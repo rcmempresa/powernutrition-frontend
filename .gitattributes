@@ -1,0 +1,6 @@
+public/fundo.tif filter=lfs diff=lfs merge=lfs -text
+public/Loja.mov filter=lfs diff=lfs merge=lfs -text
+public/video.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
