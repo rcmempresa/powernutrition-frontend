@@ -687,7 +687,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
         muted
         className="w-full h-80 lg:h-[400px] object-cover rounded-lg shadow-lg"
       >
-        <source src="/Loja.mp4" type="video/mp4" />
+        <source src="https://res.cloudinary.com/dheovknbt/video/upload/v1756742429/Loja_kcg9uj.mp4" type="video/mp4" />
         O teu navegador não suporta a tag de vídeo.
       </video>
     </div>
