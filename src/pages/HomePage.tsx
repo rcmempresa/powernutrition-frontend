@@ -79,7 +79,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   const categoriesPerPage = 4;
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
-  const videoSrc = "/video.mp4"; // Certifique-se de que este caminho está correto
+  const videoSrc = "https://res.cloudinary.com/dheovknbt/video/upload/v1756742336/video_qz6xgi.mp4"; // Certifique-se de que este caminho está correto
   const [hoveredCategoryId, setHoveredCategoryId] = useState(null);
 
   // Estados para Produtos Mais Recentes
