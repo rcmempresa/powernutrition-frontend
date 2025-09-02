@@ -172,7 +172,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
 
     const fetchRandomProducts = async () => {
       try {
-        const response = await fetch('${import.meta.env.VITE_BACKEND_URL}/api/products/listar');
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
         if (!response.ok) {
           throw new Error('Erro ao buscar a lista de produtos.');
         }
@@ -224,7 +224,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
   setIsSubmittingReview(true);
 
   try {
-    const response = await fetch('${import.meta.env.VITE_BACKEND_URL}/api/reviews/add', {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews/add`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

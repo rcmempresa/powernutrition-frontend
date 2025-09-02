@@ -119,7 +119,7 @@ const FavoriteProductsPage: React.FC = () => {
     }
 
     try {
-      const response = await axios.get<RawFavoriteProductApiResponse[]>('${import.meta.env.VITE_BACKEND_URL}/api/favorites/listar', {
+      const response = await axios.get<RawFavoriteProductApiResponse[]>(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/listar`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

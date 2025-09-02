@@ -50,7 +50,7 @@ const CartPage: React.FC<CartPageProps> = ({ items, onUpdateQuantity, onRemoveIt
     try {
       setLoadingRandom(true);
       setErrorRandom(null);
-      const response = await fetch('http://localhost:3000/api/products/listar');
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
       if (!response.ok) {
         throw new Error('Erro ao buscar a lista de produtos.');
       }
@@ -72,7 +72,7 @@ const CartPage: React.FC<CartPageProps> = ({ items, onUpdateQuantity, onRemoveIt
       return;
     }
     try {
-      const response = await axios.post('http://localhost:3000/api/coupons/apply', {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/coupons/apply`, {
         couponCode: couponCode,
         items: items.map(item => ({
           price: item.price,

@@ -12,7 +12,7 @@ import {
 import Footer from '../components/FooterPage';
 import { useAuthContext } from '../contexts/AuthContext.tsx'; // Importe o hook do contexto
 
-const API_BASE_URL = '${import.meta.env.VITE_BACKEND_URL}/api';
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');

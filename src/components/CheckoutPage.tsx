@@ -316,7 +316,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                 },
             };
 
-            const paymentResponse = await fetch('http://localhost:3000/api/referencia/multibanco/create', {
+            const paymentResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/referencia/multibanco/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -361,7 +361,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
               };
 
 
-            const paymentResponse = await fetch('http://localhost:3000/api/referencia/cc/create', {
+            const paymentResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/referencia/cc/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -398,7 +398,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
         };
         console.log("Payload de Checkout a ser enviado:", checkoutPayload);
 
-        const checkoutResponse = await fetch('http://localhost:3000/api/orders/checkout', {
+        const checkoutResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/orders/checkout`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

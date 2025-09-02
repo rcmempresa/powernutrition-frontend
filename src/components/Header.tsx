@@ -123,7 +123,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, cartItemCount, onCartClick 
   const fetchCategories = async () => {
     try {
       setLoadingCategories(true);
-      const response = await axios.get('${import.meta.env.VITE_BACKEND_URL}/api/categories/listar');
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/categories/listar`);
       const sortedCategories = response.data.sort((a: Category, b: Category) => a.id - b.id);
       setCategories(sortedCategories);
     } catch (err: any) {

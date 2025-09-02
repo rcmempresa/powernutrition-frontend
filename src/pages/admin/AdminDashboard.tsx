@@ -33,7 +33,7 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch('${import.meta.env.VITE_BACKEND_URL}/api/dashboard');
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard`);
         if (!response.ok) {
           throw new Error('Falha ao buscar dados do dashboard.');
         }
