@@ -30,12 +30,14 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 // --- NOVO: Função para buscar os produtos mais recentes da sua API ---
 // Substitua o corpo desta função pela sua chamada à API real.
 // Assumindo que sua API retorna uma lista de produtos já ordenada pelos mais recentes.
 async function fetchLatestProducts() {
   try {
-    const response = await axios.get('http://localhost:3000/api/products/listar');
+    const response = await axios.get(`${BACKEND_URL}/api/products/listar`)
     // Mapeia os dados para garantir que 'price' e 'original_price' são números
     return response.data.map(product => ({
       ...product,
@@ -212,7 +214,7 @@ function App() {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true);
-        const response = await axios.get('http://localhost:3000/api/categories/listar');
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/categories/listar`);
         const sortedCategories = response.data.sort((a, b) => a.id - b.id);
         setCategories(sortedCategories);
       } catch (err) {
@@ -253,7 +255,7 @@ function App() {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true);
-        const response = await axios.get('http://localhost:3000/api/categories/listar'); // <--- CONFIRA SEU ENDPOINT AQUI
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/categories/listar`); // <--- CONFIRA SEU ENDPOINT AQUI
         const sortedCategories = response.data.sort((a, b) => a.id - b.id);
         setCategories(sortedCategories);
       } catch (err) {
@@ -277,7 +279,7 @@ function App() {
     setErrorCategorizedProducts(null);
     try {
         // Sempre busca TODOS os produtos do endpoint /listar
-        const response = await axios.get('http://localhost:3000/api/products/listar');
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
         
         // Mapeia os dados para garantir que 'price' e 'original_price' são números
         const allProducts = response.data.map(product => ({

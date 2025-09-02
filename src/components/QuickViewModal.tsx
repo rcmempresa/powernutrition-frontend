@@ -60,7 +60,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose, cart,
       setErrorFlavor(null);
       if (product && product.flavor_id) {
         try {
-          const flavorResponse = await fetch(`http://localhost:3000/api/flavors/listar/${product.flavor_id}`);
+          const flavorResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/flavors/listar/${product.flavor_id}`);
           if (!flavorResponse.ok) {
             console.warn(`Erro HTTP ao buscar sabor para ID ${product.flavor_id}. Status: ${flavorResponse.status}`);
             setFlavorName('Sabor Desconhecido');

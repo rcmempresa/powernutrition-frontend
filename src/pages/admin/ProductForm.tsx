@@ -105,12 +105,12 @@ const ProductForm: React.FC = () => {
         return;
       }
 
-      const categoriesResponse = await axios.get<CategoryOption[]>('http://localhost:3000/api/categories/listar', {
+      const categoriesResponse = await axios.get<CategoryOption[]>(`${import.meta.env.VITE_BACKEND_URL}/api/categories/listar`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCategories(categoriesResponse.data);
 
-      const flavorsResponse = await axios.get<FlavorOption[]>('http://localhost:3000/api/flavors/listar', {
+      const flavorsResponse = await axios.get<FlavorOption[]>(`${import.meta.env.VITE_BACKEND_URL}/api/flavors/listar`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFlavors(flavorsResponse.data);
@@ -137,7 +137,7 @@ const ProductForm: React.FC = () => {
         return;
       }
 
-      const response = await axios.get(`http://localhost:3000/api/products/listar/${id}`, {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const productData = response.data;
@@ -195,7 +195,7 @@ const ProductForm: React.FC = () => {
   // ✨ Nova função para fazer o upload da imagem para o backend ✨
   const uploadImage = async (file: File) => {
     const token = getAuthToken();
-    const uploadUrl = 'http://localhost:3000/api/images/upload';
+    const uploadUrl = `${import.meta.env.VITE_BACKEND_URL}/api/images/upload`;
 
     if (!token) {
       throw new Error('Token de autenticação não encontrado.');
@@ -271,7 +271,7 @@ const ProductForm: React.FC = () => {
 
       let response;
       if (isEditing) {
-        response = await axios.put(`http://localhost:3000/api/products/atualizar/${id}`, dataToSend, {
+        response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/products/atualizar/${id}`, dataToSend, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -280,7 +280,7 @@ const ProductForm: React.FC = () => {
         setSubmitSuccess('Produto atualizado com sucesso!');
         setTimeout(() => navigate('/admin/products'), 1500); 
       } else {
-        response = await axios.post<CreatedProductResponse>('http://localhost:3000/api/products/criar', dataToSend, {
+        response = await axios.post<CreatedProductResponse>('${import.meta.env.VITE_BACKEND_URL}´/api/products/criar', dataToSend, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',

@@ -74,7 +74,7 @@ const UsersList: React.FC = () => {
       }
 
       // Requisição para listar utilizadores
-      const response = await axios.get<BackendUser[]>('http://localhost:3000/api/users/listar/', {
+      const response = await axios.get<BackendUser[]>(`${import.meta.env.VITE_BACKEND_URL}/api/users/listar/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -114,7 +114,7 @@ const UsersList: React.FC = () => {
         throw new Error('Token de autenticação não encontrado.');
       }
 
-      const response = await axios.get(`http://localhost:3000/api/users/${user.id}/orders`, {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/${user.id}/orders`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUserOrders(response.data);
@@ -148,7 +148,7 @@ const UsersList: React.FC = () => {
         return;
       }
 
-      await axios.delete(`http://localhost:3000/api/users/remover/${userId}`, {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/users/remover/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

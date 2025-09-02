@@ -66,7 +66,7 @@ const MyAccountPage = () => {
 
             try {
                 const token = getAuthToken();
-                const response = await axios.get(`http://localhost:3000/api/users/listar/${id}`, {
+                const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/listar/${id}`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
@@ -92,7 +92,7 @@ const MyAccountPage = () => {
         setIsUpdating(true);
         try {
             const token = getAuthToken();
-            await axios.put(`http://localhost:3000/api/users/atualizar/${id}`, formData, {
+            await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/users/atualizar/${id}`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }

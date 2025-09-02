@@ -35,7 +35,7 @@ const CouponEdit: React.FC = () => {
     setError(null);
     try {
       // Rota para buscar um único cupão
-      const response = await axios.get(`http://localhost:3000/api/cupoes/listar/${id}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/listar/${id}`);
       setCouponData(response.data);
     } catch (err: any) {
       console.error('Erro ao buscar o cupão:', err);
@@ -60,7 +60,7 @@ const CouponEdit: React.FC = () => {
     setError(null);
     try {
       // Passar o id real do cupão, que está no objeto 'couponData'
-      await axios.put(`http://localhost:3000/api/cupoes/atualizar/${couponData.id}`, couponData);
+      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/atualizar/${couponData.id}`, couponData);
       
       showToast('Cupão atualizado com sucesso!', 'success');
       

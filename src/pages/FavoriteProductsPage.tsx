@@ -119,7 +119,7 @@ const FavoriteProductsPage: React.FC = () => {
     }
 
     try {
-      const response = await axios.get<RawFavoriteProductApiResponse[]>('http://localhost:3000/api/favorites/listar', {
+      const response = await axios.get<RawFavoriteProductApiResponse[]>('${import.meta.env.VITE_BACKEND_URL}/api/favorites/listar', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -161,7 +161,7 @@ const FavoriteProductsPage: React.FC = () => {
 
       removingToastId = toast.loading('A remover dos favoritos...'); 
 
-      await axios.delete(`http://localhost:3000/api/favorites/remove/${productId}`, {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/remove/${productId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

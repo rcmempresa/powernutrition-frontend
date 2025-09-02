@@ -113,7 +113,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
         items: items.map(item => ({ price: item.price, quantity: item.quantity })),
       };
 
-      const response = await fetch('http://localhost:3000/api/cupoes/apply', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -231,7 +231,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
             };
         }
 
-        const addressResponse = await fetch('http://localhost:3000/api/addresses/morada', {
+        const addressResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/addresses/morada`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -273,7 +273,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                 },
             };
 
-            const paymentResponse = await fetch('http://localhost:3000/api/referencia/mbway/create', {
+            const paymentResponse = await fetch('http://:3000/api/referencia/mbway/create', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
