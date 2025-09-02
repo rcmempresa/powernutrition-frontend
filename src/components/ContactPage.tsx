@@ -44,7 +44,7 @@ const ContactPage: React.FC = () => {
 
     try {
       // Enviar dados para o endpoint da sua API de contacto
-      const response = await fetch('${import.meta.env.VITE_BACKEND_URL}/api/contact', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

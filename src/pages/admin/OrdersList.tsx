@@ -52,7 +52,7 @@ const OrdersList: React.FC = () => {
       }
 
       // A API de backend agora devolve todos os dados, sem filtros nem paginação
-      const response = await axios.get('http://localhost:3000/api/orders/admin/encomendas', { // Verifique esta URL se for diferente
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/orders/admin/encomendas`, { // Verifique esta URL se for diferente
         headers: {
           Authorization: `Bearer ${token}`,
         },

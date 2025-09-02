@@ -280,7 +280,7 @@ const ProductForm: React.FC = () => {
         setSubmitSuccess('Produto atualizado com sucesso!');
         setTimeout(() => navigate('/admin/products'), 1500); 
       } else {
-        response = await axios.post<CreatedProductResponse>('${import.meta.env.VITE_BACKEND_URL}´/api/products/criar', dataToSend, {
+        response = await axios.post<CreatedProductResponse>(`${import.meta.env.VITE_BACKEND_URL}/api/products/criar`, dataToSend, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',

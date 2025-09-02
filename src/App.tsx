@@ -137,7 +137,7 @@ function App() {
     setLoadingCategorizedProducts(true);
     setErrorCategorizedProducts(null);
     try {
-      const response = await axios.get('http://:3000/api/products/listar');
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
       const allProducts = response.data.map((product: any) => ({
         ...product,
         price: parseFloat(product.price),
@@ -162,7 +162,7 @@ function App() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/categories/listar');
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/categories/listar`);
         const sortedCategories = response.data.sort((a: any, b: any) => a.id - b.id);
         setCategories(sortedCategories);
       } catch (err) {

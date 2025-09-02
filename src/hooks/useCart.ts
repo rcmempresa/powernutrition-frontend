@@ -13,7 +13,7 @@ interface CartItem {
   flavor?: string;
 }
 
-const API_BASE_URL = '${import.meta.env.VITE_BACKEND_URL}/api';
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 export const useCart = (getToken: () => string | null) => {
   const [items, setItems] = useState<CartItem[]>([]);

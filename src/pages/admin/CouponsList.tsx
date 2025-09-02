@@ -56,7 +56,7 @@ const CouponsList: React.FC = () => {
     setError(null);
     try {
       // Simulação: A sua API deve ter uma rota de listagem de cupões
-      const response = await axios.get<BackendCoupon[]>('${import.meta.env.VITE_BACKEND_URL}´/api/cupoes/listar', {
+      const response = await axios.get<BackendCoupon[]>(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/listar`, {
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
         },
@@ -88,7 +88,7 @@ const CouponsList: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.post('${import.meta.env.VITE_BACKEND_URL}´/api/cupoes/criar', newCouponForm);
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/criar`, newCouponForm);
 
       const createdCoupon: BackendCoupon = response.data;
       
