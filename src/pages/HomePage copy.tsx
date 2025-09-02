@@ -46,7 +46,7 @@ interface Product {
 // --- Função para buscar os produtos mais recentes da sua API ---
 async function fetchLatestProducts() {
   try {
-    const response = await axios.get('http://localhost:3000/api/products/listar');
+    const response = await axios.get('${import.meta.env.VITE_BACKEND_URL}/api/products/listar');
     return response.data.map((product: any) => ({
       ...product,
       price: parseFloat(product.price),
@@ -170,7 +170,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     setLoadingCategorizedProducts(true);
     setErrorCategorizedProducts(null);
     try {
-        const response = await axios.get('http://localhost:3000/api/products/listar');
+        const response = await axios.get('${import.meta.env.VITE_BACKEND_URL}/api/products/listar');
         const allProducts = response.data.map((product: any) => ({
             ...product,
             price: parseFloat(product.price),
@@ -211,7 +211,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     if (!token) return; // Não há token, não busca favoritos
 
     try {
-      const response = await axios.get('http://localhost:3000/api/favorites/listar', {
+      const response = await axios.get('${import.meta.env.VITE_BACKEND_URL}/api/favorites/listar', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const ids = new Set(response.data.map((p: any) => p.id));
@@ -242,7 +242,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     try {
       if (isCurrentlyFavorite) {
         // Remover dos favoritos
-        await axios.delete(`http://localhost:3000/api/favorites/remove/${productId}`, {
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/remove/${productId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFavoriteProductIds(prev => {
@@ -253,7 +253,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
         toast.success('Produto removido dos favoritos!');
       } else {
         // Adicionar aos favoritos
-        await axios.post('http://localhost:3000/api/favorites/add', { productId }, {
+        await axios.post('${import.meta.env.VITE_BACKEND_URL}/api/favorites/add', { productId }, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -282,7 +282,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true);
-        const response = await axios.get('http://localhost:3000/api/categories/listar');
+        const response = await axios.get('${import.meta.env.VITE_BACKEND_URL}/api/categories/listar');
         const sortedCategories = response.data.sort((a: any, b: any) => a.id - b.id);
         setCategories(sortedCategories);
       } catch (err: any) {

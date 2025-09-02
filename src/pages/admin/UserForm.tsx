@@ -91,7 +91,7 @@ const UserForm: React.FC = () => {
         return;
       }
 
-      const response = await axios.get(`http://localhost:3000/api/users/listar/${id}`, {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/listar/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const userData = response.data;
@@ -166,7 +166,7 @@ const UserForm: React.FC = () => {
           delete dataToUpdate.password;
         }
 
-        response = await axios.put<UserResponse>(`http://localhost:3000/api/users/atualizar/${id}`, dataToUpdate, {
+        response = await axios.put<UserResponse>(`${import.meta.env.VITE_BACKEND_URL}/api/users/atualizar/${id}`, dataToUpdate, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ const UserForm: React.FC = () => {
         setSubmitSuccess('Utilizador atualizado com sucesso!');
       } else {
         // ✨ Lógica para CRIAR utilizador - Requisição para /api/users/register ✨
-        response = await axios.post<UserResponse>('http://localhost:3000/api/users/register', formData, {
+        response = await axios.post<UserResponse>(`${import.meta.env.VITE_BACKEND_URL}/api/users/register`, formData, {
           headers: {
             'Content-Type': 'application/json',
           },
@@ -219,7 +219,7 @@ const UserForm: React.FC = () => {
         return;
       }
 
-      await axios.patch(`http://localhost:3000/api/users/promote/${id}`, {}, {
+      await axios.patch(`${import.meta.env.VITE_BACKEND_URL}/api/users/promote/${id}`, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

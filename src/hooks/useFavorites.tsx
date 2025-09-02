@@ -47,7 +47,7 @@ export const FavoritesProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
 
     try {
-      const response = await axios.get<FavoriteProductData[]>('http://localhost:3000/api/favorites/listar', {
+      const response = await axios.get<FavoriteProductData[]>('${import.meta.env.VITE_BACKEND_URL}/api/favorites/listar', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const ids = new Set(response.data.map(p => p.id));
@@ -87,7 +87,7 @@ export const FavoritesProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     try {
       if (isCurrentlyFavorite) {
-        await axios.delete(`http://localhost:3000/api/favorites/remove/${productId}`, {
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/remove/${productId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFavoriteProductIds(prev => {
@@ -98,7 +98,7 @@ export const FavoritesProvider: React.FC<{ children: ReactNode }> = ({ children 
         setFavoriteItemCount(prev => prev - 1); // Decrementa a contagem
         toast.success('Produto removido dos favoritos!');
       } else {
-        await axios.post('http://localhost:3000/api/favorites/add', { productId }, {
+        await axios.post('${import.meta.env.VITE_BACKEND_URL}/api/favorites/add', { productId }, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',

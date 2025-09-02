@@ -93,7 +93,7 @@ function App() {
     setLoadingFlavors(true);
     setErrorFlavors(null);
     try {
-      const response = await axios.get('http://localhost:3000/api/flavors/listar');
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/flavors/listar`);
       const sortedFlavors = response.data.sort((a: any, b: any) => a.id - b.id);
       setFlavors(sortedFlavors);
     } catch (err: any) {
@@ -137,7 +137,7 @@ function App() {
     setLoadingCategorizedProducts(true);
     setErrorCategorizedProducts(null);
     try {
-      const response = await axios.get('http://localhost:3000/api/products/listar');
+      const response = await axios.get('http://:3000/api/products/listar');
       const allProducts = response.data.map((product: any) => ({
         ...product,
         price: parseFloat(product.price),

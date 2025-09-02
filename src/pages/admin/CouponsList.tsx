@@ -56,7 +56,7 @@ const CouponsList: React.FC = () => {
     setError(null);
     try {
       // Simulação: A sua API deve ter uma rota de listagem de cupões
-      const response = await axios.get<BackendCoupon[]>('http://localhost:3000/api/cupoes/listar', {
+      const response = await axios.get<BackendCoupon[]>('${import.meta.env.VITE_BACKEND_URL}´/api/cupoes/listar', {
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
         },
@@ -88,7 +88,7 @@ const CouponsList: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.post('http://localhost:3000/api/cupoes/criar', newCouponForm);
+      const response = await axios.post('${import.meta.env.VITE_BACKEND_URL}´/api/cupoes/criar', newCouponForm);
 
       const createdCoupon: BackendCoupon = response.data;
       
@@ -127,7 +127,7 @@ const CouponsList: React.FC = () => {
     
     try {
       // Simulação: A sua API deve ter uma rota de remoção de cupões
-      await axios.delete(`http://localhost:3000/api/cupoes/remover/${couponId}`);
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/remover/${couponId}`);
       
       setCoupons(prevCoupons => prevCoupons.filter(c => c.id !== couponId));
       showToast('Cupão eliminado com sucesso!', 'success');
@@ -143,7 +143,7 @@ const CouponsList: React.FC = () => {
   // Lidar com a visualização do uso do cupão
   const handleViewUsage = async (couponCode: string) => {
     try {
-      const response = await axios.get(`http://localhost:3000/api/cupoes/usage/${couponCode}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/usage/${couponCode}`);
       const usageCount = response.data.usage_count; 
       showToast(`O cupão "${couponCode}" foi usado ${usageCount} vezes.`, 'info');
     } catch (err: any) {

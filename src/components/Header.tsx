@@ -123,7 +123,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, cartItemCount, onCartClick 
   const fetchCategories = async () => {
     try {
       setLoadingCategories(true);
-      const response = await axios.get('http://localhost:3000/api/categories/listar');
+      const response = await axios.get('${import.meta.env.VITE_BACKEND_URL}/api/categories/listar');
       const sortedCategories = response.data.sort((a: Category, b: Category) => a.id - b.id);
       setCategories(sortedCategories);
     } catch (err: any) {
@@ -137,7 +137,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, cartItemCount, onCartClick 
   const fetchAllProducts = async () => {
     setSearchLoading(true);
     try {
-      const response = await axios.get(`http://localhost:3000/api/products/listar`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
       
       // ALTERAÇÃO CRÍTICA AQUI:
       // Agora, a sua aplicação irá usar o array diretamente de `response.data`

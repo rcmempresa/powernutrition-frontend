@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Footer from '../components/FooterPage';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = '${import.meta.env.VITE_BACKEND_URL}/api';
 
 export const RegisterPage: React.FC = () => {
   // Campos de autenticação

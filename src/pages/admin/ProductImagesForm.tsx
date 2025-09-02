@@ -76,7 +76,7 @@ const ProductImagesForm: React.FC = () => {
   // ✨ Função de upload para o backend, a mesma usada no ProductForm ✨
   const uploadImage = async (file: File) => {
     const token = getAuthToken();
-    const uploadUrl = 'http://localhost:3000/api/images/upload';
+    const uploadUrl = '${import.meta.env.VITE_BACKEND_URL}´/api/images/upload';
 
     if (!token) {
       throw new Error('Token de autenticação não encontrado.');
@@ -140,7 +140,7 @@ const ProductImagesForm: React.FC = () => {
           is_primary: false, // ✨ Sempre FALSE para imagens secundárias ✨
         };
 
-        await axios.post('http://localhost:3000/api/product_images/create', payload, {
+        await axios.post('${import.meta.env.VITE_BACKEND_URL}´/api/product_images/create', payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',

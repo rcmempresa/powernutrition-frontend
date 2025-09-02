@@ -113,7 +113,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
 
       try {
         // 1. Buscar dados do produto principal
-        const productResponse = await fetch(`http://localhost:3000/api/products/listar/${productId}`);
+        const productResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${productId}`);
         if (!productResponse.ok) {
           throw new Error(`Erro HTTP ao buscar produto! Status: ${productResponse.status}`);
         }
@@ -123,7 +123,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
         setMainImageUrl(productData.image_url);
 
         // 2. Buscar todas as imagens do produto
-        const imagesResponse = await fetch(`http://localhost:3000/api/product_images/byProductId/${productId}`);
+        const imagesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/product_images/byProductId/${productId}`);
         if (!imagesResponse.ok) {
           throw new Error(`Erro HTTP ao buscar imagens! Status: ${imagesResponse.status}`);
         }
@@ -139,7 +139,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
 
         // 3. Se houver flavor_id, buscar o nome do sabor
         if (productData.flavor_id) {
-          const flavorResponse = await fetch(`http://localhost:3000/api/flavors/listar/${productData.flavor_id}`);
+          const flavorResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/flavors/listar/${productData.flavor_id}`);
           if (!flavorResponse.ok) {
             console.warn(`Erro HTTP ao buscar sabor para ID ${productData.flavor_id}. Status: ${flavorResponse.status}`);
             setFlavorName('Desconhecido');
@@ -152,7 +152,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
         }
 
         // 4. 👈 NOVO: Buscar avaliações do produto
-        const reviewsResponse = await fetch(`http://localhost:3000/api/reviews/byProductId/${productId}`);
+        const reviewsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews/byProductId/${productId}`);
         if (reviewsResponse.ok) {
           const reviewsData = await reviewsResponse.json();
           setReviews(reviewsData);
@@ -172,7 +172,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
 
     const fetchRandomProducts = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/products/listar');
+        const response = await fetch('${import.meta.env.VITE_BACKEND_URL}/api/products/listar');
         if (!response.ok) {
           throw new Error('Erro ao buscar a lista de produtos.');
         }
@@ -224,7 +224,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
   setIsSubmittingReview(true);
 
   try {
-    const response = await fetch('http://localhost:3000/api/reviews/add', {
+    const response = await fetch('${import.meta.env.VITE_BACKEND_URL}/api/reviews/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
     setUserRating(0);
     setShowReviewForm(false);
     // Re-fetch reviews para atualizar a lista
-    const reviewsResponse = await fetch(`http://localhost:3000/api/reviews/byProductId/${productId}`);
+    const reviewsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews/byProductId/${productId}`);
     if (reviewsResponse.ok) {
       const reviewsData = await reviewsResponse.json();
       setReviews(reviewsData);

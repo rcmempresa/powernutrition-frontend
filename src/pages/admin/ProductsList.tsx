@@ -95,7 +95,7 @@ const ProductsList: React.FC = () => {
         return;
       }
 
-      const response = await axios.get<BackendProduct[]>('http://localhost:3000/api/products/listar/', {
+      const response = await axios.get<BackendProduct[]>(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -159,7 +159,7 @@ const ProductsList: React.FC = () => {
         return;
       }
 
-      await axios.delete(`http://localhost:3000/api/products/eliminar/${productId}`, {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/products/eliminar/${productId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
