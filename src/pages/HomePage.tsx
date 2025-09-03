@@ -104,10 +104,10 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   // Categorias fixas para a seção de Produtos Populares
   const staticCategories = [
     { id: 1, name: "Proteínas" },
-    { id: 2, name: "Multivitamínico" },
+    { id: 2, name: "Creatinas" },
     { id: 3, name: "Amino Ácidoss" },
     { id: 4, name: "Vitaminas e Minerais" },
-    { id: 5, name: "Creatinas" },
+    { id: 5, name: "Multivitamínico" },
     { id: 12, name: "Gainers e Carbs" },
   ];
 
@@ -485,12 +485,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
               className="flex flex-col sm:flex-row gap-4 h-[450px] md:h-[550px] lg:h-[650px] items-start"
             >
               <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/20 h-full">
-                <img
-                  src="https://images.pexels.com/photos/10360340/pexels-photo-10360340.jpeg?auto=compress&cs=tinysrgb&w=800&h=1000&fit=crop"
-                  alt="Fundo abstrato azul"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-
                 <div className="relative z-10 h-full flex flex-col items-center justify-start p-6 md:p-8">
                   <span className="text-white text-8xl md:text-9xl lg:text-[12rem] font-bold leading-none mt-4">D</span>
                   <span className="text-white text-xl md:text-2xl font-semibold -mt-4 mb-8">Vitamina</span>
@@ -721,7 +715,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                   >
                     <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg shadow-purple-500/20 h-full w-full flex items-center justify-center bg-purple-600">
                       <img
-                        src="Beneficios_BCA.webp"
+                        src="savior.png"
                         alt="Suplemento BCAA"
                         className="w-full h-full object-cover rounded-2xl"
                       />
@@ -740,7 +734,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
               <div className="flex flex-col md:flex-row items-center justify-between mb-12">
                   <div className="text-center md:text-left mb-6 md:mb-0">
                       <p className="text-gray-400 text-sm uppercase font-semibold mb-1">
-                          COMPRE UM, GANHE UM, 50% DE DESCONTO
+                          MELHORE A SUA SAÚDE E A SUA PERFORMANCE!
                       </p>
                       <h2 className="text-3xl md:text-4xl font-extrabold text-gray-100">
                           Produtos Populares
