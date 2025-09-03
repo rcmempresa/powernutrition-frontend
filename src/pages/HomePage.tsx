@@ -484,12 +484,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
               transition={{ duration: 0.8 }}
               className="flex flex-col sm:flex-row gap-4 h-[450px] md:h-[550px] lg:h-[650px] items-start"
             >
-              <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/20 h-full">
-                <div className="relative z-10 h-full flex flex-col items-center justify-start p-6 md:p-8">
-                  <span className="text-white text-8xl md:text-9xl lg:text-[12rem] font-bold leading-none mt-4">D</span>
-                  <span className="text-white text-xl md:text-2xl font-semibold -mt-4 mb-8">Vitamina</span>
-                </div>
-              </div>
 
               <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg  h-full mt-8 sm:mt-16  flex items-center justify-center">
                 <img
@@ -687,20 +681,20 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                   >
                     <div className="text-orange-500 font-medium mb-4 tracking-wider">MÁXIMO DESEMPENHO</div>
                     <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-6">
-                      Otimize a Sua Recuperação e Crescimento Muscular com BCAA.
+                      Otimize a Sua Recuperação e Crescimento Muscular com Aminoácidos.
                     </h2>
                     <p className="text-gray-400 mb-8 leading-relaxed">
-                      Leve seus treinos ao próximo nível e acelere a recuperação com os aminoácidos de cadeia ramificada (BCAA). Essenciais para a síntese proteica, os BCAAs (leucina, isoleucina e valina) ajudam a reduzir a fadiga muscular, minimizar a dor pós-treino e promover o crescimento muscular magro. Nossas fórmulas de alta pureza garantem que você obtenha o máximo de cada dose, permitindo que você treine mais pesado e se recupere mais rápido. Descubra a chave para um desempenho consistente.
+                      Leve seus treinos ao próximo nível e acelere a recuperação com a força dos aminoácidos. Essenciais para a construção de proteínas, os **aminoácidos** são os blocos de construção dos músculos, ajudando a **reduzir a fadiga**, **minimizar a dor pós-treino** e promover o **crescimento muscular magro**. Desde os **aminoácidos de cadeia ramificada (BCAA)** até a **glutamina** e a **creatina**, nossas fórmulas de alta pureza garantem que você obtenha o máximo de cada dose, permitindo que você treine mais pesado e se recupere mais rápido. Descubra a chave para um desempenho consistente.
                     </p>
                     <div className="flex items-center space-x-4">
                       <button
                         className="bg-red-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-red-700 hover:shadow-lg hover:shadow-red-700/30 transition-all flex items-center"
                         onClick={() => navigate('/produtos')} // Usar navigate
                       >
-                        EXPLORAR BCAAS
+                        EXPLORAR AMINOÁCIDOS
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </button>
-                      <button className="bg-gray-800 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors" aria-label="Saiba mais sobre BCAA">
+                      <button className="bg-gray-800 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors" aria-label="Saiba mais sobre Aminoácidos">
                         <ChevronRight className="w-5 h-5" />
                       </button>
                     </div>
@@ -716,11 +710,11 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                     <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg shadow-purple-500/20 h-full w-full flex items-center justify-center bg-purple-600">
                       <img
                         src="savior.png"
-                        alt="Suplemento BCAA"
+                        alt="Suplemento Aminoácidos"
                         className="w-full h-full object-cover rounded-2xl"
                       />
                       <div className="absolute bottom-4 right-4 bg-purple-800 w-24 h-24 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                        BCAA
+                        AMINO
                       </div>
                     </div>
                   </motion.div>
