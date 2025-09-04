@@ -510,6 +510,7 @@ const ProductForm: React.FC = () => {
                   <option value="kg">quilogramas (kg)</option>
                   <option value="ml">mililitros (ml)</option>
                   <option value="l">litros (l)</option>
+                  <option value="caps">Cápsulas (caps)</option>
                 </select>
               </div>
             </motion.div>
