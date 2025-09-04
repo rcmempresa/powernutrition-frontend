@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { Loader2, Package, Euro, CreditCard } from 'lucide-react';
+import Footer from '../components/FooterPage';
 
 interface OrderItem {
     id: number;
@@ -152,6 +153,7 @@ const MyOrdersPage: React.FC = () => {
                     ))}
                 </div>
             )}
+            <Footer />
         </div>
     );
 };
