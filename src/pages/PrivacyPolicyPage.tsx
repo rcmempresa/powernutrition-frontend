@@ -26,7 +26,13 @@ const PrivacyPolicyPage = () => {
           <p className="mb-4">
             Não vendemos ou alugamos as suas informações pessoais a terceiros. Podemos partilhar dados com fornecedores de serviços (como empresas de envio ou processadores de pagamento) que nos ajudam a operar o nosso negócio, mas apenas na medida necessária para a prestação desses serviços.
           </p>
-          
+
+          <h2 className="text-2xl font-bold text-white mt-8 mb-4">4.Legislação de Ecoommerce </h2>
+          <p className="mb-4">
+            Nome: Diogo Rodrigues Abreu
+            Morada:Caminho do Poço Barral nº28
+            Nif:234245077
+          </p>
           {/* Adicione mais seções conforme necessário */}
           <p className="mt-8 text-sm text-gray-500">
             Última atualização: {new Date().toLocaleDateString('pt-PT')}
