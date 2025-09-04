@@ -475,6 +475,16 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, cartItemCount, onCartClick 
                                 <span>Minha Conta</span>
                               </div>
                             </Link>
+                            <Link
+                              to="/minhas-encomendas"
+                              onClick={handleNavLinkClick}
+                              className="w-full block text-left px-4 py-2 text-sm transition-colors text-gray-200 hover:text-orange-500 hover:bg-gray-700"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <ShoppingCart className="w-4 h-4" />
+                                <span>Minhas Encomendas</span>
+                              </div>
+                            </Link>
 
                             {user?.is_admin && (
                               <Link
