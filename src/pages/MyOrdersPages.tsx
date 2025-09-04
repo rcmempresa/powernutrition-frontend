@@ -38,8 +38,8 @@ const MyOrdersPage: React.FC = () => {
             try {
                 const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/orders/listar/proprias`, {
                     headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                        Authorization: `Bearer ${token}`,
+                    },
                 });
                 setOrders(response.data);
             } catch (err: any) {
