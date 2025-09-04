@@ -12,6 +12,7 @@ import CartPage from './components/CartPage';
 import CheckoutPage from './components/CheckoutPage';
 import QuickViewModal from './components/QuickViewModal';
 import HomePage from './pages/HomePage';
+import MyOrdersPages from './pages/MyOrdersPages';
 import WhatsAppButton from './components/WhatsAppButton';
 import OrderConfirmationPage from './components/OrderConfirmationPage';
 import FavoriteProductsPage from './pages/FavoriteProductsPage.tsx';
@@ -268,6 +269,7 @@ function App() {
         <Route path="/politica-de-privacidade" element={<PrivacyPolicyPage />} />
         <Route path="/politica-de-devolucao" element={<ReturnPolicyPage />} />
         <Route path="/metodos-de-envio" element={<ShippingMethodsPage />} />
+        <Route path="/minhas-encomendas" element={<MyOrdersPages />}/>
 
         <Route path="/admin" element={<AdminPrivateRoute />}>
           <Route element={<AdminLayout />}>
