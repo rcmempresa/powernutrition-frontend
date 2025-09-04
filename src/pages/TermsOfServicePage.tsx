@@ -28,8 +28,8 @@ const TermsOfServicePage = () => {
           </p>
           <h2 className="text-2xl font-bold text-white mt-8 mb-4">4.Legislação de Ecoommerce </h2>
           <p className="mb-4">
-            Nome: Diogo Rodrigues Abreu
-            Morada:Caminho do Poço Barral nº28
+            Nome: Diogo Rodrigues Abreu ,
+            Morada:Caminho do Poço Barral nº28 ,
             Nif:234245077
           </p>
 
