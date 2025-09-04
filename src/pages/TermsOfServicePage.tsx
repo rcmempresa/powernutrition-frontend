@@ -26,6 +26,12 @@ const TermsOfServicePage = () => {
           <p className="mb-4">
             A RD Power Nutrition não será responsável por quaisquer danos diretos, indiretos, incidentais, especiais ou consequenciais resultantes do uso ou da incapacidade de usar o nosso site ou dos produtos comprados através dele.
           </p>
+          <h2 className="text-2xl font-bold text-white mt-8 mb-4">4.Legislação de Ecoommerce </h2>
+          <p className="mb-4">
+            Nome: Diogo Rodrigues Abreu
+            Morada:Caminho do Poço Barral nº28
+            Nif:234245077
+          </p>
 
           {/* Adicione mais seções conforme necessário */}
           <p className="mt-8 text-sm text-gray-500">
