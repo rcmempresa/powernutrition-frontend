@@ -36,7 +36,7 @@ const MyOrdersPage: React.FC = () => {
 
         const fetchOrders = async () => {
             try {
-                const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/orders/listar/user`, {
+                const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/orders/listar/proprias`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
