@@ -103,7 +103,7 @@ async function fetchLatestProducts() {
         ...product,
         displayPrice: displayPriceValue,
         displayWeight: displayWeightValue,
-        displayVariantId: displayVariantId, // ✨ RETORNA O ID DA VARIANTE
+        displayVariantId: displayVariantId,
         image_url: productImage,
         totalStock,
       };
@@ -806,17 +806,15 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                                           <button 
                                             className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
                                             aria-label="Toggle favorite"
-                                            // ✨ USE A NOVA PROPRIEDADE AQUI
                                             onClick={(e) => toggleFavorite(product.displayVariantId, e)}
                                           >
                                             <Heart 
                                               className={`w-4 h-4 transition-colors ${
-                                                // ✨ E AQUI TAMBÉM
-                                                checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
+                                                  checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
                                               }`} 
                                             />
                                           </button>
-                                          <button
+                                              <button
                                               className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
                                               aria-label="Quick view"
                                               onClick={(e) => {
