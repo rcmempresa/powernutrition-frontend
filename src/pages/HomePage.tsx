@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Heart,
   Eye,
   ShoppingCart as ShoppingCartIcon,
+  Star, // Certifique-se de que o ícone Star está importado, pois foi adicionado no código original.
 } from 'lucide-react';
 import axios from 'axios';
-import toast from 'react-hot-toast'; 
+import toast from 'react-hot-toast';
 import { useFavorites } from '../hooks/useFavorites';
 import { useAuth } from '../hooks/useAuth';
 import Footer from '../components/FooterPage';
@@ -14,10 +15,10 @@ import Footer from '../components/FooterPage';
 // --- INTERFACES NECESSÁRIAS ---
 interface Variant {
     id: number;
-    preco: number;
+    preco: string; // Alterado para string para lidar com a resposta da API
     quantidade_em_stock: number;
     sku: string;
-    weight_value: number;
+    weight_value: string; // Alterado para string
     weight_unit: string;
     flavor_id: number;
     image_url?: string;
@@ -31,8 +32,8 @@ interface Product {
     category_id: number;
     brand?: string;
     is_active: boolean;
-    original_price?: number;
-    rating?: number;
+    original_price?: string; // Alterado para string
+    rating?: string; // Alterado para string
     reviewcount?: number;
     displayPrice: number;
     displayWeight: string;
@@ -43,7 +44,7 @@ interface Product {
 async function fetchLatestProducts() {
   try {
     const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-    
+
     if (!response.data || !Array.isArray(response.data)) {
         console.warn("API returned invalid or empty data for latest products.");
         return [];
@@ -51,38 +52,46 @@ async function fetchLatestProducts() {
 
     return response.data.map((product) => {
       const hasVariants = product.variants && Array.isArray(product.variants) && product.variants.length > 0;
-      let cheapestVariant = null;
       let displayPriceValue = 0;
       let displayWeightValue = 'N/A';
       let productImage = product.image_url;
 
       if (hasVariants) {
+        // Encontra a variante com o menor preço
         const sortedVariants = product.variants.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco));
-        cheapestVariant = sortedVariants[0];
+        const cheapestVariant = sortedVariants[0];
 
-        if (cheapestVariant && cheapestVariant.preco !== undefined && cheapestVariant.preco !== null) {
+        if (cheapestVariant) {
           displayPriceValue = parseFloat(cheapestVariant.preco);
-        }
-        if (cheapestVariant && cheapestVariant.weight_value && cheapestVariant.weight_unit) {
           displayWeightValue = `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}`;
-        }
-        if (cheapestVariant && cheapestVariant.image_url) {
-            productImage = cheapestVariant.image_url;
+          if (cheapestVariant.image_url) {
+              productImage = cheapestVariant.image_url;
+          }
         }
       } else {
-        if (product.original_price !== undefined && product.original_price !== null) {
-          displayPriceValue = parseFloat(product.original_price);
-        }
+          // Se não houver variantes, usa o original_price como preço de exibição
+          if (product.original_price !== undefined && product.original_price !== null) {
+              displayPriceValue = parseFloat(product.original_price);
+          }
       }
+
+      // Garante que o displayPrice é um número válido, caso contrário, define-o como 0
       if (isNaN(displayPriceValue)) {
           displayPriceValue = 0;
       }
+
+      // Adiciona uma propriedade para verificar o stock total
+      const totalStock = hasVariants
+          ? product.variants.reduce((sum, v) => sum + v.quantidade_em_stock, 0)
+          : 0;
 
       return {
         ...product,
         displayPrice: displayPriceValue,
         displayWeight: displayWeightValue,
         image_url: productImage,
+        hasVariants,
+        totalStock,
       };
     });
   } catch (error) {
@@ -94,9 +103,9 @@ async function fetchLatestProducts() {
 // --- COMPONENTE HOMEPAGE MINIMALISTA ---
 const HomePage = ({ cart, handleQuickViewOpen }) => {
   const navigate = useNavigate();
-  const { isAuthenticated, getAuthToken } = useAuth();
   const { checkIfFavorite, toggleFavorite } = useFavorites();
-  
+  const { isAuthenticated, getAuthToken } = useAuth();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -138,7 +147,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                 >
                   <div className="relative bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
                     <div className="relative w-full h-48 md:h-56">
-                      {(!product.is_active || (product.variants && product.variants.length > 0 && product.variants.every(v => v.quantidade_em_stock === 0 && v.stock_ginasio === 0))) && (
+                      {(!product.is_active || product.totalStock === 0) && (
                           <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm z-10">
                               Esgotado
                           </div>
@@ -151,8 +160,8 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                     </div>
                     <div className="p-4 md:p-6">
                       <div className="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                            className="bg-gray-700 p-2 rounded-full shadow-lg hover:bg-gray-600 border border-gray-600" 
+                        <button
+                            className="bg-gray-700 p-2 rounded-full shadow-lg hover:bg-gray-600 border border-gray-600"
                             aria-label="Toggle favorite"
                             onClick={(e) => toggleFavorite(product.id, e)}
                         >
@@ -174,13 +183,13 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                           onClick={(e) => {
                               e.stopPropagation();
                               if (cart && cart.addItem) {
-                                  const firstVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
+                                  const cheapestVariant = product.variants?.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco))[0];
 
-                                  if (firstVariant) {
+                                  if (cheapestVariant) {
                                       cart.addItem({
-                                          id: firstVariant.id,
+                                          id: cheapestVariant.id,
                                           name: product.name,
-                                          price: parseFloat(firstVariant.preco),
+                                          price: parseFloat(cheapestVariant.preco),
                                           image: product.image_url
                                       });
                                       toast.success(`${product.name} adicionado ao carrinho!`);
@@ -199,11 +208,11 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
 
                       <div className="flex mb-2">
                         {/* Exibir o rating se ele for maior que 0 */}
-                        {product.rating > 0 ? (
+                        {parseFloat(product.rating || '0') > 0 ? (
                             Array.from({ length: 5 }).map((_, i) => (
                                 <Star
                                     key={i}
-                                    className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'text-orange-500 fill-current' : 'text-gray-500'}`}
+                                    className={`w-4 h-4 ${i < Math.floor(parseFloat(product.rating)) ? 'text-orange-500 fill-current' : 'text-gray-500'}`}
                                 />
                             ))
                         ) : (
@@ -213,9 +222,9 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
 
                       <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
                       <p className="text-gray-400 text-sm mb-2">{product.displayWeight}</p>
-                      
+
                       <div className="flex items-baseline space-x-2">
-                          {product.original_price && product.displayPrice < product.original_price && (
+                          {product.original_price && product.displayPrice < parseFloat(product.original_price) && (
                               <p className="text-gray-500 line-through text-base md:text-lg">
                                   €{parseFloat(product.original_price).toFixed(2)}
                               </p>
