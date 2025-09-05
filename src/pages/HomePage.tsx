@@ -72,7 +72,7 @@ async function fetchLatestProducts() {
       let cheapestVariant = null;
       let displayPriceValue = 0; // Preço padrão para 0
       let displayWeightValue = 'N/A'; // Peso padrão para N/A
-      let productImage = product.image_url; // Imagem padrão do produto
+
 
       if (hasVariants) {
         // 2. Ordena as variantes para encontrar a mais barata
@@ -90,10 +90,6 @@ async function fetchLatestProducts() {
           displayWeightValue = `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}`;
         }
         
-        // 5. Opcional: Usar a imagem da variante se disponível
-        if (cheapestVariant && cheapestVariant.image_url) {
-            productImage = cheapestVariant.image_url;
-        }
 
       } else {
         // Se não houver variantes, usa o original_price como displayPrice
@@ -106,7 +102,6 @@ async function fetchLatestProducts() {
         ...product, // ESTA LINHA CONTINUA CRÍTICA PARA MANTER AS VARIANTES E OUTROS CAMPOS
         displayPrice: displayPriceValue,
         displayWeight: displayWeightValue,
-        image_url: productImage, // Atribui a imagem final
       };
     });
   } catch (error) {
@@ -710,15 +705,15 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                                     <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
                                     <p className="text-gray-400 text-sm">{product.displayWeight}</p>
                                     <div className="flex items-baseline space-x-2">
-                                      {product.original_price && product.displayPrice < parseFloat(product.original_price) && (
-                                          <p className="text-gray-500 line-through text-base md:text-lg">
-                                              €{parseFloat(product.original_price).toFixed(2)}
-                                          </p>
-                                      )}
-                                      <p className="text-red-500 font-bold text-lg md:text-xl">
-                                          € {product.displayPrice.toFixed(2)}
-                                      </p>
-                                  </div>
+                                        {product.original_price && product.displayPrice < product.original_price && (
+                                            <p className="text-gray-500 line-through text-base md:text-lg">
+                                                €{product.original_price.toFixed(2)}
+                                            </p>
+                                        )}
+                                        <p className="text-red-500 font-bold text-lg md:text-xl">
+                                            € {product.displayPrice.toFixed(2)}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
