@@ -66,18 +66,47 @@ async function fetchLatestProducts() {
     }
 
     return response.data.map((product) => {
-      const cheapestVariant = (product.variants && product.variants.length > 0)
-        ? product.variants.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco))[0]
-        : null;
+      // 1. Verificação segura para `variants`
+      const hasVariants = product.variants && Array.isArray(product.variants) && product.variants.length > 0;
+
+      let cheapestVariant = null;
+      let displayPriceValue = 0; // Preço padrão para 0
+      let displayWeightValue = 'N/A'; // Peso padrão para N/A
+      let productImage = product.image_url; // Imagem padrão do produto
+
+      if (hasVariants) {
+        // 2. Ordena as variantes para encontrar a mais barata
+        // Certifica-se de que `preco` é um número para a comparação
+        const sortedVariants = product.variants.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco));
+        cheapestVariant = sortedVariants[0];
+
+        // 3. Define displayPrice a partir da variante mais barata
+        if (cheapestVariant && cheapestVariant.preco !== undefined) {
+          displayPriceValue = parseFloat(cheapestVariant.preco);
+        }
+
+        // 4. Define displayWeight a partir da variante mais barata
+        if (cheapestVariant && cheapestVariant.weight_value && cheapestVariant.weight_unit) {
+          displayWeightValue = `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}`;
+        }
         
-      const price = cheapestVariant ? cheapestVariant.preco : product.original_price;
-      const weightValue = cheapestVariant && cheapestVariant.weight_value ? cheapestVariant.weight_value : null;
-      const weightUnit = cheapestVariant && cheapestVariant.weight_unit ? cheapestVariant.weight_unit : '';
+        // 5. Opcional: Usar a imagem da variante se disponível
+        if (cheapestVariant && cheapestVariant.image_url) {
+            productImage = cheapestVariant.image_url;
+        }
+
+      } else {
+        // Se não houver variantes, usa o original_price como displayPrice
+        if (product.original_price !== undefined) {
+          displayPriceValue = parseFloat(product.original_price);
+        }
+      }
 
       return {
-        ...product, // ESTA LINHA É CRÍTICA
-        displayPrice: price !== null && price !== undefined ? parseFloat(price) : 0,
-        displayWeight: weightValue ? `${weightValue}${weightUnit}` : 'N/A',
+        ...product, // ESTA LINHA CONTINUA CRÍTICA PARA MANTER AS VARIANTES E OUTROS CAMPOS
+        displayPrice: displayPriceValue,
+        displayWeight: displayWeightValue,
+        image_url: productImage, // Atribui a imagem final
       };
     });
   } catch (error) {
