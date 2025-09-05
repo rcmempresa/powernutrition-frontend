@@ -620,6 +620,58 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
         </div>
       </section>
 
+      <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
+                    <div className="max-w-7xl mx-auto">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                        <motion.div
+                          initial={{ x: -100, opacity: 0 }}
+                          whileInView={{ x: 0, opacity: 1 }}
+                          viewport={{ once: true, amount: 0.3 }}
+                          transition={{ duration: 0.8 }}
+                        >
+                          <div className="text-orange-500 font-medium mb-4 tracking-wider">MÁXIMO DESEMPENHO</div>
+                          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-6">
+                            Otimize a Sua Recuperação e Crescimento Muscular com Aminoácidos.
+                          </h2>
+                          <p className="text-gray-400 mb-8 leading-relaxed">
+                            Leve seus treinos ao próximo nível e acelere a recuperação com a força dos aminoácidos. Essenciais para a construção de proteínas, os **aminoácidos** são os blocos de construção dos músculos, ajudando a **reduzir a fadiga**, **minimizar a dor pós-treino** e promover o **crescimento muscular magro**. Desde os **aminoácidos de cadeia ramificada (BCAA)** até a **glutamina** e a **creatina**, nossas fórmulas de alta pureza garantem que você obtenha o máximo de cada dose, permitindo que você treine mais pesado e se recupere mais rápido. Descubra a chave para um desempenho consistente.
+                          </p>
+                          <div className="flex items-center space-x-4">
+                            <button
+                              className="bg-red-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-red-700 hover:shadow-lg hover:shadow-red-700/30 transition-all flex items-center"
+                              onClick={() => navigate('/produtos')} // Usar navigate
+                            >
+                              EXPLORAR AMINOÁCIDOS
+                              <ArrowRight className="w-4 h-4 ml-2" />
+                            </button>
+                            <button className="bg-gray-800 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors" aria-label="Saiba mais sobre Aminoácidos">
+                              <ChevronRight className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </motion.div>
+            
+                        <motion.div
+                          initial={{ x: 100, opacity: 0 }}
+                          whileInView={{ x: 0, opacity: 1 }}
+                          viewport={{ once: true, amount: 0.3 }}
+                          transition={{ duration: 0.8, delay: 0.2 }}
+                          className="flex flex-col sm:flex-row gap-4 h-[450px] md:h-[550px] lg:h-[650px] items-center justify-center"
+                        >
+                          <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg shadow-purple-500/20 h-full w-full flex items-center justify-center bg-purple-600">
+                            <img
+                              src="savior.png"
+                              alt="Suplemento Aminoácidos"
+                              className="w-full h-full object-cover rounded-2xl"
+                            />
+                            <div className="absolute bottom-4 right-4 bg-purple-800 w-24 h-24 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                              AMINO
+                            </div>
+                          </div>
+                        </motion.div>
+                      </div>
+                    </div>
+            </section>
+
       {/* Popular Products Section (Corrigido) */}
       <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
@@ -704,31 +756,32 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                                             <Eye className="w-4 h-4 text-gray-200" />
                                         </button>
                                         <button
-                                            className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
-                                            aria-label="Add to cart"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (cart && cart.addItem) {
-                                                    const firstVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
-                                                    if (firstVariant) {
-                                                        cart.addItem({
-                                                            id: firstVariant.id, // Usa a ID da variante
-                                                            name: product.name,
-                                                            price: firstVariant.preco, // Usa o preço da variante
-                                                            image: product.image_url
-                                                        });
-                                                        toast.success(`${product.name} adicionado ao carrinho!`);
-                                                    } else {
-                                                        toast.error("Produto sem variantes disponíveis para adicionar ao carrinho.");
-                                                    }
-                                                } else {
-                                                    console.warn("Cart context or addItem function not available.");
-                                                    toast.error("Não foi possível adicionar ao carrinho.");
-                                                }
-                                            }}
-                                        >
-                                            <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
-                                        </button>
+                                          className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                          aria-label="Add to cart"
+                                          onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (cart && cart.addItem) {
+                                                  const firstVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
+
+                                                  if (firstVariant) {
+                                                      cart.addItem({
+                                                          id: product.id,
+                                                          name: product.name,
+                                                          price: firstVariant.preco, 
+                                                          image: product.image_url
+                                                      });
+                                                      toast.success(`${product.name} adicionado ao carrinho!`);
+                                                  } else {
+                                                      toast.error("Este produto não tem variantes para adicionar ao carrinho.");
+                                                  }
+                                              } else {
+                                                  console.warn("Cart context or addItem function not available.");
+                                                  toast.error("Não foi possível adicionar ao carrinho.");
+                                              }
+                                          }}
+                                      >
+                                          <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
+                                      </button>
                                     </div>
     
                                     <div className="flex mb-2">
