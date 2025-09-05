@@ -110,7 +110,7 @@ async function fetchLatestProducts() {
 const HomePage = ({ cart, handleQuickViewOpen }) => {
   const navigate = useNavigate();
   const { isAuthenticated, getAuthToken } = useAuth(); 
-  const { checkIfFavorite, toggleFavorite } = useFavorites(); // Removido 'loadingFavorites' para simplificar
+  const { checkIfFavorite, toggleFavorite } = useFavorites();
 
 
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -525,7 +525,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                             !canGoNextProduct ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-600'
                         }`}
                     >
-                        <ChevronRight className="w-6 h-6" />
+                        ChevronRight className="w-6 h-6" />
                     </button>
                 </div>
             </div>
@@ -611,7 +611,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                                     <p className="text-gray-400 text-sm mb-2">{product.displayWeight}</p>
                                     
                                     <div className="flex items-baseline space-x-2">
-                                        {product.original_price && product.displayPrice < parseFloat(product.original_price) && (
+                                        {product.original_price && parseFloat(product.displayPrice) < parseFloat(product.original_price) && (
                                             <p className="text-gray-500 line-through text-base md:text-lg">
                                                 €{parseFloat(product.original_price).toFixed(2)}
                                             </p>
