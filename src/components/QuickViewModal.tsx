@@ -1,116 +1,95 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Star, ShoppingCart as ShoppingCartIcon, Plus, Minus } from 'lucide-react'; // 👈 Adicionar Plus e Minus
+import { X, Star, ShoppingCart as ShoppingCartIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
+// 👈 ALTERAÇÃO: A interface do produto agora inclui variantes
 interface Product {
   id: string;
   name: string;
   description: string;
-  price: number;
-  original_price?: number;
   image_url: string;
-  weight_value?: string;
-  weight_unit?: string;
-  flavor_id?: string;
-  category_id?: number;
+  brand_name: string;
+  variants: {
+    id: string;
+    preco: number;
+    weight_value: string;
+    weight_unit: string;
+    flavor_name: string;
+  }[];
 }
 
-// 👈 ALTERAÇÃO: Interface para o item do carrinho com quantidade
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  selectedWeight?: string | null;
-  selectedFlavor?: string | null;
-}
-
-// 👈 ALTERAÇÃO: Interface do contexto do carrinho atualizada
-interface CartContext {
-  addItem: (item: CartItem) => void;
-}
-
-// 👈 ALTERAÇÃO: Interface de props do modal simplificada
 interface QuickViewModalProps {
   product: Product | null;
   onClose: () => void;
-  cart: CartContext;
+  cart: any; // Use a interface correta do seu useCart
   isOpen: boolean;
 }
 
 const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose, cart, isOpen }) => {
   const navigate = useNavigate();
+  // ✨ NOVO: Estado para a variante selecionada
+  const [selectedVariant, setSelectedVariant] = useState<Product['variants'][0] | null>(null);
 
-  const [selectedWeight, setSelectedWeight] = useState(product?.weight_value || null);
-  const [selectedFlavor, setSelectedFlavor] = useState(product?.flavor_id || null);
-  const [quantity, setQuantity] = useState(1); // 👈 NOVO: Estado para a quantidade
-  
-  const [flavorName, setFlavorName] = useState('Carregando...');
-  const [loadingFlavor, setLoadingFlavor] = useState(true);
-  const [errorFlavor, setErrorFlavor] = useState<string | null>(null);
-
-  // Placeholder para simular variações
-  const productWeights = product?.weight_value ? [`${product.weight_value} ${product.weight_unit}`] : ['250g', '500g', '1kg'];
-  const productFlavors = product?.flavor_id ? [product.flavor_id] : ['Chocolate', 'Baunilha', 'Morango'];
-
-  // Efeito para buscar o nome do sabor
+  // ✨ NOVO: Inicializa a variante selecionada quando o produto muda
   useEffect(() => {
-    const fetchFlavorName = async () => {
-      setLoadingFlavor(true);
-      setErrorFlavor(null);
-      if (product && product.flavor_id) {
-        try {
-          const flavorResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/flavors/listar/${product.flavor_id}`);
-          if (!flavorResponse.ok) {
-            console.warn(`Erro HTTP ao buscar sabor para ID ${product.flavor_id}. Status: ${flavorResponse.status}`);
-            setFlavorName('Sabor Desconhecido');
-            setErrorFlavor('Sabor não encontrado.');
-          } else {
-            const flavorData = await flavorResponse.json();
-            setFlavorName(flavorData.name);
-          }
-        } catch (err) {
-          console.error("Erro ao buscar nome do sabor:", err);
-          setFlavorName('Erro ao carregar sabor');
-          setErrorFlavor('Falha ao carregar sabor.');
-        } finally {
-          setLoadingFlavor(false);
-        }
-      } else {
-        setFlavorName('N/A');
-        setLoadingFlavor(false);
-      }
-    };
-
-    fetchFlavorName();
+    if (product && product.variants && product.variants.length > 0) {
+      // Define a primeira variante como padrão
+      setSelectedVariant(product.variants[0]);
+    } else {
+      setSelectedVariant(null);
+    }
   }, [product]);
 
-  // Atualiza os estados de seleção quando o produto muda
-  useEffect(() => {
-    setSelectedWeight(product?.weight_value || null);
-    setSelectedFlavor(product?.flavor_id || null);
-  }, [product]);
-
+  // Se o modal não estiver aberto ou o produto for nulo, não renderizar nada
   if (!isOpen || !product) {
     return null;
   }
+  
+  // Obter sabores e pesos únicos para os botões
+  const uniqueFlavors = Array.from(new Set(product.variants.map(v => v.flavor_name)));
+  const uniqueWeights = Array.from(new Set(product.variants.map(v => `${v.weight_value} ${v.weight_unit}`)));
+  
+  // Lógica para selecionar a variante com base no sabor e peso
+  const handleFlavorSelect = (flavor: string) => {
+    const newVariant = product.variants.find(v => 
+      v.flavor_name === flavor && 
+      `${v.weight_value} ${v.weight_unit}` === `${selectedVariant?.weight_value} ${selectedVariant?.weight_unit}`
+    );
+    if (newVariant) {
+      setSelectedVariant(newVariant);
+    }
+  };
 
-  // Função para adicionar ao carrinho a partir do modal
+  const handleWeightSelect = (weight: string) => {
+    const newVariant = product.variants.find(v => 
+      `${v.weight_value} ${v.weight_unit}` === weight &&
+      v.flavor_name === selectedVariant?.flavor_name
+    );
+    if (newVariant) {
+      setSelectedVariant(newVariant);
+    }
+  };
+
+
+  // ✨ ALTERADO: Função de adicionar ao carrinho com a variante correta
   const handleAddToCart = useCallback(() => {
-    if (cart && cart.addItem) {
+    if (cart && cart.addItem && selectedVariant) {
       cart.addItem({
-        id: product.id,
+        variant_id: selectedVariant.id, // ✨ Envia o ID da variante
         name: product.name,
-        price: product.price,
-        image: product.image_url,
-        selectedWeight: selectedWeight,
-        selectedFlavor: flavorName,
+        price: selectedVariant.preco, // ✨ Envia o preço da variante
+        image_url: product.image_url,
+        // Envia sabor e peso para exibição no carrinho, se necessário
+        flavor: selectedVariant.flavor_name,
+        weight_value: selectedVariant.weight_value,
       });
+      toast.success(`${product.name} adicionado ao carrinho!`);
       onClose();
     } else {
-      console.warn("Cart context or addItem function not available.");
+      toast.warn("Por favor, selecione uma variante válida.");
     }
-  }, [cart, product, selectedWeight, flavorName, onClose, quantity]); // 👈 ALTERAÇÃO: Adiciona 'quantity' à lista de dependências
+  }, [cart, product, selectedVariant, onClose]);
 
   // Função para navegar para a página de detalhes do produto
   const handleViewDetails = useCallback(() => {
@@ -148,17 +127,12 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose, cart,
 
             {/* Preço */}
             <div className="flex items-baseline space-x-3 mt-4">
-              {product.original_price && product.price < product.original_price && (
-                <p className="text-gray-500 line-through text-xl md:text-2xl">
-                  € {product.original_price.toFixed(2)}
-                </p>
-              )}
               <p className="text-red-500 font-bold text-2xl md:text-3xl">
-                € {product.price.toFixed(2)}
+                € {selectedVariant ? selectedVariant.preco.toFixed(2) : 'N/A'}
               </p>
             </div>
 
-            {/* Rating (simulado, já que não vem da API) */}
+            {/* Rating (simulado) */}
             <div className="flex items-center text-orange-500">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="w-5 h-5 fill-current" />
@@ -170,12 +144,12 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose, cart,
             <div className="mt-6">
               <h4 className="text-lg font-semibold text-gray-200 mb-2">Peso/Tamanho:</h4>
               <div className="flex flex-wrap gap-3">
-                {productWeights.map((weight, index) => (
+                {uniqueWeights.map((weight, index) => (
                   <button
                     key={index}
-                    onClick={() => setSelectedWeight(weight)}
+                    onClick={() => handleWeightSelect(weight)}
                     className={`px-4 py-2 rounded-lg border transition-colors ${
-                      selectedWeight === weight
+                      `${selectedVariant?.weight_value} ${selectedVariant?.weight_unit}` === weight
                         ? 'bg-orange-600 border-orange-600 text-white'
                         : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                     }`}
@@ -188,29 +162,29 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose, cart,
 
             {/* Opções de Sabor */}
             <div className="mt-4">
-              <h4 className="text-lg font-semibold text-gray-200 mb-2">
-                Sabor: {loadingFlavor ? 'Carregando...' : errorFlavor ? errorFlavor : flavorName}
-              </h4>
+              <h4 className="text-lg font-semibold text-gray-200 mb-2">Sabor:</h4>
               <div className="flex flex-wrap gap-3">
-                {product.flavor_id && (
+                {uniqueFlavors.map((flavor, index) => (
                   <button
-                    onClick={() => setSelectedFlavor(product.flavor_id)}
+                    key={index}
+                    onClick={() => handleFlavorSelect(flavor)}
                     className={`px-4 py-2 rounded-lg border transition-colors ${
-                      selectedFlavor === product.flavor_id
+                      selectedVariant?.flavor_name === flavor
                         ? 'bg-orange-600 border-orange-600 text-white'
                         : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                     }`}
                   >
-                    {loadingFlavor ? 'Carregando...' : errorFlavor ? 'Erro' : flavorName}
+                    {flavor}
                   </button>
-                )}
+                ))}
               </div>
             </div>
           
             {/* Botão Adicionar ao Carrinho */}
             <button
               onClick={handleAddToCart}
-              className="mt-8 w-full bg-red-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-red-700 transition-colors flex items-center justify-center"
+              disabled={!selectedVariant}
+              className="mt-8 w-full bg-red-600 text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700"
             >
               <ShoppingCartIcon className="w-5 h-5 mr-2" />
               Adicionar ao Carrinho
