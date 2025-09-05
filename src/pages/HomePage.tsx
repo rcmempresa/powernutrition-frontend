@@ -110,7 +110,6 @@ async function fetchLatestProducts() {
 
 const HomePage = ({ cart, handleQuickViewOpen }) => {
   const navigate = useNavigate();
-  const { isAuthenticated, getAuthToken } = useAuth(); 
   // Usa o hook de favoritos
   const { checkIfFavorite, toggleFavorite } = useFavorites();
   
@@ -737,7 +736,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                 </div>
               </div>
       </section>
-      
+
       {/* --- SEÇÃO CORRIGIDA: PRODUTOS POPULARES --- */}
       <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
           <div className="max-w-7xl mx-auto">
