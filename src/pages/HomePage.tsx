@@ -89,7 +89,7 @@ async function fetchLatestProducts() {
 const HomePage = ({ cart, handleQuickViewOpen }) => {
   const navigate = useNavigate();
   const { isAuthenticated, getAuthToken } = useAuth(); 
-  const { checkIfFavorite, toggleFavorite } = useFavorites();
+  const { checkIfFavorite, toggleFavorite, loadingFavorites } = useFavorites();
   
 
   // --- ESTADOS E HOOKS ESPECÍFICOS DA HOMEPAGE ---
@@ -104,7 +104,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   const categoriesPerPage = 4;
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
-  const videoSrc = "https://res.cloudinary.com/dheovknbt/video/upload/v1756742336/video_qz6xgi.mp4";
+  const videoSrc = "https://res.cloudinary.com/dheovknbt/video/upload/v1756742336/video_qz6xgi.mp4"; // Certifique-se de que este caminho está correto
   const [hoveredCategoryId, setHoveredCategoryId] = useState(null);
 
   // Estados para Produtos Mais Recentes
@@ -115,12 +115,18 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   const [currentProductStartIndex, setCurrentProductStartIndex] = useState(0);
   const productsPerPage = 4;
 
+  // ✨ NOVO ESTADO: Para rastrear os IDs dos produtos favoritos do utilizador ✨
+  // ESTE ESTADO FOI SUBSTITUIDO PELO USEFAVORITES, MAS MANTIDO PARA COMPARAÇÃO
+  const [favoriteProductIds, setFavoriteProductIds] = useState<Set<number>>(new Set());
+
+  // Dados estáticos para os slides da Hero Section
   const slides = [
     { title: "Apoie a Sua Saúde & Vitalidade.", subtitle: "BEM-ESTAR DIÁRIO", image: "/suplementos.webp" },
     { title: "Recupere Mais Rápido, Treine Mais Forte.", subtitle: "SUPLEMENTOS DESPORTIVOS", image: "suplementos_2.webp" },
     { title: "Eleva o Teu Potencial, Quebra Limites.", subtitle: "PERFORMANCE DE ELITE", image: "/suplementos_3.avif" }
   ];
 
+  // Categorias fixas para a seção de Produtos Populares
   const staticCategories = [
     { id: 1, name: "Proteínas" },
     { id: 2, name: "Creatinas" },
@@ -156,6 +162,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     }
   };
 
+  // Funções de navegação do carrossel de CATEGORIAS
   const handleNextCategory = () => {
     setCurrentIndex(prevIndex => Math.min(prevIndex + categoriesPerPage, categories.length - categoriesPerPage));
   };
@@ -164,6 +171,8 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     setCurrentIndex(prevIndex => Math.max(prevIndex - categoriesPerPage, 0));
   };
   
+
+  // Funções de navegação do carrossel de PRODUTOS MAIS RECENTES
   const handleNextProduct = () => {
     const nextIndex = currentProductStartIndex + productsPerPage;
     if (nextIndex < allLatestProducts.length) {
@@ -184,33 +193,24 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     }
   };
 
-  // --- FUNÇÃO CORRIGIDA para buscar produtos por categoria ---
   const fetchProductsByCategory = async (categoryId: number | null) => {
     setLoadingCategorizedProducts(true);
     setErrorCategorizedProducts(null);
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-      const allProducts = response.data.map((product: any) => {
-          const cheapestVariant = (product.variants && product.variants.length > 0)
-              ? product.variants.sort((a: any, b: any) => a.preco - b.preco)[0]
-              : null;
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
+        const allProducts = response.data.map((product: any) => ({
+            ...product,
+            price: parseFloat(product.price),
+            original_price: product.original_price ? parseFloat(product.original_price) : null
+        }));
 
-          const price = cheapestVariant ? cheapestVariant.preco : product.original_price;
-          
-          return {
-              ...product,
-              displayPrice: price !== null && price !== undefined ? parseFloat(price) : 0,
-              displayWeight: cheapestVariant ? `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}` : 'N/A',
-          };
-      });
-
-      let filteredProducts = [];
-      if (categoryId !== null) {
-          filteredProducts = allProducts.filter((product: any) => product.category_id === categoryId);
-      } else {
-          filteredProducts = allProducts;
-      }
-      setCategorizedProducts(filteredProducts);
+        let filteredProducts = [];
+        if (categoryId !== null) {
+            filteredProducts = allProducts.filter((product: any) => product.category_id === categoryId);
+        } else {
+            filteredProducts = allProducts;
+        }
+        setCategorizedProducts(filteredProducts);
     } catch (error: any) {
         console.error(`Erro ao buscar ou filtrar produtos para categoria ${categoryId}:`, error);
         setErrorCategorizedProducts(error);
@@ -227,8 +227,76 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   const handleCategoryClickCategories = (categoryId: number) => {
     navigate(`/produtos?categoria=${categoryId}`);
   };
+  
+  // ✨ NOVA FUNÇÃO: Buscar IDs de produtos favoritos para o utilizador atual ✨
+  const fetchFavoriteProductIds = useCallback(async () => {
+    if (!isAuthenticated) {
+      setFavoriteProductIds(new Set()); // Limpa se não estiver autenticado
+      return;
+    }
+    const token = getAuthToken();
+    if (!token) return; // Não há token, não busca favoritos
+
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/listar`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const ids = new Set(response.data.map((p: any) => p.id));
+      setFavoriteProductIds(ids);
+    } catch (error) {
+      console.error('Erro ao buscar favoritos do utilizador:', error);
+      // Não define erro na UI, apenas loga, pois é um recurso secundário
+    }
+  }, [isAuthenticated, getAuthToken]);
+
+  // ✨ NOVA FUNÇÃO: Alternar o estado de favorito de um produto ✨
+  const handleToggleFavorite = useCallback(async (productId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Previne que o clique no coração navegue para a página do produto
+
+    if (!isAuthenticated) {
+      toast.error('Precisa de estar autenticado para gerir favoritos.');
+      return;
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      toast.error('Token de autenticação não encontrado. Por favor, faça login.');
+      return;
+    }
+
+    const isCurrentlyFavorite = favoriteProductIds.has(productId);
+
+    try {
+      if (isCurrentlyFavorite) {
+        // Remover dos favoritos
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/remove/${productId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFavoriteProductIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        });
+        toast.success('Produto removido dos favoritos!');
+      } else {
+        // Adicionar aos favoritos
+        await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/add`, { productId }, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        setFavoriteProductIds(prev => new Set(prev).add(productId));
+        toast.success('Produto adicionado aos favoritos!');
+      }
+    } catch (error: any) {
+      console.error('Erro ao alternar favorito:', error);
+      toast.error(error.response?.data?.message || 'Erro ao gerir favorito.');
+    }
+  }, [isAuthenticated, getAuthToken, favoriteProductIds]);
 
   // --- USE EFFECTS ---
+  // Efeito para o slider automático da Hero Section
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -236,6 +304,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     return () => clearInterval(interval);
   }, [slides.length]);
 
+  // Efeito para buscar as categorias do backend
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -253,6 +322,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     fetchCategories();
   }, []);
 
+  // Efeito para buscar os PRODUTOS MAIS RECENTES do backend
   useEffect(() => {
     const getLatestProducts = async () => {
       try {
@@ -269,14 +339,22 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     getLatestProducts();
   }, []);
 
+  // Efeito para atualizar os PRODUTOS VISÍVEIS do carrossel
   useEffect(() => {
     const endIndex = currentProductStartIndex + productsPerPage;
     setVisibleLatestProducts(allLatestProducts.slice(currentProductStartIndex, endIndex));
   }, [currentProductStartIndex, allLatestProducts, productsPerPage]);
 
+  // Efeito para buscar produtos da categoria padrão (ex: "Todos") ao carregar a página
   useEffect(() => {
     fetchProductsByCategory(null);
   }, []);
+
+  // ✨ Efeito para buscar favoritos quando o componente monta ou o estado de autenticação muda ✨
+  useEffect(() => {
+    fetchFavoriteProductIds();
+  }, [fetchFavoriteProductIds]);
+
 
   // --- LÓGICA PARA BOTÕES DO CARROSSEL ---
   const visibleCategories = categories.slice(currentIndex, currentIndex + categoriesPerPage);
