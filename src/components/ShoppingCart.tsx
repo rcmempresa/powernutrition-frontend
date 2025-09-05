@@ -4,6 +4,7 @@ import { X, Plus, Minus, ShoppingBag } from 'lucide-react';
 interface CartItem {
   id: string;
   name: string;
+  product_name: string;
   price: number;
   quantity: number;
   image_url: string;
@@ -74,7 +75,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({
                       className="h-16 w-16 rounded-lg object-cover"
                     />
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.name}</h3>
+                      <h3 className="font-medium text-gray-900">{item.product_name}</h3>
                       <p className="text-orange-500 font-semibold">{item.price.toFixed(2)}€</p>
                       
                       <div className="flex items-center space-x-2 mt-2">
