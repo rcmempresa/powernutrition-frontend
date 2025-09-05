@@ -1,18 +1,12 @@
+// src/pages/FavoriteProductsPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  HeartCrack, 
-  Loader2, 
-  XCircle, 
-  ShoppingCart, 
-  Eye, 
-  Twitter, 
-  Instagram, 
-  Facebook, 
-  MapPin, 
-  User, 
-  Mail 
+import {
+  HeartCrack,
+  Loader2,
+  XCircle,
+  Eye
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
@@ -20,13 +14,14 @@ import toast from 'react-hot-toast';
 import { useFavorites } from '../hooks/useFavorites';
 import Footer from '../components/FooterPage';
 
-
-// Tipagem básica para um produto favorito, tal como usado no componente (após processamento)
+// Tipagem para a resposta da API, agora inclui o ID da variante favorita
 interface FavoriteProduct {
-  id: number;
+  id: number; // ID do produto principal
+  variant_id: number; // ID da variante favorita
   name: string;
   description: string;
-  price: number; 
+  price: number;
+  original_price?: number;
   stock_quantity: number;
   sku: string;
   image_url: string;
@@ -40,19 +35,20 @@ interface FavoriteProduct {
   updated_at: string;
   flavor_id?: number;
   flavor_name?: string;
-  original_price?: number; 
   stock_ginasio?: number;
   rating?: number;
   reviewcount?: number;
-  favorited_at: string; 
+  favorited_at: string;
 }
 
-// Tipagem para a resposta bruta da API (onde price pode vir como string)
+// Tipagem para a resposta bruta da API
 interface RawFavoriteProductApiResponse {
   id: number;
+  variant_id: number;
   name: string;
   description: string;
-  price: string | number; 
+  price: string | number;
+  original_price?: string | number;
   stock_quantity: number;
   sku: string;
   image_url: string;
@@ -66,7 +62,6 @@ interface RawFavoriteProductApiResponse {
   updated_at: string;
   flavor_id?: number;
   flavor_name?: string;
-  original_price?: string | number; 
   stock_ginasio?: number;
   rating?: number;
   reviewcount?: number;
@@ -76,14 +71,12 @@ interface RawFavoriteProductApiResponse {
 const FavoriteProductsPage: React.FC = () => {
   const navigate = useNavigate();
   const { getAuthToken, isAuthenticated, loadingAuth } = useAuth();
-  const { favoriteProductIds, refreshFavorites, loadingFavorites: loadingFavoritesHook } = useFavorites(); 
+  const { refreshFavorites, loadingFavorites: loadingFavoritesHook } = useFavorites();
 
-  const [allFetchedProductsDetails, setAllFetchedProductsDetails] = useState<FavoriteProduct[]>([]);
-  const [displayedFavoriteProducts, setDisplayedFavoriteProducts] = useState<FavoriteProduct[]>([]);
-  const [loadingLocal, setLoadingLocal] = useState<boolean>(true); 
+  const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
+  const [loadingLocal, setLoadingLocal] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Variantes de animação para Framer Motion
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
@@ -98,43 +91,42 @@ const FavoriteProductsPage: React.FC = () => {
     setLoadingLocal(true);
     setError(null);
 
-    if (loadingAuth || loadingFavoritesHook) { 
+    if (loadingAuth || loadingFavoritesHook) {
       setLoadingLocal(true);
       return;
     }
-    
-    // A verificação de autenticação agora será feita na lógica de renderização
-    // Apenas fetcha se estiver autenticado
+
     if (!isAuthenticated) {
-        setLoadingLocal(false);
-        return;
+      setLoadingLocal(false);
+      return;
     }
 
     const token = getAuthToken();
     if (!token) {
-        // Isso não deve acontecer se isAuthenticated for true, mas é um bom fallback
-        setError('Token de autenticação não encontrado. Por favor, faça login.');
-        setLoadingLocal(false);
-        return;
+      setError('Token de autenticação não encontrado. Por favor, faça login.');
+      setLoadingLocal(false);
+      return;
     }
 
     try {
+      // O endpoint /api/favorites/listar já deve retornar os detalhes completos dos produtos favoritos.
       const response = await axios.get<RawFavoriteProductApiResponse[]>(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/listar`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const processedFavorites: FavoriteProduct[] = response.data.map(product => ({
-        ...product,
-        price: parseFloat(product.price as string), 
-        original_price: product.original_price ? parseFloat(product.original_price as string) : undefined,
+      const processedFavorites: FavoriteProduct[] = response.data.map(item => ({
+        ...item,
+        price: parseFloat(item.price as string),
+        original_price: item.original_price ? parseFloat(item.original_price as string) : undefined,
       }));
 
-      setAllFetchedProductsDetails(processedFavorites);
+      setFavoriteProducts(processedFavorites);
     } catch (err: any) {
       console.error('Erro ao buscar produtos favoritos:', err);
       setError(err.response?.data?.message || 'Erro ao carregar os seus produtos favoritos.');
+      setFavoriteProducts([]);
     } finally {
       setLoadingLocal(false);
     }
@@ -144,14 +136,8 @@ const FavoriteProductsPage: React.FC = () => {
     fetchProductsDetails();
   }, [fetchProductsDetails]);
 
-  useEffect(() => {
-    setDisplayedFavoriteProducts(
-      allFetchedProductsDetails.filter(product => favoriteProductIds.has(product.id))
-    );
-  }, [allFetchedProductsDetails, favoriteProductIds]);
-
-  const handleRemoveFavorite = useCallback(async (productId: number) => {
-    let removingToastId: string | undefined; 
+  const handleRemoveFavorite = useCallback(async (variantId: number) => {
+    let removingToastId: string | undefined;
     try {
       const token = getAuthToken();
       if (!token) {
@@ -159,19 +145,22 @@ const FavoriteProductsPage: React.FC = () => {
         return;
       }
 
-      removingToastId = toast.loading('A remover dos favoritos...'); 
+      removingToastId = toast.loading('A remover dos favoritos...');
 
-      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/remove/${productId}`, {
+      // Agora a requisição DELETE usa o variantId, como no seu backend
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/remove/${variantId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      toast.success('Produto removido dos favoritos!', { id: removingToastId });
-      refreshFavorites(); 
+      toast.success('Variante removida dos favoritos!', { id: removingToastId });
+      // Atualiza a lista localmente para uma resposta mais rápida
+      setFavoriteProducts(prev => prev.filter(product => product.variant_id !== variantId));
+      refreshFavorites(); // Sincroniza o estado global
     } catch (err: any) {
       console.error('Erro ao remover favorito:', err);
-      if (removingToastId) { 
+      if (removingToastId) {
         toast.error(err.response?.data?.message || 'Erro ao remover produto dos favoritos.', { id: removingToastId });
       } else {
         toast.error(err.response?.data?.message || 'Erro ao remover produto dos favoritos.');
@@ -179,7 +168,6 @@ const FavoriteProductsPage: React.FC = () => {
     }
   }, [getAuthToken, refreshFavorites]);
 
-  // Novo layout para usuário não autenticado
   if (!loadingAuth && !isAuthenticated) {
     return (
       <>
@@ -191,7 +179,7 @@ const FavoriteProductsPage: React.FC = () => {
           <p className="text-lg text-gray-600 mb-6">
             Para ver e gerir os seus produtos favoritos, por favor, faça login ou crie uma conta.
           </p>
-          <motion.button 
+          <motion.button
             onClick={() => navigate('/login')}
             className="w-full sm:w-auto px-8 py-4 bg-orange-500 text-white font-semibold rounded-lg shadow-lg hover:bg-orange-600 transition-all duration-300 transform hover:scale-105"
             whileHover={{ scale: 1.05 }}
@@ -205,8 +193,7 @@ const FavoriteProductsPage: React.FC = () => {
     );
   }
 
-  // Layout de carregamento (mantido)
-  if (loadingLocal || loadingFavoritesHook) { 
+  if (loadingLocal || loadingFavoritesHook) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] bg-gray-50 rounded-lg shadow-xl animate-pulse">
         <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
@@ -214,8 +201,7 @@ const FavoriteProductsPage: React.FC = () => {
       </div>
     );
   }
-  
-  // Layout de erro (após a tentativa de fetch)
+
   if (error) {
     return (
       <>
@@ -228,7 +214,6 @@ const FavoriteProductsPage: React.FC = () => {
     );
   }
 
-  // Layout principal (lista de produtos favoritos)
   return (
     <div className="flex flex-col min-h-screen">
       <motion.div
@@ -243,11 +228,11 @@ const FavoriteProductsPage: React.FC = () => {
         </h1>
         <p className="text-lg text-gray-700 mb-8">Aqui está a lista de produtos que marcou como favoritos.</p>
 
-        {displayedFavoriteProducts.length === 0 ? (
+        {favoriteProducts.length === 0 ? (
           <div className="text-center p-8 bg-gray-50 rounded-lg shadow-md border border-gray-200">
             <p className="text-xl text-gray-700 font-semibold mb-4">Ainda não tem produtos favoritos.</p>
             <p className="text-gray-600 mb-6">Comece a explorar a nossa loja e adicione alguns produtos!</p>
-            <motion.button 
+            <motion.button
               onClick={() => navigate('/produtos')}
               className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg shadow-md hover:bg-orange-600 transition-all duration-300 transform hover:scale-105"
               whileHover={{ scale: 1.05 }}
@@ -259,9 +244,9 @@ const FavoriteProductsPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatePresence>
-              {displayedFavoriteProducts.map((product, index) => (
+              {favoriteProducts.map((product, index) => (
                 <motion.div
-                  key={product.id}
+                  key={product.variant_id} // Usamos o variant_id como key para ser único e estável
                   className="bg-gray-50 rounded-lg shadow-lg border border-gray-200 flex flex-col overflow-hidden transform hover:scale-105 transition-transform duration-200 ease-in-out"
                   variants={itemVariants}
                   initial="hidden"
@@ -291,7 +276,7 @@ const FavoriteProductsPage: React.FC = () => {
                     {product.brand && <p className="text-sm text-gray-600 mb-1">{product.brand}</p>}
                     {product.flavor_name && <p className="text-sm text-gray-600 mb-1">Sabor: {product.flavor_name}</p>}
                     <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
-                    
+
                     <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-200">
                       <div>
                         {product.original_price && product.price < product.original_price ? (
@@ -315,7 +300,7 @@ const FavoriteProductsPage: React.FC = () => {
                         <Eye className="w-4 h-4 mr-2" /> Ver Detalhes
                       </motion.button>
                       <motion.button
-                        onClick={() => handleRemoveFavorite(product.id)}
+                        onClick={() => handleRemoveFavorite(product.variant_id)} // Usa o variant_id para remover
                         className="px-3 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition-colors duration-200 flex items-center justify-center text-sm"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
