@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Heart,
+  Eye,
   ShoppingCart as ShoppingCartIcon,
 } from 'lucide-react';
 import axios from 'axios';
