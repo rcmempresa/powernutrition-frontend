@@ -1,12 +1,3 @@
-Vamos atualizar o seu ficheiro HomePage.jsx para que ele funcione corretamente com a nova estrutura de dados que inclui variantes.
-
-A nova versão corrige os erros e exibe as informações de produto de forma correta, encontrando o preço e peso da variante mais barata.
-
-Versão Atualizada do HomePage.jsx
-Aqui está o código completo. As secções que foram alteradas para acomodar as variantes estão comentadas para sua referência.
-
-JavaScript
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
