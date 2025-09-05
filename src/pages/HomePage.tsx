@@ -180,33 +180,43 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   };
 
   const fetchProductsByCategory = async (categoryId: number | null) => {
-    setLoadingCategorizedProducts(true);
-    setErrorCategorizedProducts(null);
-    try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-        const allProducts = response.data.map((product: any) => {
-            const cheapestVariant = product.variants.sort((a, b) => a.preco - b.preco)[0];
-            return {
-                ...product,
-                displayPrice: cheapestVariant ? cheapestVariant.preco : 0,
-                displayWeight: cheapestVariant ? `${cheapestVariant.weight_value} ${cheapestVariant.weight_unit}` : '',
-            };
-        });
+  setLoadingCategorizedProducts(true);
+  setErrorCategorizedProducts(null);
+  try {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
+      
+      // ✨ ADIÇÃO DE VERIFICAÇÃO DE DADOS ✨
+      if (!response.data || !Array.isArray(response.data)) {
+          console.error("Resposta da API inválida: os dados não são um array.", response.data);
+          setCategorizedProducts([]); // Define para um array vazio para não quebrar a UI
+          setLoadingCategorizedProducts(false);
+          return; // Sai da função para evitar o erro
+      }
 
-        let filteredProducts = [];
-        if (categoryId !== null) {
-            filteredProducts = allProducts.filter((product: any) => product.category_id === categoryId);
-        } else {
-            filteredProducts = allProducts;
-        }
-        setCategorizedProducts(filteredProducts);
-    } catch (error: any) {
-        console.error(`Erro ao buscar ou filtrar produtos para categoria ${categoryId}:`, error);
-        setErrorCategorizedProducts(error);
-    } finally {
-        setLoadingCategorizedProducts(false);
-    }
-  };
+      const allProducts = response.data.map((product: any) => {
+          const cheapestVariant = product.variants.sort((a, b) => a.preco - b.preco)[0];
+          return {
+              ...product,
+              displayPrice: cheapestVariant ? cheapestVariant.preco : 0,
+              displayWeight: cheapestVariant ? `${cheapestVariant.weight_value} ${cheapestVariant.weight_unit}` : '',
+          };
+      });
+
+      let filteredProducts = [];
+      if (categoryId !== null) {
+          filteredProducts = allProducts.filter((product: any) => product.category_id === categoryId);
+      } else {
+          filteredProducts = allProducts;
+      }
+      setCategorizedProducts(filteredProducts);
+
+  } catch (error: any) {
+      console.error(`Erro ao buscar ou filtrar produtos para categoria ${categoryId}:`, error);
+      setErrorCategorizedProducts(error);
+  } finally {
+      setLoadingCategorizedProducts(false);
+  }
+};
 
   const handleCategoryClick = (categoryId: number) => {
     setSelectedCategoryId(categoryId);
