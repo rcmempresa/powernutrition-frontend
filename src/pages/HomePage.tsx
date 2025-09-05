@@ -32,7 +32,8 @@ interface Variant {
     sku: string;
     weight_value: string;
     weight_unit: string;
-    flavor_id: number;
+    flavor_id?: number;
+    flavor_name?: string;
     image_url?: string;
 }
 
@@ -42,17 +43,20 @@ interface Product {
     description: string;
     image_url?: string;
     category_id: number;
-    brand?: string;
+    brand_name?: string;
     is_active: boolean;
     original_price?: string;
     rating?: string;
     reviewcount?: number;
+    variants: Variant[];
     // NOVAS PROPRIEDADES DERIVADAS
     displayPrice: number;
     displayWeight: string;
-    variants: Variant[];
+    displayVariantId: number | null; // ID da variante mais barata para o frontend
     totalStock?: number;
 }
+
+// --- Função de busca de dados atualizada para a nova estrutura ---
 
 // --- Função de busca de dados atualizada para a nova estrutura ---
 async function fetchLatestProducts() {
@@ -64,13 +68,13 @@ async function fetchLatestProducts() {
         return [];
     }
 
-    // Processar os dados para extrair preço e stock das variantes
     return response.data.map((product) => {
       const hasVariants = product.variants && Array.isArray(product.variants) && product.variants.length > 0;
       let displayPriceValue = 0;
       let displayWeightValue = 'N/A';
       let productImage = product.image_url;
       let totalStock = 0;
+      let displayVariantId = null;
 
       if (hasVariants) {
         totalStock = product.variants.reduce((sum, v) => sum + v.quantidade_em_stock, 0);
@@ -80,6 +84,7 @@ async function fetchLatestProducts() {
         if (cheapestVariant) {
           displayPriceValue = parseFloat(cheapestVariant.preco);
           displayWeightValue = `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}`;
+          displayVariantId = cheapestVariant.id; // ✨ CAPTURA O ID DA VARIANTE
           if (cheapestVariant.image_url) {
               productImage = cheapestVariant.image_url;
           }
@@ -98,6 +103,7 @@ async function fetchLatestProducts() {
         ...product,
         displayPrice: displayPriceValue,
         displayWeight: displayWeightValue,
+        displayVariantId: displayVariantId, // ✨ RETORNA O ID DA VARIANTE
         image_url: productImage,
         totalStock,
       };
@@ -107,7 +113,6 @@ async function fetchLatestProducts() {
     throw error;
   }
 }
-
 const HomePage = ({ cart, handleQuickViewOpen }) => {
   const navigate = useNavigate();
   // Usa o hook de favoritos
@@ -603,11 +608,11 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                                         <button 
                                             className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
                                             aria-label="Toggle favorite"
-                                            onClick={(e) => toggleFavorite(product.id, e)}
+                                            onClick={(e) => toggleFavorite(variant.id, e)}
                                         >
                                             <Heart 
                                                 className={`w-4 h-4 transition-colors ${
-                                                    checkIfFavorite(product.id) ? 'text-red-500 fill-current' : 'text-gray-200'
+                                                    checkIfFavorite(variant.id) ? 'text-red-500 fill-current' : 'text-gray-200'
                                                 }`} 
                                             />
                                         </button>
@@ -799,15 +804,17 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                                   <div className="p-4 md:p-6">
                                       <div className="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                           <button 
-                                              className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
-                                              aria-label="Toggle favorite"
-                                              onClick={(e) => toggleFavorite(product.id, e)}
+                                            className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
+                                            aria-label="Toggle favorite"
+                                            // ✨ USE A NOVA PROPRIEDADE AQUI
+                                            onClick={(e) => toggleFavorite(product.displayVariantId, e)}
                                           >
-                                              <Heart 
-                                                  className={`w-4 h-4 transition-colors ${
-                                                      checkIfFavorite(product.id) ? 'text-red-500 fill-current' : 'text-gray-200'
-                                                  }`} 
-                                              />
+                                            <Heart 
+                                              className={`w-4 h-4 transition-colors ${
+                                                // ✨ E AQUI TAMBÉM
+                                                checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
+                                              }`} 
+                                            />
                                           </button>
                                           <button
                                               className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
