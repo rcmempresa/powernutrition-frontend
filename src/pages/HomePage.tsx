@@ -525,7 +525,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                             !canGoNextProduct ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-600'
                         }`}
                     >
-                        ChevronRight className="w-6 h-6" />
+                        <ChevronRight className="w-6 h-6" />
                     </button>
                 </div>
             </div>
