@@ -67,7 +67,8 @@ async function fetchLatestProducts() {
     }
 
     return response.data.map((product) => {
-      const cheapestVariant = product.variants && product.variants.length > 0
+      // Adiciona uma verificação para garantir que o array 'variants' existe e não está vazio
+      const cheapestVariant = (product.variants && product.variants.length > 0)
         ? product.variants.sort((a, b) => a.preco - b.preco)[0]
         : null;
         
@@ -75,7 +76,7 @@ async function fetchLatestProducts() {
 
       return {
         ...product,
-        // Ensure displayPrice is always a number
+        // Garante que displayPrice é sempre um número válido, ou 0.
         displayPrice: price !== null && price !== undefined ? parseFloat(price) : 0,
         displayWeight: cheapestVariant ? `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}` : 'N/A',
       };
