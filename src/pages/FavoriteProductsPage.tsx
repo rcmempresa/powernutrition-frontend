@@ -154,7 +154,7 @@ const FavoriteProductsPage: React.FC = () => {
         },
       });
 
-      toast.success('Variante removida dos favoritos!', { id: removingToastId });
+      toast.success('Produto removida dos favoritos!', { id: removingToastId });
       // Atualiza a lista localmente para uma resposta mais rápida
       setFavoriteProducts(prev => prev.filter(product => product.variant_id !== variantId));
       refreshFavorites(); // Sincroniza o estado global
