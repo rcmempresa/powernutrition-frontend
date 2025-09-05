@@ -58,13 +58,24 @@ interface Product {
 }
 
 // --- FUNÇÃO ATUALIZADA: Busca e formata os dados dos produtos ---
+// --- FUNÇÃO ATUALIZADA: Busca e formata os dados dos produtos ---
 async function fetchLatestProducts() {
   try {
     const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
     return response.data.map((product: any) => {
+      // ✨ Verificação para garantir que o array de variantes existe e não está vazio ✨
+      if (!product.variants || product.variants.length === 0) {
+        console.warn(`Produto ${product.id} não tem variantes. Usando valores padrão.`);
+        return {
+          ...product,
+          displayPrice: product.original_price || 0,
+          displayWeight: 'N/A',
+        };
+      }
+
       // Encontra a variante com o menor preço para exibir
       const cheapestVariant = product.variants.sort((a, b) => a.preco - b.preco)[0];
-
+      
       return {
         ...product,
         displayPrice: cheapestVariant.preco,
