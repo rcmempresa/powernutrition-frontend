@@ -64,19 +64,22 @@ async function fetchLatestProducts() {
         return [];
     }
 
-    return response.data.map((product: any) => {
+    return response.data.map((product) => {
       // Encontra a variante mais barata
       const cheapestVariant = (product.variants && product.variants.length > 0)
-        ? product.variants.sort((a: any, b: any) => a.preco - b.preco)[0]
+        ? product.variants.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco))[0]
         : null;
         
       const price = cheapestVariant ? cheapestVariant.preco : product.original_price;
+      
+      const weightValue = cheapestVariant && cheapestVariant.weight_value ? cheapestVariant.weight_value : 'N/A';
+      const weightUnit = cheapestVariant && cheapestVariant.weight_unit ? cheapestVariant.weight_unit : '';
 
       return {
         ...product,
-        // Garante que displayPrice é sempre um número válido, ou 0.
         displayPrice: price !== null && price !== undefined ? parseFloat(price) : 0,
-        displayWeight: cheapestVariant ? `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}` : 'N/A',
+        // CORRIGIDO: Verifica se o peso e a unidade existem
+        displayWeight: cheapestVariant && weightValue !== 'N/A' ? `${weightValue}${weightUnit}` : 'N/A',
       };
     });
   } catch (error) {
