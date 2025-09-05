@@ -4,7 +4,7 @@ import {
   Heart,
   Eye,
   ShoppingCart as ShoppingCartIcon,
-  Star, // Certifique-se de que este ícone está importado
+  Star,
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -38,7 +38,7 @@ interface Product {
     displayPrice: number;
     displayWeight: string;
     variants: Variant[];
-    totalStock: number; // Adicionada para a lógica de stock
+    totalStock: number;
 }
 
 // --- FUNÇÃO DE BUSCA E PROCESSAMENTO DE PRODUTOS ---
@@ -59,10 +59,8 @@ async function fetchLatestProducts() {
       let totalStock = 0;
 
       if (hasVariants) {
-        // Calcula o stock total de todas as variantes
         totalStock = product.variants.reduce((sum, v) => sum + v.quantidade_em_stock, 0);
         
-        // Encontra a variante com o menor preço
         const sortedVariants = product.variants.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco));
         const cheapestVariant = sortedVariants[0];
 
@@ -146,7 +144,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Secção de Produtos Mais Recentes */}
       <section className="py-16 px-4">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl font-bold text-gray-100 mb-12 text-center">Produtos</h2>
