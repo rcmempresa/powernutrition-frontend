@@ -109,9 +109,7 @@ export const useCart = (getToken: () => string | null) => {
 
   // A função addItem foi corrigida para usar o ID da variante
   const addItem = useCallback(async (product: {
-    // ✨ Agora a função addItem deve receber o product_id, não o variant_id.
-    // O seu código do componente deve ser corrigido para passar product.id
-    product_id: number;
+    variant_id: number; // ✨ A função agora recebe explicitamente o variant_id
     name: string;
     price: number;
     image_url: string;
@@ -120,7 +118,7 @@ export const useCart = (getToken: () => string | null) => {
   }) => {
     try {
       await callApi('/cart/adicionar', 'POST', {
-        product_id: product.product_id, // ✨ Use product_id aqui para o backend
+        variant_id: product.variant_id, // ✨ Envia o variant_id para a API
         quantity: 1,
       });
       toast.success('Produto adicionado ao carrinho!');
@@ -128,7 +126,6 @@ export const useCart = (getToken: () => string | null) => {
       setIsOpen(true);
     } catch (e) {
       console.error("Erro ao adicionar item ao carrinho:", e);
-      toast.error("Erro ao adicionar ao carrinho. Por favor, tente novamente.");
     }
   }, [callApi, fetchCart]);
 
