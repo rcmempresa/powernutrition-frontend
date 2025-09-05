@@ -61,26 +61,27 @@ async function fetchLatestProducts() {
   try {
     const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
     
-    // ✨ Verificação de segurança: A API retornou dados e são um array?
     if (!response.data || !Array.isArray(response.data)) {
-        console.warn("API retornou dados inválidos ou vazios para produtos recentes.");
+        console.warn("API returned invalid or empty data for latest products.");
         return [];
     }
 
-    return response.data.map((product: any) => {
-      // Garantir que a variante existe antes de tentar ordená-la
+    return response.data.map((product) => {
       const cheapestVariant = product.variants && product.variants.length > 0
         ? product.variants.sort((a, b) => a.preco - b.preco)[0]
         : null;
+        
+      const price = cheapestVariant ? cheapestVariant.preco : product.original_price;
 
       return {
         ...product,
-        displayPrice: cheapestVariant ? cheapestVariant.preco : product.original_price || 0,
+        // Ensure displayPrice is always a number
+        displayPrice: price !== null && price !== undefined ? parseFloat(price) : 0,
         displayWeight: cheapestVariant ? `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}` : 'N/A',
       };
     });
   } catch (error) {
-    console.error("Erro ao buscar produtos mais recentes:", error);
+    console.error("Error fetching latest products:", error);
     throw error;
   }
 }
