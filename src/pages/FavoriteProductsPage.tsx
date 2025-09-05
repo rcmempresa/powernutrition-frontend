@@ -279,13 +279,14 @@ const FavoriteProductsPage: React.FC = () => {
 
                     <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-200">
                       <div>
-                        {product.original_price && product.price < product.original_price ? (
+                        {/* AQUI ESTÁ A CORREÇÃO */}
+                        {product.originalPrice && product.displayPrice < product.originalPrice ? (
                           <>
-                            <span className="text-xl font-bold text-orange-600 mr-2">€{product.price.toFixed(2)}</span>
-                            <span className="text-gray-500 line-through text-sm">€{product.original_price.toFixed(2)}</span>
+                            <span className="text-xl font-bold text-orange-600 mr-2">€{product.displayPrice.toFixed(2)}</span>
+                            <span className="text-gray-500 line-through text-sm">€{product.originalPrice.toFixed(2)}</span>
                           </>
                         ) : (
-                          <span className="text-xl font-bold text-gray-900">€{product.price.toFixed(2)}</span>
+                          <span className="text-xl font-bold text-gray-900">€{product.displayPrice.toFixed(2)}</span>
                         )}
                       </div>
                     </div>
