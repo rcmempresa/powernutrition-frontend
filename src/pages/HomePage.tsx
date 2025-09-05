@@ -58,28 +58,26 @@ interface Product {
 }
 
 // --- FUNÇÃO ATUALIZADA: Busca e formata os dados dos produtos ---
-// --- FUNÇÃO ATUALIZADA: Busca e formata os dados dos produtos ---
 async function fetchLatestProducts() {
   try {
     const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-    return response.data.map((product: any) => {
-      // ✨ Verificação para garantir que o array de variantes existe e não está vazio ✨
-      if (!product.variants || product.variants.length === 0) {
-        console.warn(`Produto ${product.id} não tem variantes. Usando valores padrão.`);
-        return {
-          ...product,
-          displayPrice: product.original_price || 0,
-          displayWeight: 'N/A',
-        };
-      }
+    
+    // ✨ Verificação de segurança: A API retornou dados e são um array?
+    if (!response.data || !Array.isArray(response.data)) {
+        console.warn("API retornou dados inválidos ou vazios para produtos recentes.");
+        return []; // Retorna um array vazio para evitar o erro
+    }
 
-      // Encontra a variante com o menor preço para exibir
-      const cheapestVariant = product.variants.sort((a, b) => a.preco - b.preco)[0];
-      
+    return response.data.map((product: any) => {
+      // Garantir que a variante existe antes de tentar ordená-la
+      const cheapestVariant = product.variants && product.variants.length > 0
+        ? product.variants.sort((a, b) => a.preco - b.preco)[0]
+        : null;
+
       return {
         ...product,
-        displayPrice: cheapestVariant.preco,
-        displayWeight: `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}`,
+        displayPrice: cheapestVariant ? cheapestVariant.preco : product.original_price || 0,
+        displayWeight: cheapestVariant ? `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}` : 'N/A',
       };
     });
   } catch (error) {
@@ -180,43 +178,46 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   };
 
   const fetchProductsByCategory = async (categoryId: number | null) => {
-  setLoadingCategorizedProducts(true);
-  setErrorCategorizedProducts(null);
-  try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-      
-      // ✨ ADIÇÃO DE VERIFICAÇÃO DE DADOS ✨
-      if (!response.data || !Array.isArray(response.data)) {
-          console.error("Resposta da API inválida: os dados não são um array.", response.data);
-          setCategorizedProducts([]); // Define para um array vazio para não quebrar a UI
-          setLoadingCategorizedProducts(false);
-          return; // Sai da função para evitar o erro
-      }
-
-      const allProducts = response.data.map((product: any) => {
-          const cheapestVariant = product.variants.sort((a, b) => a.preco - b.preco)[0];
-          return {
-              ...product,
-              displayPrice: cheapestVariant ? cheapestVariant.preco : 0,
-              displayWeight: cheapestVariant ? `${cheapestVariant.weight_value} ${cheapestVariant.weight_unit}` : '',
-          };
-      });
-
-      let filteredProducts = [];
-      if (categoryId !== null) {
-          filteredProducts = allProducts.filter((product: any) => product.category_id === categoryId);
-      } else {
-          filteredProducts = allProducts;
-      }
-      setCategorizedProducts(filteredProducts);
-
-  } catch (error: any) {
-      console.error(`Erro ao buscar ou filtrar produtos para categoria ${categoryId}:`, error);
-      setErrorCategorizedProducts(error);
-  } finally {
-      setLoadingCategorizedProducts(false);
-  }
-};
+    setLoadingCategorizedProducts(true);
+    setErrorCategorizedProducts(null);
+    try {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
+        
+        // ✨ ADIÇÃO DE VERIFICAÇÃO DE DADOS ✨
+        if (!response.data || !Array.isArray(response.data)) {
+            console.warn("API retornou dados inválidos ou vazios para produtos por categoria.");
+            setCategorizedProducts([]); // Define para um array vazio
+            return; // Sai da função para evitar o erro
+        }
+  
+        const allProducts = response.data.map((product: any) => {
+            // Garantir que a variante existe antes de tentar aceder
+            const cheapestVariant = product.variants && product.variants.length > 0
+              ? product.variants.sort((a, b) => a.preco - b.preco)[0]
+              : null;
+            
+            return {
+                ...product,
+                displayPrice: cheapestVariant ? cheapestVariant.preco : 0,
+                displayWeight: cheapestVariant ? `${cheapestVariant.weight_value} ${cheapestVariant.weight_unit}` : '',
+            };
+        });
+  
+        let filteredProducts = [];
+        if (categoryId !== null) {
+            filteredProducts = allProducts.filter((product: any) => product.category_id === categoryId);
+        } else {
+            filteredProducts = allProducts;
+        }
+        setCategorizedProducts(filteredProducts);
+  
+    } catch (error: any) {
+        console.error(`Erro ao buscar ou filtrar produtos para categoria ${categoryId}:`, error);
+        setErrorCategorizedProducts(error);
+    } finally {
+        setLoadingCategorizedProducts(false);
+    }
+  };
 
   const handleCategoryClick = (categoryId: number) => {
     setSelectedCategoryId(categoryId);
