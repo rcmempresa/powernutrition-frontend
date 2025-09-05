@@ -565,32 +565,32 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                                             <Eye className="w-4 h-4 text-gray-200" />
                                         </button>
                                         <button
-                                            className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
-                                            aria-label="Add to cart"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (cart && cart.addItem) {
-                                                    // LÓGICA DO CARRINHO CORRIGIDA
-                                                    const firstVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
-                                                    if (firstVariant) {
-                                                        cart.addItem({
-                                                            id: firstVariant.id, // Usa a ID da variante
-                                                            name: product.name,
-                                                            price: firstVariant.preco, // Usa o preço da variante
-                                                            image: product.image_url
-                                                        });
-                                                        toast.success(`${product.name} adicionado ao carrinho!`);
-                                                    } else {
-                                                        toast.error("Produto sem variantes disponíveis para adicionar ao carrinho.");
-                                                    }
-                                                } else {
-                                                    console.warn("Cart context or addItem function not available.");
-                                                    toast.error("Não foi possível adicionar ao carrinho.");
-                                                }
-                                            }}
-                                        >
-                                            <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
-                                        </button>
+                                          className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                          aria-label="Add to cart"
+                                          onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (cart && cart.addItem) {
+                                                  const firstVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
+
+                                                  if (firstVariant) {
+                                                      cart.addItem({
+                                                          id: firstVariant.id,
+                                                          name: product.name,
+                                                          price: firstVariant.preco,
+                                                          image: product.image_url
+                                                      });
+                                                      toast.success(`${product.name} adicionado ao carrinho!`);
+                                                  } else {
+                                                      toast.error("Produto sem variantes disponíveis para adicionar ao carrinho.");
+                                                  }
+                                              } else {
+                                                  console.warn("Cart context or addItem function not available.");
+                                                  toast.error("Não foi possível adicionar ao carrinho.");
+                                              }
+                                          }}
+                                      >
+                                          <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
+                                      </button>
                                     </div>
 
                                     <div className="flex mb-2">
