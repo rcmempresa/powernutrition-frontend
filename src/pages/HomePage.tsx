@@ -72,16 +72,15 @@ async function fetchLatestProducts() {
       let cheapestVariant = null;
       let displayPriceValue = 0; // Preço padrão para 0
       let displayWeightValue = 'N/A'; // Peso padrão para N/A
-
+      let productImage = product.image_url; // Imagem padrão do produto
 
       if (hasVariants) {
         // 2. Ordena as variantes para encontrar a mais barata
-        // Certifica-se de que `preco` é um número para a comparação
         const sortedVariants = product.variants.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco));
         cheapestVariant = sortedVariants[0];
 
         // 3. Define displayPrice a partir da variante mais barata
-        if (cheapestVariant && cheapestVariant.preco !== undefined) {
+        if (cheapestVariant && cheapestVariant.preco !== undefined && cheapestVariant.preco !== null) {
           displayPriceValue = parseFloat(cheapestVariant.preco);
         }
 
@@ -90,18 +89,28 @@ async function fetchLatestProducts() {
           displayWeightValue = `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}`;
         }
         
+        // 5. Opcional: Usar a imagem da variante se disponível
+        if (cheapestVariant && cheapestVariant.image_url) {
+            productImage = cheapestVariant.image_url;
+        }
 
       } else {
         // Se não houver variantes, usa o original_price como displayPrice
-        if (product.original_price !== undefined) {
+        if (product.original_price !== undefined && product.original_price !== null) {
           displayPriceValue = parseFloat(product.original_price);
         }
       }
 
+      // Adiciona uma verificação final para garantir que displayPriceValue é um número
+      if (isNaN(displayPriceValue)) {
+          displayPriceValue = 0;
+      }
+
       return {
-        ...product, // ESTA LINHA CONTINUA CRÍTICA PARA MANTER AS VARIANTES E OUTROS CAMPOS
+        ...product, // ESTA LINHA CONTINUA CRÍTICA
         displayPrice: displayPriceValue,
         displayWeight: displayWeightValue,
+        image_url: productImage,
       };
     });
   } catch (error) {
