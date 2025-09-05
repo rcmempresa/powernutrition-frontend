@@ -273,11 +273,12 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
         const cheapestVariant = product.variants?.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco))[0];
 
         if (cheapestVariant) {
+          console.log("➡️ O ID da variante a ser enviado é:", cheapestVariant.id);
             cart.addItem({
-                id: cheapestVariant.id,
+                variant_id: cheapestVariant.id,
                 name: product.name,
                 price: parseFloat(cheapestVariant.preco),
-                image: product.image_url
+                image_url: product.image_url
             });
             toast.success(`${product.name} adicionado ao carrinho!`);
         } else {
@@ -287,7 +288,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
         console.warn("Cart context or addItem function not available.");
         toast.error("Não foi possível adicionar ao carrinho.");
     }
-  }, [cart]);
+}, [cart]);
   
   useEffect(() => {
     const interval = setInterval(() => {

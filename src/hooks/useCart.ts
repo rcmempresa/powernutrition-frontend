@@ -117,6 +117,7 @@ export const useCart = (getToken: () => string | null) => {
     flavor?: string;
   }) => {
     try {
+      console.log("➡️ addItem está a receber:", product);
       await callApi('/cart/adicionar', 'POST', {
         variant_id: product.variant_id, // ✨ Envia o variant_id para a API
         quantity: 1,
