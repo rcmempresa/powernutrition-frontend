@@ -21,6 +21,8 @@ import axios from 'axios';
 import { useAuth } from '../hooks/useAuth'; 
 import toast from 'react-hot-toast'; 
 import { useFavorites } from '../hooks/useFavorites';
+import { Mail } from 'lucide-react';
+import Footer from '../components/FooterPage';
 
 // Tipagem básica para um produto
 interface Product {
@@ -77,7 +79,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   const categoriesPerPage = 4;
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
-  const videoSrc = "/video.mp4"; // Certifique-se de que este caminho está correto
+  const videoSrc = "https://res.cloudinary.com/dheovknbt/video/upload/v1756742336/video_qz6xgi.mp4"; // Certifique-se de que este caminho está correto
   const [hoveredCategoryId, setHoveredCategoryId] = useState(null);
 
   // Estados para Produtos Mais Recentes
@@ -105,7 +107,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     { id: 2, name: "Creatinas" },
     { id: 3, name: "Amino Ácidoss" },
     { id: 4, name: "Vitaminas e Minerais" },
-    { id: 5, name: "Multivitamínicos" },
+    { id: 5, name: "Multivitamínico" },
     { id: 12, name: "Gainers e Carbs" },
   ];
 
@@ -116,20 +118,20 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   // --- FUNÇÕES AUXILIARES ---
   const getCategoryImageUrl = (categoryName: string) => {
     switch (categoryName.toLowerCase()) {
-      case 'acessórios': return 'https://images.pexels.com/photos/163071/pexels-photo-163071.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
-      case 'aminoácidos': return '/aminoacidos.webp';
-      case 'articulações': return 'https://images.pexels.com/photos/4047074/pexels-photo-4047074.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
-      case 'creatinas': return '/creatina.webp';
-      case 'endurance': return 'https://images.pexels.com/photos/3683081/pexels-photo-3683081.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
-      case 'gainers e carbs': return 'https://images.pexels.com/photos/3683074/pexels-photo-3683074.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
-      case 'hormonal': return 'https://images.pexels.com/photos/4047074/pexels-photo-4047074.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
-      case 'lifestyle': return 'https://images.pexels.com/photos/3683056/pexels-photo-3683056.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
-      case 'natural e essencial': return 'https://images.pexels.com/photos/3683050/pexels-photo-3683050.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
       case 'proteínas': return '/proteina.webp';
+      case 'acessórios': return '/acessorios.WEBP';
+      case 'aminoácidos': return '/aminoacidos.webp';
+      case 'articulações': return '/articulacoes_1.png';
+      case 'creatinas': return '/creatina.webp';
+      case 'endurance': return '/endurance.webp';
+      case 'gainers e carbs': return '/Gainer.webp';
+      case 'hormonal': return '/hormonal.png';
+      case 'lifestyle': return '/lifestyle.webp';
+      case 'natural e essencial': return '/natural.png';
       case 'pré-treinos': return '/pre_treino.webp';
-      case 'saúde e bem-estar': return 'https://images.pexels.com/photos/3683056/pexels-photo-3683056.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
-      case 'snacks e barras': return 'https://images.pexels.com/photos/3683050/pexels-photo-3683050.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
-      case 'termogénicos': return 'https://images.pexels.com/photos/3683081/pexels-photo-3683081.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop';
+      case 'saúde e bem-estar': return '/saude.png';
+      case 'snacks e barras': return '/barras.webp';
+      case 'termogénicos': return '/termogenico.webp';
       case 'vitaminas e minerais': return '/vitaminas.avif';
       default: return '/images/default-category.png';
     }
@@ -482,12 +484,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
               transition={{ duration: 0.8 }}
               className="flex flex-col sm:flex-row gap-4 h-[450px] md:h-[550px] lg:h-[650px] items-start"
             >
-              <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/20 h-full">
-                <div className="relative z-10 h-full flex flex-col items-center justify-start p-6 md:p-8">
-                  <span className="text-white text-8xl md:text-9xl lg:text-[12rem] font-bold leading-none mt-4">D</span>
-                  <span className="text-white text-xl md:text-2xl font-semibold -mt-4 mb-8">Vitamina</span>
-                </div>
-              </div>
 
               <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg  h-full mt-8 sm:mt-16  flex items-center justify-center">
                 <img
@@ -583,7 +579,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                         tabIndex={0}
                         onMouseEnter={() => setHoveredProduct(product.id)}
                         onMouseLeave={() => setHoveredProduct(null)}
-                        onClick={() => navigate(`/produto/${product.id}`)} // <-- AQUI ESTÁ A MUDANÇA
+                        onClick={() => navigate(`/produto/${product.id}`)} 
                     >
                         <div className="relative bg-gray-700 rounded-2xl shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-600 overflow-hidden">
                             <div className="relative w-full h-48 md:h-56">
@@ -673,50 +669,189 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
 </section>
 
       {/* NOVA SECTION: BCAA para Recuperação e Crescimento Muscular */}
+
       <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <motion.div
-              initial={{ x: -100, opacity: 0 }}
-              whileInView={{ x: 0, opacity: 1 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.8 }}
-            >
-              <div className="text-orange-500 font-medium mb-4 tracking-wider">MÁXIMO DESEMPENHO</div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-6">
-                BCAA para a Sua Recuperação Muscular.
-              </h2>
-              <p className="text-gray-400 mb-8 leading-relaxed">
-                Os aminoácidos de cadeia ramificada (BCAA) são essenciais para a recuperação muscular e crescimento. Eles fornecem a energia que os seus músculos precisam durante o exercício intenso, diminuem a fadiga e aceleram a reparação dos tecidos após o treino.
-              </p>
-              <div className="flex items-center space-x-4">
-                <button
-                  className="bg-orange-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-orange-700 hover:shadow-lg hover:shadow-orange-700/30 transition-all flex items-center"
-                  onClick={() => navigate('/produtos')}
-                >
-                  EXPLORAR PRODUTOS
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </button>
+              <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                  <motion.div
+                    initial={{ x: -100, opacity: 0 }}
+                    whileInView={{ x: 0, opacity: 1 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.8 }}
+                  >
+                    <div className="text-orange-500 font-medium mb-4 tracking-wider">MÁXIMO DESEMPENHO</div>
+                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-6">
+                      Otimize a Sua Recuperação e Crescimento Muscular com Aminoácidos.
+                    </h2>
+                    <p className="text-gray-400 mb-8 leading-relaxed">
+                      Leve seus treinos ao próximo nível e acelere a recuperação com a força dos aminoácidos. Essenciais para a construção de proteínas, os **aminoácidos** são os blocos de construção dos músculos, ajudando a **reduzir a fadiga**, **minimizar a dor pós-treino** e promover o **crescimento muscular magro**. Desde os **aminoácidos de cadeia ramificada (BCAA)** até a **glutamina** e a **creatina**, nossas fórmulas de alta pureza garantem que você obtenha o máximo de cada dose, permitindo que você treine mais pesado e se recupere mais rápido. Descubra a chave para um desempenho consistente.
+                    </p>
+                    <div className="flex items-center space-x-4">
+                      <button
+                        className="bg-red-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-red-700 hover:shadow-lg hover:shadow-red-700/30 transition-all flex items-center"
+                        onClick={() => navigate('/produtos')} // Usar navigate
+                      >
+                        EXPLORAR AMINOÁCIDOS
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </button>
+                      <button className="bg-gray-800 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors" aria-label="Saiba mais sobre Aminoácidos">
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </motion.div>
+      
+                  <motion.div
+                    initial={{ x: 100, opacity: 0 }}
+                    whileInView={{ x: 0, opacity: 1 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    className="flex flex-col sm:flex-row gap-4 h-[450px] md:h-[550px] lg:h-[650px] items-center justify-center"
+                  >
+                    <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg shadow-purple-500/20 h-full w-full flex items-center justify-center bg-purple-600">
+                      <img
+                        src="savior.png"
+                        alt="Suplemento Aminoácidos"
+                        className="w-full h-full object-cover rounded-2xl"
+                      />
+                      <div className="absolute bottom-4 right-4 bg-purple-800 w-24 h-24 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                        AMINO
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
               </div>
-            </motion.div>
-            <motion.div
-              initial={{ x: 100, opacity: 0 }}
-              whileInView={{ x: 0, opacity: 1 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative rounded-2xl overflow-hidden shadow-lg shadow-green-500/20"
-            >
-              <img
-                src="/bcaa.jpg"
-                alt="Pote de suplemento BCAA"
-                className="w-full h-full object-cover"
-              />
-            </motion.div>
-          </div>
-        </div>
       </section>
 
-      {/* Testimonials Section */}
+
+      <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
+          <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col md:flex-row items-center justify-between mb-12">
+                  <div className="text-center md:text-left mb-6 md:mb-0">
+                      <p className="text-gray-400 text-sm uppercase font-semibold mb-1">
+                          MELHORE A SUA SAÚDE E A SUA PERFORMANCE!
+                      </p>
+                      <h2 className="text-3xl md:text-4xl font-extrabold text-gray-100">
+                          Produtos Populares
+                      </h2>
+                  </div>
+                  <div className="flex space-x-4">
+                      {staticCategories.map((category) => (
+                          <button
+                              key={category.id}
+                              onClick={() => handleCategoryClick(category.id)}
+                              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
+                                  selectedCategoryId === category.id
+                                      ? 'bg-orange-600 text-white shadow-lg'
+                                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              }`}
+                          >
+                              {category.name}
+                          </button>
+                      ))}
+                  </div>
+              </div>
+      
+              {loadingCategorizedProducts ? (
+                  <p className="text-center text-gray-400">Carregando produtos...</p>
+              ) : errorCategorizedProducts ? (
+                  <p className="text-center text-red-500">Erro ao carregar produtos: {errorCategorizedProducts.message}</p>
+              ) : categorizedProducts.length === 0 ? (
+                  <p className="text-center text-gray-400">Nenhum produto encontrado para esta categoria.</p>
+              ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                      {categorizedProducts.map((product) => (
+                          <div
+                              key={product.id}
+                              className="group cursor-pointer"
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => navigate(`/produto/${product.id}`)} // <-- AQUI ESTÁ A MUDANÇA
+                          >
+                              <div className="relative bg-gray-700 rounded-2xl shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-600 overflow-hidden">
+                                  <div className="relative w-full h-40 md:h-48">
+                                      {(!product.is_active || (product.stock_quantity === 0 && product.stock_ginasio === 0)) && (
+                                          <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm z-10">
+                                              Esgotado
+                                          </div>
+                                      )}
+                                      <img
+                                          src={product.image_url}
+                                          alt={product.name}
+                                          className="w-full h-full object-cover"
+                                      />
+                                  </div>
+      
+                                  <div className="p-4 md:p-6">
+                                      <div className="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <button 
+                                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
+                                        aria-label="Toggle favorite"
+                                        onClick={(e) => toggleFavorite(product.id, e)}
+                                    >
+                                        <Heart 
+                                            className={`w-4 h-4 transition-colors ${
+                                                checkIfFavorite(product.id) ? 'text-red-500 fill-current' : 'text-gray-200'
+                                            }`} 
+                                        />
+                                    </button>
+                                          <button
+                                              className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                              aria-label="Quick view"
+                                              onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleQuickViewOpen(product);
+                                              }}
+                                          >
+                                              <Eye className="w-4 h-4 text-gray-200" />
+                                          </button>
+                                          <button
+                                              className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                              aria-label="Add to cart"
+                                              onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  if (cart && cart.addItem) {
+                                                      cart.addItem({
+                                                          id: product.id,
+                                                          name: product.name,
+                                                          price: product.price,
+                                                          image: product.image_url
+                                                      });
+                                                  } else {
+                                                      console.warn("Cart context or addItem function not available.");
+                                                  }
+                                              }}
+                                          >
+                                              <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
+                                          </button>
+                                      </div>
+      
+                                      <div className="flex mb-2">
+                                          {[...Array(5)].map((_, i) => (
+                                              <Star key={i} className="w-4 h-4 text-orange-500 fill-current" />
+                                          ))}
+                                      </div>
+      
+                                      <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
+                                      <div className="flex items-baseline space-x-2">
+                                          {product.original_price && product.price < product.original_price && (
+                                              <p className="text-gray-500 line-through text-base md:text-lg">
+                                                  €{product.original_price.toFixed(2)}
+                                              </p>
+                                          )}
+                                          <p className="text-red-500 font-bold text-lg md:text-xl">
+                                              € {product.price.toFixed(2)}
+                                          </p>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              )}
+          </div>
+      </section>
+
+       {/* Testimonials Section */}
       <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-4">
@@ -805,327 +940,9 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
         </div>
       </section>
 
-      <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
-              <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                  <motion.div
-                    initial={{ x: -100, opacity: 0 }}
-                    whileInView={{ x: 0, opacity: 1 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ duration: 0.8 }}
-                  >
-                    <div className="text-orange-500 font-medium mb-4 tracking-wider">MÁXIMO DESEMPENHO</div>
-                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-6">
-                      Otimize a Sua Recuperação e Crescimento Muscular com BCAA.
-                    </h2>
-                    <p className="text-gray-400 mb-8 leading-relaxed">
-                      Leve seus treinos ao próximo nível e acelere a recuperação com os aminoácidos de cadeia ramificada (BCAA). Essenciais para a síntese proteica, os BCAAs (leucina, isoleucina e valina) ajudam a reduzir a fadiga muscular, minimizar a dor pós-treino e promover o crescimento muscular magro. Nossas fórmulas de alta pureza garantem que você obtenha o máximo de cada dose, permitindo que você treine mais pesado e se recupere mais rápido. Descubra a chave para um desempenho consistente.
-                    </p>
-                    <div className="flex items-center space-x-4">
-                      <button
-                        className="bg-red-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-red-700 hover:shadow-lg hover:shadow-red-700/30 transition-all flex items-center"
-                        onClick={() => navigate('/produtos')} // Usar navigate
-                      >
-                        EXPLORAR BCAAS
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </button>
-                      <button className="bg-gray-800 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors" aria-label="Saiba mais sobre BCAA">
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </motion.div>
-      
-                  <motion.div
-                    initial={{ x: 100, opacity: 0 }}
-                    whileInView={{ x: 0, opacity: 1 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                    className="flex flex-col sm:flex-row gap-4 h-[450px] md:h-[550px] lg:h-[650px] items-center justify-center"
-                  >
-                    <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg shadow-purple-500/20 h-full w-full flex items-center justify-center bg-purple-600">
-                      <img
-                        src="savior.webp"
-                        alt="Suplemento BCAA"
-                        className="w-full h-full object-cover rounded-2xl"
-                      />
-                      <div className="absolute bottom-4 right-4 bg-purple-800 w-24 h-24 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                        BCAA
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-              </div>
-            </section>
-
-      <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
-          <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col md:flex-row items-center justify-between mb-12">
-                  <div className="text-center md:text-left mb-6 md:mb-0">
-                      <p className="text-gray-400 text-sm uppercase font-semibold mb-1">
-                          DESCOBRE AS NOVIDADES!
-                      </p>
-                      <h2 className="text-3xl md:text-4xl font-extrabold text-gray-100">
-                          Produtos Populares
-                      </h2>
-                  </div>
-                  <div className="flex space-x-4">
-                      {staticCategories.map((category) => (
-                          <button
-                              key={category.id}
-                              onClick={() => handleCategoryClick(category.id)}
-                              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
-                                  selectedCategoryId === category.id
-                                      ? 'bg-orange-600 text-white shadow-lg'
-                                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                              }`}
-                          >
-                              {category.name}
-                          </button>
-                      ))}
-                  </div>
-              </div>
-      
-              {loadingCategorizedProducts ? (
-                  <p className="text-center text-gray-400">Carregando produtos...</p>
-              ) : errorCategorizedProducts ? (
-                  <p className="text-center text-red-500">Erro ao carregar produtos: {errorCategorizedProducts.message}</p>
-              ) : categorizedProducts.length === 0 ? (
-                  <p className="text-center text-gray-400">Nenhum produto encontrado para esta categoria.</p>
-              ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                      {categorizedProducts.map((product) => (
-                          <div
-                              key={product.id}
-                              className="group cursor-pointer"
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => navigate(`/produto/${product.id}`)} // <-- AQUI ESTÁ A MUDANÇA
-                          >
-                              <div className="relative bg-gray-700 rounded-2xl shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-600 overflow-hidden">
-                                  <div className="relative w-full h-40 md:h-48">
-                                      {(!product.is_active || (product.stock_quantity === 0 && product.stock_ginasio === 0)) && (
-                                          <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm z-10">
-                                              Esgotado
-                                          </div>
-                                      )}
-                                      <img
-                                          src={product.image_url}
-                                          alt={product.name}
-                                          className="w-full h-full object-cover"
-                                      />
-                                  </div>
-      
-                                  <div className="p-4 md:p-6">
-                                      <div className="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <button className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" aria-label="Add to wishlist">
-                                              <Heart className="w-4 h-4 text-gray-200" />
-                                          </button>
-                                          <button
-                                              className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
-                                              aria-label="Quick view"
-                                              onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  handleQuickViewOpen(product);
-                                              }}
-                                          >
-                                              <Eye className="w-4 h-4 text-gray-200" />
-                                          </button>
-                                          <button
-                                              className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
-                                              aria-label="Add to cart"
-                                              onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  if (cart && cart.addItem) {
-                                                      cart.addItem({
-                                                          id: product.id,
-                                                          name: product.name,
-                                                          price: product.price,
-                                                          image: product.image_url
-                                                      });
-                                                  } else {
-                                                      console.warn("Cart context or addItem function not available.");
-                                                  }
-                                              }}
-                                          >
-                                              <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
-                                          </button>
-                                      </div>
-      
-                                      <div className="flex mb-2">
-                                          {[...Array(5)].map((_, i) => (
-                                              <Star key={i} className="w-4 h-4 text-orange-500 fill-current" />
-                                          ))}
-                                      </div>
-      
-                                      <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
-                                      <div className="flex items-baseline space-x-2">
-                                          {product.original_price && product.price < product.original_price && (
-                                              <p className="text-gray-500 line-through text-base md:text-lg">
-                                                  €{product.original_price.toFixed(2)}
-                                              </p>
-                                          )}
-                                          <p className="text-red-500 font-bold text-lg md:text-xl">
-                                              € {product.price.toFixed(2)}
-                                          </p>
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-                      ))}
-                  </div>
-              )}
-          </div>
-            </section>
-
-      {/* Newsletter Section */}
-      <section className="py-8 md:py-16 px-4 bg-gray-800 text-white">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Subscreva a Nossa Newsletter
-          </h2>
-          <p className="text-gray-400 mb-8">
-            Receba as últimas notícias, promoções e dicas diretamente na sua caixa de entrada.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <input
-              type="email"
-              placeholder="Digite o seu e-mail"
-              className="w-full sm:w-80 px-4 py-3 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-full sm:w-auto px-8 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-lg hover:bg-orange-700 transition-colors"
-            >
-              Subscrever
-            </motion.button>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white" role="contentinfo">
-  <div className="max-w-7xl mx-auto px-4 py-12 md:py-16 lg:py-20">
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-      <div className="space-y-6">
-        <div className="flex items-center">
-          <img
-            src="/rd_power.png"
-            alt="RD Power Nutrition Logo"
-            className="h-10 w-auto"
-          />
-        </div>
-        <p className="text-gray-300 leading-relaxed text-sm">
-          RD Power® was founded on the belief that wellness is more than just a necessity—it's a powerful expression of self-care and vitality.
-        </p>
-        <div className="flex space-x-4 mt-6">
-          <a
-            href="https://twitter.com/yourprofile"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Follow us on Twitter"
-            className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-orange-600 transition-colors duration-300 transform hover:scale-105 shadow-md"
-          >
-            <Twitter className="w-5 h-5 text-gray-300 group-hover:text-white" />
-          </a>
-          <a
-            href="https://instagram.com/yourprofile"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Follow us on Instagram"
-            className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-orange-600 transition-colors duration-300 transform hover:scale-105 shadow-md"
-          >
-            <Instagram className="w-5 h-5 text-gray-300 group-hover:text-white" />
-          </a>
-          <a
-            href="https://facebook.com/yourprofile"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Follow us on Facebook"
-            className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-orange-600 transition-colors duration-300 transform hover:scale-105 shadow-md"
-          >
-            <Facebook className="w-5 h-5 text-gray-300 group-hover:text-white" />
-          </a>
-        </div>
-      </div>
-
-      {/* Coluna 2: Links Rápidos */}
-      <div>
-        <h3 className="text-lg font-bold text-gray-100 mb-6">Links Rápidos</h3>
-        <ul className="space-y-3 text-gray-300 text-sm">
-          <li><a href="#" className="hover:text-orange-500 transition-colors">Sobre Nós</a></li>
-          <li><a href="#" className="hover:text-orange-500 transition-colors">Serviços</a></li>
-          <li><a href="#" className="hover:text-orange-500 transition-colors">Perguntas Frequentes</a></li>
-          <li><a href="#" className="hover:text-orange-500 transition-colors">Blog</a></li>
-        </ul>
-      </div>
-
-      {/* Coluna 3: Páginas Obrigatórias */}
-      <div>
-        <h3 className="text-lg font-bold text-gray-100 mb-6">Informações Legais</h3>
-        <ul className="space-y-3 text-gray-300 text-sm">
-          <li><a href="/termos-de-servico" className="hover:text-orange-500 transition-colors">Termos de Serviço</a></li>
-          <li><a href="/politica-de-privacidade" className="hover:text-orange-500 transition-colors">Política de Privacidade</a></li>
-          <li><a href="/politica-de-devolucao" className="hover:text-orange-500 transition-colors">Política de Devolução</a></li>
-          <li><a href="/metodos-de-envio" className="hover:text-orange-500 transition-colors">Métodos de Envio</a></li>
-        </ul>
-      </div>
-
-      {/* Coluna 4: Contacto */}
-      <div>
-        <h3 className="text-lg font-bold text-gray-100 mb-6">Contacto</h3>
-        <ul className="space-y-3 text-gray-300 text-sm">
-          <li className="flex items-start">
-            <MapPin className="w-5 h-5 mr-3 flex-shrink-0 text-orange-500" />
-            <span>Rua do Exemplo, 123, Cidade, País</span>
-          </li>
-          <li className="flex items-center">
-            <User className="w-5 h-5 mr-3 text-orange-500" />
-            <span>+123 456 7890</span>
-          </li>
-          <li className="flex items-center">
-            <Mail className="w-5 h-5 mr-3 text-orange-500" />
-            <span>info@rdpower.com</span>
-          </li>
-        </ul>
-      </div>
-
-      {/* Coluna 5: Newsletter */}
-      <div>
-        <h3 className="text-lg font-bold text-gray-100 mb-6">Newsletter</h3>
-        <p className="text-gray-300 text-sm mb-4">
-          Subscreva a nossa newsletter para receber as últimas notícias e ofertas.
-        </p>
-        <form className="flex">
-          <input
-            type="email"
-            placeholder="O seu email"
-            className="flex-grow px-4 py-2 rounded-l-lg bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-          <button
-            type="submit"
-            className="bg-orange-600 px-4 py-2 rounded-r-lg text-white font-semibold hover:bg-orange-700 transition-colors"
-          >
-            Subscrever
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <div className="border-t border-gray-700 mt-12 pt-8 text-center text-gray-500 text-sm space-y-2">
-      <p>
-        &copy; {new Date().getFullYear()} RD Power Nutrition. Todos os direitos reservados.
-      </p>
-      <p>
-        Desenvolvido por
-        <a href="https://1way.pt" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-orange-500 transition-colors ml-1">1way.pt</a>
-      </p>
-      <p>
-        Os preços apresentados no site incluem IVA à taxa legal em vigor.
-      </p>
-    </div>
-  </div>
-</footer>
+      <Footer />
     </div>
   );
 };
