@@ -55,6 +55,7 @@ interface Product {
 }
 
 // --- Funções de Busca de Dados Atualizadas ---
+// Função de busca para produtos recentes
 async function fetchLatestProducts() {
   try {
     const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
@@ -65,21 +66,18 @@ async function fetchLatestProducts() {
     }
 
     return response.data.map((product) => {
-      // Encontra a variante mais barata
       const cheapestVariant = (product.variants && product.variants.length > 0)
         ? product.variants.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco))[0]
         : null;
         
       const price = cheapestVariant ? cheapestVariant.preco : product.original_price;
-      
-      const weightValue = cheapestVariant && cheapestVariant.weight_value ? cheapestVariant.weight_value : 'N/A';
+      const weightValue = cheapestVariant && cheapestVariant.weight_value ? cheapestVariant.weight_value : null;
       const weightUnit = cheapestVariant && cheapestVariant.weight_unit ? cheapestVariant.weight_unit : '';
 
       return {
-        ...product,
+        ...product, // ESTA LINHA É CRÍTICA
         displayPrice: price !== null && price !== undefined ? parseFloat(price) : 0,
-        // CORRIGIDO: Verifica se o peso e a unidade existem
-        displayWeight: cheapestVariant && weightValue !== 'N/A' ? `${weightValue}${weightUnit}` : 'N/A',
+        displayWeight: weightValue ? `${weightValue}${weightUnit}` : 'N/A',
       };
     });
   } catch (error) {
