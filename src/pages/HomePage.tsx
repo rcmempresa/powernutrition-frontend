@@ -675,13 +675,13 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
 
                                 <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
                                 <div className="flex items-baseline space-x-2">
-                                    {product.original_price && product.price < product.original_price && (
+                                    {product.original_price && product.displayPrice < product.original_price && (
                                         <p className="text-gray-500 line-through text-base md:text-lg">
                                             €{product.original_price.toFixed(2)}
                                         </p>
                                     )}
                                     <p className="text-red-500 font-bold text-lg md:text-xl">
-                                        € {product.price.toFixed(2)}
+                                        € {product.displayPrice.toFixed(2)}
                                     </p>
                                 </div>
                             </div>
@@ -858,13 +858,13 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
       
                                       <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
                                       <div className="flex items-baseline space-x-2">
-                                          {product.original_price && product.price < product.original_price && (
+                                          {product.original_price && product.displayPrice < product.original_price && (
                                               <p className="text-gray-500 line-through text-base md:text-lg">
                                                   €{product.original_price.toFixed(2)}
                                               </p>
                                           )}
                                           <p className="text-red-500 font-bold text-lg md:text-xl">
-                                              € {product.price.toFixed(2)}
+                                              € {product.displayPrice.toFixed(2)}
                                           </p>
                                       </div>
                                   </div>
