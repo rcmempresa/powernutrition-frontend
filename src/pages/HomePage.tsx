@@ -27,10 +27,10 @@ import Footer from '../components/FooterPage';
 // --- TIPAGEM CORRIGIDA para a nova estrutura de dados ---
 interface Variant {
     id: number;
-    preco: string; // Corrigido para string
+    preco: string;
     quantidade_em_stock: number;
     sku: string;
-    weight_value: string; // Corrigido para string
+    weight_value: string;
     weight_unit: string;
     flavor_id: number;
     image_url?: string;
@@ -44,14 +44,14 @@ interface Product {
     category_id: number;
     brand?: string;
     is_active: boolean;
-    original_price?: string; // Corrigido para string
-    rating?: string; // Corrigido para string
+    original_price?: string;
+    rating?: string;
     reviewcount?: number;
     // NOVAS PROPRIEDADES DERIVADAS
     displayPrice: number;
     displayWeight: string;
     variants: Variant[];
-    totalStock?: number; // Adicionada para a lógica de stock
+    totalStock?: number;
 }
 
 // --- Funções de Busca de Dados Atualizadas ---
@@ -111,7 +111,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   const navigate = useNavigate();
   const { isAuthenticated, getAuthToken } = useAuth(); 
   const { checkIfFavorite, toggleFavorite } = useFavorites();
-
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [hoveredProduct, setHoveredProduct] = useState(null);
@@ -195,30 +194,62 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     }
   };
 
+  // --- FUNÇÃO CORRIGIDA PARA PRODUTOS POR CATEGORIA ---
   const fetchProductsByCategory = async (categoryId: number | null) => {
-    setLoadingCategorizedProducts(true);
-    setErrorCategorizedProducts(null);
-    try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-        const allProducts = response.data.map((product: any) => ({
-            ...product,
-            price: parseFloat(product.price),
-            original_price: product.original_price ? parseFloat(product.original_price) : null
-        }));
+      setLoadingCategorizedProducts(true);
+      setErrorCategorizedProducts(null);
+      try {
+          const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
+          if (!response.data || !Array.isArray(response.data)) {
+              console.warn("API returned invalid or empty data for categories.");
+              setCategorizedProducts([]);
+              return;
+          }
 
-        let filteredProducts = [];
-        if (categoryId !== null) {
-            filteredProducts = allProducts.filter((product: any) => product.category_id === categoryId);
-        } else {
-            filteredProducts = allProducts;
-        }
-        setCategorizedProducts(filteredProducts);
-    } catch (error: any) {
-        console.error(`Erro ao buscar ou filtrar produtos para categoria ${categoryId}:`, error);
-        setErrorCategorizedProducts(error);
-    } finally {
-        setLoadingCategorizedProducts(false);
-    }
+          const processedProducts = response.data.map((product) => {
+              const hasVariants = product.variants && Array.isArray(product.variants) && product.variants.length > 0;
+              let displayPriceValue = 0;
+              let displayWeightValue = 'N/A';
+              let productImage = product.image_url;
+              let totalStock = 0;
+
+              if (hasVariants) {
+                  totalStock = product.variants.reduce((sum, v) => sum + v.quantidade_em_stock, 0);
+                  const sortedVariants = product.variants.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco));
+                  const cheapestVariant = sortedVariants[0];
+                  if (cheapestVariant) {
+                      displayPriceValue = parseFloat(cheapestVariant.preco);
+                      displayWeightValue = `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}`;
+                      if (cheapestVariant.image_url) {
+                          productImage = cheapestVariant.image_url;
+                      }
+                  }
+              }
+
+              return {
+                  ...product,
+                  displayPrice: displayPriceValue,
+                  displayWeight: displayWeightValue,
+                  image_url: productImage,
+                  totalStock,
+              };
+          });
+
+          // Filtra os produtos processados
+          let filteredProducts = [];
+          if (categoryId !== null) {
+              filteredProducts = processedProducts.filter((p) => p.category_id === categoryId);
+          } else {
+              filteredProducts = processedProducts;
+          }
+
+          setCategorizedProducts(filteredProducts);
+      } catch (error: any) {
+          console.error(`Erro ao buscar ou filtrar produtos para categoria ${categoryId}:`, error);
+          setErrorCategorizedProducts(error);
+      } finally {
+          setLoadingCategorizedProducts(false);
+      }
   };
 
   const handleCategoryClick = (categoryId: number) => {
@@ -233,7 +264,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
   const handleAddToCart = useCallback((e, product) => {
     e.stopPropagation();
     if (cart && cart.addItem) {
-        // Encontra a variante mais barata para adicionar ao carrinho
         const cheapestVariant = product.variants?.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco))[0];
 
         if (cheapestVariant) {
@@ -298,8 +328,13 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
     setVisibleLatestProducts(allLatestProducts.slice(currentProductStartIndex, endIndex));
   }, [currentProductStartIndex, allLatestProducts, productsPerPage]);
 
+  // Carrega produtos da primeira categoria popular (Proteínas) ao carregar a página
   useEffect(() => {
-    fetchProductsByCategory(null);
+    if (staticCategories.length > 0) {
+      const defaultCategoryId = staticCategories[0].id;
+      setSelectedCategoryId(defaultCategoryId);
+      fetchProductsByCategory(defaultCategoryId);
+    }
   }, []);
 
   const visibleCategories = categories.slice(currentIndex, currentIndex + categoriesPerPage);
@@ -441,7 +476,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
         </section>
       )}
 
-      {/* Vitamin C Section - Adaptada para Desalinhamento Vertical */}
+      {/* Vitamin C Section */}
       <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
@@ -497,7 +532,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
         </div>
       </section>
 
-      {/* Latest Products Section (Corrigido) */}
+      {/* Latest Products Section */}
       <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-12">
@@ -648,33 +683,167 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
             </button>
         </div>
       </section>
+
+      {/* --- SEÇÃO CORRIGIDA: PRODUTOS POPULARES --- */}
+      <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
+          <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col md:flex-row items-center justify-between mb-12">
+                  <div className="text-center md:text-left mb-6 md:mb-0">
+                      <p className="text-gray-400 text-sm uppercase font-semibold mb-1">
+                          MELHORE A SUA SAÚDE E A SUA PERFORMANCE!
+                      </p>
+                      <h2 className="text-3xl md:text-4xl font-extrabold text-gray-100">
+                          Produtos Populares
+                      </h2>
+                  </div>
+                  <div className="flex space-x-4 flex-wrap justify-center md:justify-start">
+                      {staticCategories.map((category) => (
+                          <button
+                              key={category.id}
+                              onClick={() => handleCategoryClick(category.id)}
+                              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300 mb-2 md:mb-0 ${
+                                  selectedCategoryId === category.id
+                                      ? 'bg-orange-600 text-white shadow-lg'
+                                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              }`}
+                          >
+                              {category.name}
+                          </button>
+                      ))}
+                  </div>
+              </div>
       
-      {/* Brands Section */}
-      <section className="py-8 md:py-16 px-4 text-white relative">
-        <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-12">Marcas de Confiança</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8 items-center justify-items-center">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_1.png" alt="Marca 1" className="max-w-full max-h-full object-contain" />
-            </div>
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_2.png" alt="Marca 2" className="max-w-full max-h-full object-contain" />
-            </div>
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_3.png" alt="Marca 3" className="max-w-full max-h-full object-contain" />
-            </div>
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_4.png" alt="Marca 4" className="max-w-full max-h-full object-contain" />
-            </div>
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_5.png" alt="Marca 5" className="max-w-full max-h-full object-contain" />
-            </div>
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_6.png" alt="Marca 6" className="max-w-full max-h-full object-contain" />
-            </div>
+              {loadingCategorizedProducts ? (
+                  <p className="text-center text-gray-400">Carregando produtos...</p>
+              ) : errorCategorizedProducts ? (
+                  <p className="text-center text-red-500">Erro ao carregar produtos: {errorCategorizedProducts.message}</p>
+              ) : categorizedProducts.length === 0 ? (
+                  <p className="text-center text-gray-400">Nenhum produto encontrado para esta categoria.</p>
+              ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                      {categorizedProducts.map((product) => (
+                          <div
+                              key={product.id}
+                              className="group cursor-pointer"
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => navigate(`/produto/${product.id}`)}
+                          >
+                              <div className="relative bg-gray-700 rounded-2xl shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-600 overflow-hidden">
+                                  <div className="relative w-full h-40 md:h-48">
+                                      {(!product.is_active || product.totalStock === 0) && (
+                                          <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm z-10">
+                                              Esgotado
+                                          </div>
+                                      )}
+                                      <img
+                                          src={product.image_url}
+                                          alt={product.name}
+                                          className="w-full h-full object-cover"
+                                      />
+                                  </div>
+      
+                                  <div className="p-4 md:p-6">
+                                      <div className="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <button 
+                                              className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
+                                              aria-label="Toggle favorite"
+                                              onClick={(e) => toggleFavorite(product.id, e)}
+                                          >
+                                              <Heart 
+                                                  className={`w-4 h-4 transition-colors ${
+                                                      checkIfFavorite(product.id) ? 'text-red-500 fill-current' : 'text-gray-200'
+                                                  }`} 
+                                              />
+                                          </button>
+                                          <button
+                                              className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                              aria-label="Quick view"
+                                              onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleQuickViewOpen(product);
+                                              }}
+                                          >
+                                              <Eye className="w-4 h-4 text-gray-200" />
+                                          </button>
+                                          <button
+                                              className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                              aria-label="Add to cart"
+                                              onClick={(e) => handleAddToCart(e, product)}
+                                          >
+                                              <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
+                                          </button>
+                                      </div>
+      
+                                      <div className="flex mb-2">
+                                        {parseFloat(product.rating || '0') > 0 ? (
+                                            Array.from({ length: 5 }).map((_, i) => (
+                                                <Star
+                                                    key={i}
+                                                    className={`w-4 h-4 ${i < Math.floor(parseFloat(product.rating)) ? 'text-orange-500 fill-current' : 'text-gray-500'}`}
+                                                />
+                                            ))
+                                        ) : (
+                                            <div className="h-4"></div>
+                                        )}
+                                      </div>
+      
+                                      <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
+                                      <p className="text-gray-400 text-sm mb-2">{product.displayWeight}</p>
+                                      <div className="flex items-baseline space-x-2">
+                                          {product.original_price && parseFloat(product.displayPrice) < parseFloat(product.original_price) && (
+                                              <p className="text-gray-500 line-through text-base md:text-lg">
+                                                  €{parseFloat(product.original_price).toFixed(2)}
+                                              </p>
+                                          )}
+                                          <p className="text-red-500 font-bold text-lg md:text-xl">
+                                              € {product.displayPrice.toFixed(2)}
+                                          </p>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              )}
           </div>
-        </div>
       </section>
+
+      {/* NEW SECTION: BCAA for Recovery and Muscle Growth */}
+
+      <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
+              <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                  <motion.div
+                    initial={{ x: -100, opacity: 0 }}
+                    whileInView={{ x: 0, opacity: 1 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.8 }}
+                  >
+                    <div className="text-orange-500 font-medium mb-4 tracking-wider">MÁXIMO DESEMPENHO</div>
+                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-6">
+                      Otimize a Sua Recuperação e Crescimento Muscular com Aminoácidos.
+                    </h2>
+                    <p className="text-gray-400 mb-8 leading-relaxed">
+                      Leve seus treinos ao próximo nível e acelere a recuperação com a força dos aminoácidos. Essenciais para a construção de proteínas, os **aminoácidos** são os blocos de construção dos músculos, ajudando a **reduzir a fadiga**, **minimizar a dor pós-treino** e promover o **crescimento muscular magro**. Desde os **aminoácidos de cadeia ramificada (BCAA)** até a **glutamina** e a **creatina**, nossas fórmulas de alta pureza garantem que você obtenha o máximo de cada dose, permitindo que você treine mais pesado e se recupere mais rápido. Descubra a chave para um desempenho consistente.
+                    </p>
+                    <div className="flex items-center space-x-4">
+                      <button
+                        className="bg-red-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-red-700 hover:shadow-lg hover:shadow-red-700/30 transition-all flex items-center"
+                        onClick={() => navigate('/produtos')}
+                      >
+                        EXPLORAR AMINOÁCIDOS
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </button>
+                      <button className="bg-gray-800 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
+                          <Play className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+      </section>
+
 
       {/* Testimonials Section */}
       <section className="py-8 md:py-16 px-4 bg-gray-950 text-white">
