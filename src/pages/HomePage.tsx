@@ -608,14 +608,14 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                                         <button 
                                             className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
                                             aria-label="Toggle favorite"
-                                            onClick={(e) => toggleFavorite(variant.id, e)}
-                                        >
+                                            onClick={(e) => toggleFavorite(product.displayVariantId, e)}
+                                          >
                                             <Heart 
-                                                className={`w-4 h-4 transition-colors ${
-                                                    checkIfFavorite(variant.id) ? 'text-red-500 fill-current' : 'text-gray-200'
-                                                }`} 
+                                              className={`w-4 h-4 transition-colors ${
+                                                  checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
+                                              }`} 
                                             />
-                                        </button>
+                                          </button>
                                         <button
                                             className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
                                             aria-label="Quick view"
