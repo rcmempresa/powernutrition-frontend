@@ -686,6 +686,58 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
         </div>
       </section>
 
+<section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
+              <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                  <motion.div
+                    initial={{ x: -100, opacity: 0 }}
+                    whileInView={{ x: 0, opacity: 1 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.8 }}
+                  >
+                    <div className="text-orange-500 font-medium mb-4 tracking-wider">MÁXIMO DESEMPENHO</div>
+                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-6">
+                      Otimize a Sua Recuperação e Crescimento Muscular com Aminoácidos.
+                    </h2>
+                    <p className="text-gray-400 mb-8 leading-relaxed">
+                      Leve seus treinos ao próximo nível e acelere a recuperação com a força dos aminoácidos. Essenciais para a construção de proteínas, os **aminoácidos** são os blocos de construção dos músculos, ajudando a **reduzir a fadiga**, **minimizar a dor pós-treino** e promover o **crescimento muscular magro**. Desde os **aminoácidos de cadeia ramificada (BCAA)** até a **glutamina** e a **creatina**, nossas fórmulas de alta pureza garantem que você obtenha o máximo de cada dose, permitindo que você treine mais pesado e se recupere mais rápido. Descubra a chave para um desempenho consistente.
+                    </p>
+                    <div className="flex items-center space-x-4">
+                      <button
+                        className="bg-red-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-red-700 hover:shadow-lg hover:shadow-red-700/30 transition-all flex items-center"
+                        onClick={() => navigate('/produtos')} // Usar navigate
+                      >
+                        EXPLORAR AMINOÁCIDOS
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </button>
+                      <button className="bg-gray-800 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors" aria-label="Saiba mais sobre Aminoácidos">
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </motion.div>
+      
+                  <motion.div
+                    initial={{ x: 100, opacity: 0 }}
+                    whileInView={{ x: 0, opacity: 1 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    className="flex flex-col sm:flex-row gap-4 h-[450px] md:h-[550px] lg:h-[650px] items-center justify-center"
+                  >
+                    <div className="relative flex-1 rounded-2xl overflow-hidden shadow-lg shadow-purple-500/20 h-full w-full flex items-center justify-center bg-purple-600">
+                      <img
+                        src="savior.png"
+                        alt="Suplemento Aminoácidos"
+                        className="w-full h-full object-cover rounded-2xl"
+                      />
+                      <div className="absolute bottom-4 right-4 bg-purple-800 w-24 h-24 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                        AMINO
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+      </section>
+      
       {/* --- SEÇÃO CORRIGIDA: PRODUTOS POPULARES --- */}
       <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
           <div className="max-w-7xl mx-auto">
@@ -813,65 +865,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
 
       {/* NEW SECTION: BCAA for Recovery and Muscle Growth */}
 
-      <section className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
-              <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                  <motion.div
-                    initial={{ x: -100, opacity: 0 }}
-                    whileInView={{ x: 0, opacity: 1 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ duration: 0.8 }}
-                  >
-                    <div className="text-orange-500 font-medium mb-4 tracking-wider">MÁXIMO DESEMPENHO</div>
-                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-6">
-                      Otimize a Sua Recuperação e Crescimento Muscular com Aminoácidos.
-                    </h2>
-                    <p className="text-gray-400 mb-8 leading-relaxed">
-                      Leve seus treinos ao próximo nível e acelere a recuperação com a força dos aminoácidos. Essenciais para a construção de proteínas, os **aminoácidos** são os blocos de construção dos músculos, ajudando a **reduzir a fadiga**, **minimizar a dor pós-treino** e promover o **crescimento muscular magro**. Desde os **aminoácidos de cadeia ramificada (BCAA)** até a **glutamina** e a **creatina**, nossas fórmulas de alta pureza garantem que você obtenha o máximo de cada dose, permitindo que você treine mais pesado e se recupere mais rápido. Descubra a chave para um desempenho consistente.
-                    </p>
-                    <div className="flex items-center space-x-4">
-                      <button
-                        className="bg-red-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-red-700 hover:shadow-lg hover:shadow-red-700/30 transition-all flex items-center"
-                        onClick={() => navigate('/produtos')}
-                      >
-                        EXPLORAR AMINOÁCIDOS
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </button>
-                      <button className="bg-gray-800 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
-                          <Play className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </motion.div>
-                </div>
-              </div>
-      </section>
-
-      {/* Brands Section */}
-      <section className="py-8 md:py-16 px-4 text-white relative">
-        <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-12">Marcas de Confiança</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8 items-center justify-items-center">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_1.png" alt="Marca 1" className="max-w-full max-h-full object-contain" />
-            </div>
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_2.png" alt="Marca 2" className="max-w-full max-h-full object-contain" />
-            </div>
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_3.png" alt="Marca 3" className="max-w-full max-h-full object-contain" />
-            </div>
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_4.png" alt="Marca 4" className="max-w-full max-h-full object-contain" />
-            </div>
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_5.png" alt="Marca 5" className="max-w-full max-h-full object-contain" />
-            </div>
-            <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-full bg-gray-700 p-4 shadow-lg transition-transform transform hover:scale-110">
-              <img src="/marca_6.png" alt="Marca 6" className="max-w-full max-h-full object-contain" />
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Testimonials Section */}
       <section className="py-8 md:py-16 px-4 bg-gray-950 text-white">
@@ -904,20 +897,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-8 md:py-16 px-4 bg-gray-900 text-white text-center">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100 mb-4">Pronto para Elevar o seu Treino?</h2>
-          <p className="text-gray-400 mb-8 max-w-2xl mx-auto">Junte-se a milhares de atletas que confiam nos nossos suplementos para alcançar os seus objetivos. Descubra a diferença de uma nutrição de qualidade.</p>
-          <button
-            className="bg-orange-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-orange-700 transition-all duration-300 transform hover:scale-105 shadow-xl focus:outline-none focus:ring-4 focus:ring-orange-300"
-            onClick={() => navigate('/produtos')}
-            aria-label="Ver todos os produtos"
-          >
-            VER TODOS OS PRODUTOS
-          </button>
-        </div>
-      </section>
 
       <Footer />
     </div>
