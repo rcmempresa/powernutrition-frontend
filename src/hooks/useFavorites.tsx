@@ -95,7 +95,7 @@ export const FavoritesProvider: React.FC<{ children: ReactNode }> = ({ children 
           return newSet;
         });
         setFavoriteItemCount(prev => prev - 1);
-        toast.success('Variante removida dos favoritos!');
+        toast.success('Produto removido dos favoritos!');
       } else {
         await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/add`, { variantId }, {
           headers: {
@@ -105,7 +105,7 @@ export const FavoritesProvider: React.FC<{ children: ReactNode }> = ({ children 
         });
         setFavoriteVariantIds(prev => new Set(prev).add(variantId));
         setFavoriteItemCount(prev => prev + 1);
-        toast.success('Variante adicionada aos favoritos!');
+        toast.success('Produto adicionado aos favoritos!');
       }
     } catch (error: any) {
       console.error('Erro ao alternar favorito:', error);
