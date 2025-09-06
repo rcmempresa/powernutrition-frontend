@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback} from 'react';
+import toast from 'react-hot-toast'; 
 import { useSearchParams } from 'react-router-dom';
 import {
   ChevronDown,
@@ -97,6 +98,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
   brandsList,
   loading,
   error,
+  cart,
   onProductClick,
   onAddToCart,
   onQuickViewOpen
@@ -126,6 +128,29 @@ const ShopPage: React.FC<ShopPageProps> = ({
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
   const productsPerPage = 9;
+
+  const handleAddToCart = useCallback((e, product) => {
+    e.stopPropagation();
+    if (cart && cart.addItem) {
+        const cheapestVariant = product.variants?.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco))[0];
+
+        if (cheapestVariant) {
+          console.log("➡️ O ID da variante a ser enviado é:", cheapestVariant.id);
+            cart.addItem({
+                variant_id: cheapestVariant.id,
+                name: product.name,
+                price: parseFloat(cheapestVariant.preco),
+                image_url: product.image_url
+            });
+            toast.success(`${product.name} adicionado ao carrinho!`);
+        } else {
+            toast.error("Produto sem variantes disponíveis para adicionar ao carrinho.");
+        }
+    } else {
+        console.warn("Cart context or addItem function not available.");
+        toast.error("Não foi possível adicionar ao carrinho.");
+    }
+}, [cart]);
 
   // --- Efeito para ler filtros do URL ---
   useEffect(() => {
@@ -987,12 +1012,11 @@ const ShopPage: React.FC<ShopPageProps> = ({
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       {/* Existing Buttons */}
                       <button
-                        onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
                         className="p-3 bg-gray-700 text-white rounded-full hover:bg-orange-500 hover:text-white transition-colors duration-200"
-                        aria-label="Adicionar ao carrinho"
+                        aria-label="Add to cart"
+                        onClick={(e) => handleAddToCart(e, product)}
                         disabled={product.isOutOfStock}
                       >
-                        
                         <ShoppingCart className="w-5 h-5" />
                       </button>
                       <button
