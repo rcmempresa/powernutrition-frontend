@@ -51,25 +51,31 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose, cart,
   const uniqueWeights = Array.from(new Set(product.variants.map(v => `${v.weight_value} ${v.weight_unit}`)));
   
   // Lógica para selecionar a variante com base no sabor e peso
-  const handleFlavorSelect = (flavor: string) => {
-    const newVariant = product.variants.find(v => 
-      v.flavor_name === flavor && 
-      `${v.weight_value} ${v.weight_unit}` === `${selectedVariant?.weight_value} ${selectedVariant?.weight_unit}`
+  const handleFlavorSelect = (flavorName: string) => {
+    // Encontra a variante que corresponde ao novo sabor e ao peso atual
+    const newVariant = product.variants.find(v =>
+        v.flavor_name === flavorName &&
+        v.weight_value === selectedVariant?.weight_value &&
+        v.weight_unit === selectedVariant?.weight_unit
     );
     if (newVariant) {
-      setSelectedVariant(newVariant);
+        setSelectedVariant(newVariant);
     }
-  };
+};
 
-  const handleWeightSelect = (weight: string) => {
-    const newVariant = product.variants.find(v => 
-      `${v.weight_value} ${v.weight_unit}` === weight &&
-      v.flavor_name === selectedVariant?.flavor_name
+// Lógica para selecionar a variante com base no peso
+const handleWeightSelect = (weight: string) => {
+    // Encontra a variante que corresponde ao novo peso e ao sabor atual
+    const [weightValue, weightUnit] = weight.split(' ');
+    const newVariant = product.variants.find(v =>
+        v.weight_value === weightValue &&
+        v.weight_unit === weightUnit &&
+        v.flavor_name === selectedVariant?.flavor_name
     );
     if (newVariant) {
-      setSelectedVariant(newVariant);
+        setSelectedVariant(newVariant);
     }
-  };
+};
 
 
   // ✨ ALTERADO: Função de adicionar ao carrinho com a variante correta
