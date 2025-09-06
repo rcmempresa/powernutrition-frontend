@@ -62,7 +62,7 @@ interface Product {
   displayVariantId: number | null;// Id da variante mais barata
   totalStock?: number;            // Soma de todas as variantes
   soldOut?: boolean;              // true se totalStock === 0
-  isOutOfStock?: number;
+  isOutOfStock?: boolean;
 }
 
 interface Category {
@@ -399,7 +399,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
     (variant: any) => (variant.quantidade_em_stock || 0) === 0
   );
   
-  console.log(`Produto ID: ${product.id}`, `isOutOfStock: ${isOutOfStock}`);
 
 
   // Define o preço original
