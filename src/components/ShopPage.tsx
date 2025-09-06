@@ -966,7 +966,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                       )}
                     </div>
 
-                    {product.stock_quantity === 0 && product.stock_ginasio === 0 && (
+                    {product.variants.every(variant => (variant.quantidade_em_stock || 0) + (variant.stock_ginasio || 0) === 0) && (
                       <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
                         Esgotado
                       </div>
