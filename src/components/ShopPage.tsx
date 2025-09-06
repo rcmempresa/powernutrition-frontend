@@ -1011,20 +1011,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         aria-label="Visualização rápida"
                       >
                         <Eye className="w-5 h-5" />
-                      </button>
-
-                      {/* New Button Example */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Add your new function here, e.g., navigate to the product page
-                          // navigate(`/produto/${product.id}`);
-                        }}
-                        className="p-3 bg-gray-700 text-white rounded-full hover:bg-blue-500 hover:text-white transition-colors duration-200"
-                        aria-label="Ver detalhes"
-                      >
-                        <ArrowRight className="w-5 h-5" />
-                      </button>
+                      </button> 
                     </div>
                   </div>
 
