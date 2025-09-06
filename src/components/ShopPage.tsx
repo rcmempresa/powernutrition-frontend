@@ -255,6 +255,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = filteredAndSortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+  console.log(currentProducts);
   const { checkIfFavorite, toggleFavorite, loadingFavorites } = useFavorites();
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
