@@ -254,30 +254,19 @@ const ShopPage: React.FC<ShopPageProps> = ({
 
   // --- Handlers de Filtros ---
   const handleAvailabilityChange = (name: string) => {
-  const currentAvailability = new Set(searchParams.get('disponibilidade')?.split(',').filter(Boolean) || []);
-
-  if (currentAvailability.has(name)) {
-    // Se o filtro já estiver selecionado, remove-o
-    currentAvailability.delete(name);
-  } else {
-    // Caso contrário, adiciona o novo filtro
-    // Para filtros de disponibilidade, normalmente só se pode selecionar um de cada vez.
-    // Esta lógica garante que só um filtro pode ser aplicado
-    currentAvailability.clear();
-    currentAvailability.add(name);
-  }
-
-  const newAvailabilityArray = Array.from(currentAvailability);
-  const newParams = { ...Object.fromEntries(searchParams.entries()) };
-  
-  if (newAvailabilityArray.length > 0) {
-    newParams.disponibilidade = newAvailabilityArray.join(',');
-  } else {
-    delete newParams.disponibilidade;
-  }
-  
-  setSearchParams(newParams);
-};
+    const currentAvailability = searchParams.get('disponibilidade')?.split(',').filter(Boolean) || [];
+    const newAvailability = currentAvailability.includes(name)
+        ? currentAvailability.filter(item => item !== name)
+        : [...currentAvailability, name];
+    
+    const newParams = { ...Object.fromEntries(searchParams.entries()) };
+    if (newAvailability.length > 0) {
+        newParams.disponibilidade = newAvailability.join(',');
+    } else {
+        delete newParams.disponibilidade;
+    }
+    setSearchParams(newParams);
+  };
 
 
   const handleCategoryChange = (id: string) => {
@@ -986,10 +975,15 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         <p className="text-xs text-gray-400 mb-2">{product.brand_name}</p> 
                     )}
                     <div className="flex items-baseline mb-2">
-                      <span className="text-xl font-bold text-orange-500 mr-2">€{product.price.toFixed(2)}</span>
-                      {product.original_price && product.original_price > product.price && (
-                          <span className="text-gray-500 line-through">€{product.original_price.toFixed(2)}</span>
-                      )}
+                    {product.original_price && parseFloat(product.displayPrice) < parseFloat(product.original_price) && (
+                      <p className="text-gray-500 line-through text-base md:text-lg">
+                        €{parseFloat(product.original_price).toFixed(2)}
+                      </p>
+                    )}
+                    <p className="text-red-500 font-bold text-lg md:text-xl">
+                      € {product.displayPrice.toFixed(2)}
+                    </p>
+                      
                     </div>
                     {product.rating !== undefined && (
                       <div className="flex items-center text-yellow-500">
