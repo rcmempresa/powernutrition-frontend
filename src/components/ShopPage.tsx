@@ -400,8 +400,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
   );
   
 
-  console.log(`Produto ID: ${product.id}, isOutOfStock: ${isOutOfStock}`);
-
   // Define o preço original
   // Esta linha está correta e usa o `original_price`
   const originalPrice = product.original_price ? parseFloat(String(product.original_price)) : undefined;
