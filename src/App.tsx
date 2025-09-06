@@ -12,7 +12,7 @@ import CartPage from './components/CartPage';
 import CheckoutPage from './components/CheckoutPage';
 import QuickViewModal from './components/QuickViewModal';
 import HomePage from './pages/HomePage';
-import MyOrdersPages from './pages/MyOrdersPages';
+import MyOrdersPages from './pages/MyOrdersPages.tsx';
 import WhatsAppButton from './components/WhatsAppButton';
 import OrderConfirmationPage from './components/OrderConfirmationPage';
 import FavoriteProductsPage from './pages/FavoriteProductsPage.tsx';
@@ -63,7 +63,7 @@ function ScrollToTop() {
 }
 
 function App() {
- const navigate = useNavigate();
+  const navigate = useNavigate();
   const location = useLocation();
   const { getAuthToken } = useAuth();
   const cart = useCart(getAuthToken);
@@ -81,87 +81,30 @@ function App() {
     setQuickViewProduct(null);
   }, []);
 
-  // ✨ NOVO: Estado unificado para todos os produtos
-  const [allProducts, setAllProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
-  const [errorProducts, setErrorProducts] = useState<string | null>(null);
-  
+  const [categorizedProducts, setCategorizedProducts] = useState([]);
+  const [loadingCategorizedProducts, setLoadingCategorizedProducts] = useState(false);
+  const [errorCategorizedProducts, setErrorCategorizedProducts] = useState<string | null>(null);
   const [categories, setCategories] = useState([]);
-  
-  // ✨ NOVO: Estados para as listas de filtros, geradas dinamicamente
+
   const [flavors, setFlavors] = useState([]);
-  const [brands, setBrands] = useState([]);
+  const [loadingFlavors, setLoadingFlavors] = useState(false);
+  const [errorFlavors, setErrorFlavors] = useState<string | null>(null);
 
-  // ✨ CORRIGIDO: Função unificada para buscar e processar os produtos
- const fetchAndProcessProducts = useCallback(async () => {
-    setLoadingProducts(true);
-    setErrorProducts(null);
+  const fetchFlavors = useCallback(async () => {
+    setLoadingFlavors(true);
+    setErrorFlavors(null);
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-      const productsData = response.data.map((product: any) => {
-
-        // ✨ CORREÇÃO: Filtra os preços inválidos para evitar o erro
-        const validPrices = product.variants
-          .map((v: any) => parseFloat(v.preco))
-          .filter((price: number) => !isNaN(price));
-          
-        return {
-          ...product,
-          // Garante que o displayPrice é sempre um número válido
-          displayPrice: validPrices.length > 0 ? Math.min(...validPrices) : 0,
-          totalStock: product.variants.reduce((sum: number, v: any) => sum + (v.quantidade_em_stock + v.stock_ginasio), 0),
-          // Certifica-se de que os IDs são strings para consistência
-          category_id: String(product.category_id),
-          brand_id: String(product.brand_id)
-        };
-      });
-      
-      setAllProducts(productsData);
-
-      // GERAÇÃO DA LISTA DE SABORES a partir dos produtos
-      const uniqueFlavors = new Set();
-      productsData.forEach((product: any) => {
-        product.variants.forEach((variant: any) => {
-          if (variant.flavor_id && variant.flavor_name) {
-            uniqueFlavors.add(JSON.stringify({ id: String(variant.flavor_id), name: variant.flavor_name }));
-          }
-        });
-      });
-      setFlavors(Array.from(uniqueFlavors).map((str: any) => JSON.parse(str)));
-
-      // GERAÇÃO DA LISTA DE MARCAS a partir dos produtos
-      const uniqueBrands = new Set();
-      productsData.forEach((product: any) => {
-        if (product.brand_id && product.brand_name) {
-          uniqueBrands.add(JSON.stringify({ id: String(product.brand_id), name: product.brand_name }));
-        }
-      });
-      setBrands(Array.from(uniqueBrands).map((str: any) => JSON.parse(str)));
-      
-    } catch (error: any) {
-      console.error("Erro ao carregar produtos:", error);
-      setErrorProducts(error.message || 'Erro ao carregar produtos.');
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/flavors/listar`);
+      const sortedFlavors = response.data.sort((a: any, b: any) => a.id - b.id);
+      setFlavors(sortedFlavors);
+    } catch (err: any) {
+      console.error("Failed to fetch flavors:", err);
+      setErrorFlavors(err.message || 'Erro ao carregar sabores.');
     } finally {
-      setLoadingProducts(false);
+      setLoadingFlavors(false);
     }
   }, []);
 
-  // ✨ CORRIGIDO: Efeito que busca as categorias e, em seguida, os produtos
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/categories/listar`);
-        const sortedCategories = response.data.sort((a: any, b: any) => a.id - b.id);
-        setCategories(sortedCategories);
-      } catch (err) {
-        console.error("Failed to fetch categories:", err);
-      }
-    };
-    fetchCategories();
-    fetchAndProcessProducts();
-  }, [fetchAndProcessProducts]);
-
-  // Efeito para atualizar o título da página
   useEffect(() => {
     const getPageTitle = (pathname: string) => {
       switch (pathname) {
@@ -191,6 +134,49 @@ function App() {
     document.title = getPageTitle(location.pathname);
   }, [location.pathname]);
 
+  const fetchProductsByCategory = useCallback(async (categoryId: number | null) => {
+    setLoadingCategorizedProducts(true);
+    setErrorCategorizedProducts(null);
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
+      const allProducts = response.data.map((product: any) => ({
+        ...product,
+        price: parseFloat(product.price),
+        original_price: product.original_price ? parseFloat(product.original_price) : null
+      }));
+
+      let filteredProducts = [];
+      if (categoryId !== null) {
+        filteredProducts = allProducts.filter((product: any) => product.category_id === categoryId);
+      } else {
+        filteredProducts = allProducts;
+      }
+      setCategorizedProducts(filteredProducts);
+    } catch (error: any) {
+      console.error(`Erro ao buscar ou filtrar produtos para categoria ${categoryId}:`, error);
+      setErrorCategorizedProducts(error.message || 'Erro ao carregar produtos.');
+    } finally {
+      setLoadingCategorizedProducts(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/categories/listar`);
+        const sortedCategories = response.data.sort((a: any, b: any) => a.id - b.id);
+        setCategories(sortedCategories);
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    };
+    fetchCategories();
+    fetchFlavors();
+  }, [fetchFlavors]);
+
+  useEffect(() => {
+    fetchProductsByCategory(null);
+  }, [fetchProductsByCategory]);
 
   return (
     <div
@@ -223,21 +209,23 @@ function App() {
           }
         />
         <Route
-        path="/produtos"
-        element={
-          <ShopPage
-            products={allProducts}
-            categoriesList={categories}
-            flavorsList={flavors} // Lista de sabores gerada dinamicamente
-            brandsList={brands}   // Lista de marcas gerada dinamicamente
-            onProductClick={(product) => navigate(`/produto/${product.id}`)}
-            onAddToCart={cart.addItem}
-            onQuickViewOpen={handleQuickViewOpen}
-            loading={loadingProducts}
-            error={errorProducts}
-          />
-        }
-      />
+          path="/produtos"
+          element={
+            <ShopPage
+              products={categorizedProducts}
+              categoriesList={categories}
+              flavorsList={flavors} 
+              onProductClick={(product) => {
+                navigate(`/produto/${product.id}`);
+              }}
+              onAddToCart={cart.addItem}
+              onQuickViewOpen={handleQuickViewOpen}
+              loading={loadingCategorizedProducts || loadingFlavors} 
+              error={errorCategorizedProducts || errorFlavors}
+              fetchProductsByCategory={fetchProductsByCategory}
+            />
+          }
+        />
         <Route
           path="/produto/:id"
           element={
