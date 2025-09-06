@@ -396,9 +396,9 @@ const ShopPage: React.FC<ShopPageProps> = ({
   }
 
   const isOutOfStock = product.variants.every(
-    (variant: any) => (variant.quantidade_em_stock || 0) + (variant.stock_ginasio || 0) === 0
+    (variant: any) => (variant.quantidade_em_stock || 0) === 0
   );
-
+  
   console.log(`Produto ID: ${product.id}`, `isOutOfStock: ${isOutOfStock}`);
 
 
