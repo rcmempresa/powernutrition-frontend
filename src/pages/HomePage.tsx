@@ -850,7 +850,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                                       <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
                                       <p className="text-gray-400 text-sm mb-2">{product.displayWeight}</p>
                                       <div className="flex items-baseline space-x-2">
-                                          {product.original_price && parseFloat(product.displayPrice) < parseFloat(product.original_price) && (
+                                          {product.original_price && parseFloat(product.displayPrice.toFixed(2)) < parseFloat(product.original_price) && (
                                               <p className="text-gray-500 line-through text-base md:text-lg">
                                                   €{parseFloat(product.original_price).toFixed(2)}
                                               </p>
