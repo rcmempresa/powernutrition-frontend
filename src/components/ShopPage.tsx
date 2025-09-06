@@ -998,15 +998,19 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         <p className="text-xs text-gray-400 mb-2">{product.brand_name}</p> 
                     )}
                     <div className="flex items-baseline mb-2">
-                      <span className="text-xl font-bold text-orange-500 mr-2">
-                        €{product.displayPrice.toFixed(2)}
+                    {/* Este span mostra o preço atual ou o preço da variante mais barata */}
+                    <span className="text-xl font-bold text-orange-500 mr-2">
+                      €{product.displayPrice.toFixed(2)}
+                    </span>
+
+                    {/* Esta condição verifica se há um preço original e se ele é maior que o preço atual */}
+                    {product.original_price && Number(product.original_price) > product.displayPrice && (
+                      /* Este span mostra o preço original, riscado, e com estilo mais discreto */
+                      <span className="text-gray-500 line-through">
+                        €{Number(product.original_price).toFixed(2)}
                       </span>
-                      {product.original_price && Number(product.original_price) > product.displayPrice && (
-                        <span className="text-xl font-bold text-orange-500 mr-2">
-                          €{product.displayPrice?.toFixed(2) || '0.00'}
-                        </span>
-                      )}
-                    </div>
+                    )}
+                  </div>
                     {product.rating !== undefined && (
                       <div className="flex items-center text-yellow-500">
                         {Array.from({ length: 5 }, (_, i) => (
