@@ -242,11 +242,11 @@ function App() {
                 navigate(`/produto/${product.id}`);
               }}
               cart={cart}
+              fetchCart={cart.fetchCart} 
               onQuickViewOpen={handleQuickViewOpen}
               loading={loadingCategorizedProducts || loadingFlavors} 
               error={errorCategorizedProducts || errorFlavors}
               fetchProductsByCategory={fetchProductsByCategory}
-              fetchCart={fetchCart}
             />
           }
         />

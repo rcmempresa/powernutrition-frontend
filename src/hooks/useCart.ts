@@ -193,6 +193,7 @@ export const useCart = (getToken: () => string | null) => {
     updateQuantity,
     removeItem,
     openCart,
-    closeCart
+    closeCart,
+    fetchCart
   };
 };
