@@ -139,11 +139,11 @@ function App() {
     setErrorCategorizedProducts(null);
     try {
         const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-        const allProducts = response.data;
+        const allProducts = response.data; // Use os dados brutos
 
-        // Processa cada produto para adicionar as novas propriedades
+        // Adicione a lógica de processamento aqui
         const processedProducts = allProducts.map((product: any) => {
-            let displayPrice = 0;
+            let displayPrice = 0; // Preço padrão para evitar NaN
             if (product.variants && product.variants.length > 0) {
                 const prices = product.variants.map((v: any) => parseFloat(v.preco));
                 const validPrices = prices.filter((p: any) => !isNaN(p));
@@ -151,20 +151,13 @@ function App() {
                     displayPrice = Math.min(...validPrices);
                 }
             }
-
-            // Lógica para verificar se o produto está esgotado
-            const isOutOfStock = product.variants.every(
-                (variant: any) => (variant.quantidade_em_stock || 0) + (variant.stock_ginasio || 0) === 0
-            );
-
+            // Define o preço original
             const originalPrice = product.original_price ? parseFloat(String(product.original_price)) : null;
 
             return {
                 ...product,
-                displayPrice,
+                displayPrice, // Use a propriedade calculada
                 original_price: originalPrice,
-                isOutOfStock,
-                fetchCart // Adicione a propriedade aqui
             };
         });
 
@@ -241,8 +234,7 @@ function App() {
               onProductClick={(product) => {
                 navigate(`/produto/${product.id}`);
               }}
-              cart={cart}
-              fetchCart={cart.fetchCart} 
+              onAddToCart={cart.addItem}
               onQuickViewOpen={handleQuickViewOpen}
               loading={loadingCategorizedProducts || loadingFlavors} 
               error={errorCategorizedProducts || errorFlavors}
