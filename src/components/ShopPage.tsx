@@ -412,8 +412,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
   };
 });
 
-console.log(processedProducts);
-
   processedProducts.forEach(product => {
     if (filterType === 'availability') {
       const key = product.isAvailable ? 'Em stock' : 'Fora de stock';
