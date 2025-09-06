@@ -987,6 +987,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
 
                     {/* Overlay de Ações (aparece no hover) */}
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      {/* Existing Buttons */}
                       <button
                         onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
                         className="p-3 bg-gray-700 text-white rounded-full hover:bg-orange-500 hover:text-white transition-colors duration-200"
@@ -995,16 +996,16 @@ const ShopPage: React.FC<ShopPageProps> = ({
                       >
                         <ShoppingCart className="w-5 h-5" />
                       </button>
-                      <button 
-                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
+                      <button
+                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
                         aria-label="Toggle favorite"
                         onClick={(e) => toggleFavorite(product.displayVariantId, e)}
                       >
-                      <Heart 
-                        lassName={`w-4 h-4 transition-colors ${
-                        checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
-                        }`} 
-                       />
+                        <Heart
+                          lassName={`w-4 h-4 transition-colors ${
+                            checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
+                          }`}
+                        />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onQuickViewOpen(product); }}
@@ -1012,6 +1013,19 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         aria-label="Visualização rápida"
                       >
                         <Eye className="w-5 h-5" />
+                      </button>
+
+                      {/* New Button Example */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Add your new function here, e.g., navigate to the product page
+                          // navigate(`/produto/${product.id}`);
+                        }}
+                        className="p-3 bg-gray-700 text-white rounded-full hover:bg-blue-500 hover:text-white transition-colors duration-200"
+                        aria-label="Ver detalhes"
+                      >
+                        <ArrowRight className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
