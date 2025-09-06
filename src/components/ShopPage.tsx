@@ -991,7 +991,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
                         className="p-3 bg-gray-700 text-white rounded-full hover:bg-orange-500 hover:text-white transition-colors duration-200"
                         aria-label="Adicionar ao carrinho"
-                        disabled={product.stock_quantity === 0}
+                        disabled={product.isOutOfStock}
                       >
                         <ShoppingCart className="w-5 h-5" />
                       </button>
