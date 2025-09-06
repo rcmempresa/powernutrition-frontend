@@ -3,7 +3,6 @@ import { X, Star, ShoppingCart as ShoppingCartIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-// 👈 ALTERAÇÃO: A interface do produto agora inclui variantes
 interface Product {
   id: string;
   name: string;
@@ -22,71 +21,65 @@ interface Product {
 interface QuickViewModalProps {
   product: Product | null;
   onClose: () => void;
-  cart: any; // Use a interface correta do seu useCart
+  cart: any; // Substitua por sua interface de carrinho
   isOpen: boolean;
 }
 
 const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, onClose, cart, isOpen }) => {
   const navigate = useNavigate();
-  // ✨ NOVO: Estado para a variante selecionada
+
+  // ✨ NOVO: Estados para os valores selecionados (independentes)
+  const [selectedFlavorName, setSelectedFlavorName] = useState<string | null>(null);
+  const [selectedWeightString, setSelectedWeightString] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<Product['variants'][0] | null>(null);
 
-  // ✨ NOVO: Inicializa a variante selecionada quando o produto muda
+  // ✨ NOVO: Efeito para inicializar a seleção ao abrir o modal
   useEffect(() => {
     if (product && product.variants && product.variants.length > 0) {
-      // Define a primeira variante como padrão
-      setSelectedVariant(product.variants[0]);
+      // Inicializa com a primeira variante como padrão
+      setSelectedFlavorName(product.variants[0].flavor_name);
+      setSelectedWeightString(`${product.variants[0].weight_value} ${product.variants[0].weight_unit}`);
     } else {
-      setSelectedVariant(null);
+      setSelectedFlavorName(null);
+      setSelectedWeightString(null);
     }
   }, [product]);
 
-  // Se o modal não estiver aberto ou o produto for nulo, não renderizar nada
+  // ✨ NOVO: Efeito para encontrar a variante correspondente quando a seleção muda
+  useEffect(() => {
+    if (selectedFlavorName && selectedWeightString) {
+      const newVariant = product?.variants.find(v =>
+        v.flavor_name === selectedFlavorName &&
+        `${v.weight_value} ${v.weight_unit}` === selectedWeightString
+      );
+      setSelectedVariant(newVariant || null);
+    }
+  }, [selectedFlavorName, selectedWeightString, product]);
+
   if (!isOpen || !product) {
     return null;
   }
   
-  // Obter sabores e pesos únicos para os botões
   const uniqueFlavors = Array.from(new Set(product.variants.map(v => v.flavor_name)));
   const uniqueWeights = Array.from(new Set(product.variants.map(v => `${v.weight_value} ${v.weight_unit}`)));
   
-  // Lógica para selecionar a variante com base no sabor e peso
-  const handleFlavorSelect = (flavorName: string) => {
-    // Encontra a variante que corresponde ao novo sabor e ao peso atual
-    const newVariant = product.variants.find(v =>
-        v.flavor_name === flavorName &&
-        v.weight_value === selectedVariant?.weight_value &&
-        v.weight_unit === selectedVariant?.weight_unit
-    );
-    if (newVariant) {
-        setSelectedVariant(newVariant);
-    }
-};
+  // As funções de seleção agora apenas atualizam o estado
+  const handleFlavorSelect = (flavor: string) => {
+    setSelectedFlavorName(flavor);
+  };
 
-// Lógica para selecionar a variante com base no peso
-const handleWeightSelect = (weight: string) => {
-    // Encontra a variante que corresponde ao novo peso e ao sabor atual
-    const [weightValue, weightUnit] = weight.split(' ');
-    const newVariant = product.variants.find(v =>
-        v.weight_value === weightValue &&
-        v.weight_unit === weightUnit &&
-        v.flavor_name === selectedVariant?.flavor_name
-    );
-    if (newVariant) {
-        setSelectedVariant(newVariant);
-    }
-};
+  const handleWeightSelect = (weight: string) => {
+    setSelectedWeightString(weight);
+  };
 
 
-  // ✨ ALTERADO: Função de adicionar ao carrinho com a variante correta
   const handleAddToCart = useCallback(() => {
     if (cart && cart.addItem && selectedVariant) {
       cart.addItem({
-        variant_id: selectedVariant.id, // ✨ Envia o ID da variante
+        variant_id: selectedVariant.id,
         name: product.name,
-        price: selectedVariant.preco, // ✨ Envia o preço da variante
+        price: selectedVariant.preco,
         image_url: product.image_url,
-        // Envia sabor e peso para exibição no carrinho, se necessário
         flavor: selectedVariant.flavor_name,
         weight_value: selectedVariant.weight_value,
       });
@@ -97,7 +90,6 @@ const handleWeightSelect = (weight: string) => {
     }
   }, [cart, product, selectedVariant, onClose]);
 
-  // Função para navegar para a página de detalhes do produto
   const handleViewDetails = useCallback(() => {
     if (product?.id) {
       navigate(`/produto/${product.id}`);
@@ -155,7 +147,7 @@ const handleWeightSelect = (weight: string) => {
                     key={index}
                     onClick={() => handleWeightSelect(weight)}
                     className={`px-4 py-2 rounded-lg border transition-colors ${
-                      `${selectedVariant?.weight_value} ${selectedVariant?.weight_unit}` === weight
+                      selectedWeightString === weight
                         ? 'bg-orange-600 border-orange-600 text-white'
                         : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                     }`}
@@ -175,7 +167,7 @@ const handleWeightSelect = (weight: string) => {
                     key={index}
                     onClick={() => handleFlavorSelect(flavor)}
                     className={`px-4 py-2 rounded-lg border transition-colors ${
-                      selectedVariant?.flavor_name === flavor
+                      selectedFlavorName === flavor
                         ? 'bg-orange-600 border-orange-600 text-white'
                         : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                     }`}
