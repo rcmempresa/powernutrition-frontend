@@ -380,18 +380,24 @@ const ShopPage: React.FC<ShopPageProps> = ({
   
   // Agrupa as variantes por produto para evitar contagens duplicadas
   const processedProducts = products.map(product => {
-  let displayPrice = 0; // Valor padrão
+  let displayPrice = 0; // Preço padrão caso não haja variantes
+  
   if (product.variants && product.variants.length > 0) {
-    // Calcula o preço mínimo entre as variantes
+    // Extrai e converte todos os preços das variantes para números
     const prices = product.variants.map(v => parseFloat(v.preco));
+    // Filtra para garantir que apenas números válidos sejam considerados
     const validPrices = prices.filter(p => !isNaN(p));
+    
     if (validPrices.length > 0) {
+      // Encontra o preço mais baixo
       displayPrice = Math.min(...validPrices);
     }
   }
 
   // Define o preço original
+  // Esta linha está correta e usa o `original_price`
   const originalPrice = product.original_price ? parseFloat(String(product.original_price)) : undefined;
+
 
   // Retorna um novo objeto de produto com as propriedades calculadas
   return {
