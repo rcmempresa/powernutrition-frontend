@@ -153,7 +153,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
         console.warn("Cart context or addItem function not available.");
         toast.error("Não foi possível adicionar ao carrinho.");
     }
-}, [cart,fetchCart]);
+}, [cart, fetchCart]);
 
   // --- Efeito para ler filtros do URL ---
   useEffect(() => {
