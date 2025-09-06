@@ -451,6 +451,10 @@ console.log(processedProducts);
 
   return (
     <>
+
+    <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', color: 'red' }}>
+        {JSON.stringify(currentProducts, null, 2)}
+      </pre>
       {/* Breadcrumb */}
       <div className="py-4 px-4">
         <div className="max-w-7xl mx-auto">
