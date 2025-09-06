@@ -93,24 +93,32 @@ function App() {
   const [brands, setBrands] = useState([]);
 
   // ✨ CORRIGIDO: Função unificada para buscar e processar os produtos
-  const fetchAndProcessProducts = useCallback(async () => {
+ const fetchAndProcessProducts = useCallback(async () => {
     setLoadingProducts(true);
     setErrorProducts(null);
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-      const productsData = response.data.map((product: any) => ({
-        ...product,
-        // Garante que o displayPrice e outros dados derivados existem
-        displayPrice: Math.min(...product.variants.map((v: any) => parseFloat(v.preco))),
-        totalStock: product.variants.reduce((sum: number, v: any) => sum + (v.quantidade_em_stock + v.stock_ginasio), 0),
-        // Certifica-se de que os IDs são strings para consistência
-        category_id: String(product.category_id),
-        brand_id: String(product.brand_id)
-      }));
+      const productsData = response.data.map((product: any) => {
+
+        // ✨ CORREÇÃO: Filtra os preços inválidos para evitar o erro
+        const validPrices = product.variants
+          .map((v: any) => parseFloat(v.preco))
+          .filter((price: number) => !isNaN(price));
+          
+        return {
+          ...product,
+          // Garante que o displayPrice é sempre um número válido
+          displayPrice: validPrices.length > 0 ? Math.min(...validPrices) : 0,
+          totalStock: product.variants.reduce((sum: number, v: any) => sum + (v.quantidade_em_stock + v.stock_ginasio), 0),
+          // Certifica-se de que os IDs são strings para consistência
+          category_id: String(product.category_id),
+          brand_id: String(product.brand_id)
+        };
+      });
       
       setAllProducts(productsData);
 
-      // ✨ GERAÇÃO DA LISTA DE SABORES a partir dos produtos
+      // GERAÇÃO DA LISTA DE SABORES a partir dos produtos
       const uniqueFlavors = new Set();
       productsData.forEach((product: any) => {
         product.variants.forEach((variant: any) => {
@@ -121,7 +129,7 @@ function App() {
       });
       setFlavors(Array.from(uniqueFlavors).map((str: any) => JSON.parse(str)));
 
-      // ✨ GERAÇÃO DA LISTA DE MARCAS a partir dos produtos
+      // GERAÇÃO DA LISTA DE MARCAS a partir dos produtos
       const uniqueBrands = new Set();
       productsData.forEach((product: any) => {
         if (product.brand_id && product.brand_name) {
