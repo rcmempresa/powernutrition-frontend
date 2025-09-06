@@ -979,8 +979,8 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         €{product.displayPrice.toFixed(2)}
                       </span>
                       {product.original_price && Number(product.original_price) > product.displayPrice && (
-                        <span className="text-gray-500 line-through">
-                          €{Number(product.original_price).toFixed(2)}
+                        <span className="text-xl font-bold text-orange-500 mr-2">
+                          €{product.displayPrice?.toFixed(2) || '0.00'}
                         </span>
                       )}
                     </div>
