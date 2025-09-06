@@ -139,11 +139,11 @@ function App() {
     setErrorCategorizedProducts(null);
     try {
         const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-        const allProducts = response.data; // Use os dados brutos
+        const allProducts = response.data;
 
-        // Adicione a lógica de processamento aqui
+        // Processa cada produto para adicionar as novas propriedades
         const processedProducts = allProducts.map((product: any) => {
-            let displayPrice = 0; // Preço padrão para evitar NaN
+            let displayPrice = 0;
             if (product.variants && product.variants.length > 0) {
                 const prices = product.variants.map((v: any) => parseFloat(v.preco));
                 const validPrices = prices.filter((p: any) => !isNaN(p));
@@ -151,13 +151,19 @@ function App() {
                     displayPrice = Math.min(...validPrices);
                 }
             }
-            // Define o preço original
+
+            // Lógica para verificar se o produto está esgotado
+            const isOutOfStock = product.variants.every(
+                (variant: any) => (variant.quantidade_em_stock || 0) + (variant.stock_ginasio || 0) === 0
+            );
+
             const originalPrice = product.original_price ? parseFloat(String(product.original_price)) : null;
 
             return {
                 ...product,
-                displayPrice, // Use a propriedade calculada
+                displayPrice,
                 original_price: originalPrice,
+                isOutOfStock, // Adicione a propriedade aqui
             };
         });
 
