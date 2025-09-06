@@ -138,27 +138,43 @@ function App() {
     setLoadingCategorizedProducts(true);
     setErrorCategorizedProducts(null);
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-      const allProducts = response.data.map((product: any) => ({
-        ...product,
-        price: parseFloat(product.price),
-        original_price: product.original_price ? parseFloat(product.original_price) : null
-      }));
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
+        const allProducts = response.data; // Use os dados brutos
 
-      let filteredProducts = [];
-      if (categoryId !== null) {
-        filteredProducts = allProducts.filter((product: any) => product.category_id === categoryId);
-      } else {
-        filteredProducts = allProducts;
-      }
-      setCategorizedProducts(filteredProducts);
+        // Adicione a lógica de processamento aqui
+        const processedProducts = allProducts.map((product: any) => {
+            let displayPrice = 0; // Preço padrão para evitar NaN
+            if (product.variants && product.variants.length > 0) {
+                const prices = product.variants.map((v: any) => parseFloat(v.preco));
+                const validPrices = prices.filter((p: any) => !isNaN(p));
+                if (validPrices.length > 0) {
+                    displayPrice = Math.min(...validPrices);
+                }
+            }
+            // Define o preço original
+            const originalPrice = product.original_price ? parseFloat(String(product.original_price)) : null;
+
+            return {
+                ...product,
+                displayPrice, // Use a propriedade calculada
+                original_price: originalPrice,
+            };
+        });
+
+        let filteredProducts = [];
+        if (categoryId !== null) {
+            filteredProducts = processedProducts.filter((product: any) => product.category_id === categoryId);
+        } else {
+            filteredProducts = processedProducts;
+        }
+        setCategorizedProducts(filteredProducts);
     } catch (error: any) {
-      console.error(`Erro ao buscar ou filtrar produtos para categoria ${categoryId}:`, error);
-      setErrorCategorizedProducts(error.message || 'Erro ao carregar produtos.');
+        console.error(`Erro ao buscar ou filtrar produtos para categoria ${categoryId}:`, error);
+        setErrorCategorizedProducts(error.message || 'Erro ao carregar produtos.');
     } finally {
-      setLoadingCategorizedProducts(false);
+        setLoadingCategorizedProducts(false);
     }
-  }, []);
+}, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
