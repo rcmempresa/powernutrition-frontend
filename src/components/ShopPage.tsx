@@ -280,6 +280,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
   };
 
 
+
   const handleCategoryChange = (id: string) => {
     const currentCategories = new Set(searchParams.get('categoria')?.split(',').filter(Boolean) || []);
 
@@ -379,15 +380,26 @@ const ShopPage: React.FC<ShopPageProps> = ({
   
   // Agrupa as variantes por produto para evitar contagens duplicadas
   const processedProducts = products.map(product => {
-    return {
-      id: product.id,
-      isAvailable: product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0),
-      category_id: product.category_id,
-      brands: [product.brand_id],
-      flavors: Array.from(new Set(product.variants.map(v => v.flavor_id).filter(Boolean))),
-      weights: Array.from(new Set(product.variants.map(v => `${v.weight_value}${v.weight_unit}`).filter(Boolean))),
-    };
-  });
+  // Lógica para encontrar o preço da variante mais barata
+  const displayPrice = product.variants.length > 0
+    ? Math.min(...product.variants.map(v => parseFloat(v.preco)))
+    : 0;
+
+  // Lógica para definir o preço original, se existir
+  const originalPrice = product.original_price ? parseFloat(String(product.original_price)) : undefined;
+
+  // Retorna um novo objeto de produto com as propriedades calculadas
+  return {
+    ...product,
+    displayPrice: displayPrice,
+    original_price: originalPrice,
+    isAvailable: product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0),
+    category_id: product.category_id,
+    brands: [product.brand_id],
+    flavors: Array.from(new Set(product.variants.map(v => v.flavor_id).filter(Boolean))),
+    weights: Array.from(new Set(product.variants.map(v => `${v.weight_value}${v.weight_unit}`).filter(Boolean))),
+  };
+});
 
   processedProducts.forEach(product => {
     if (filterType === 'availability') {
