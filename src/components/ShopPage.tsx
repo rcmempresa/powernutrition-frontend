@@ -456,9 +456,9 @@ const ShopPage: React.FC<ShopPageProps> = ({
   return (
     <>
 
-    <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', color: 'red' }}>
+    {/*<pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', color: 'red' }}>
         {JSON.stringify(currentProducts[0]?.displayPrice, null, 2)}
-      </pre>
+      </pre>*/}
       {/* Breadcrumb */}
       <div className="py-4 px-4">
         <div className="max-w-7xl mx-auto">
