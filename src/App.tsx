@@ -240,7 +240,7 @@ function App() {
               onProductClick={(product) => {
                 navigate(`/produto/${product.id}`);
               }}
-              onAddToCart={cart.addItem}
+              cart={cart}
               onQuickViewOpen={handleQuickViewOpen}
               loading={loadingCategorizedProducts || loadingFlavors} 
               error={errorCategorizedProducts || errorFlavors}
