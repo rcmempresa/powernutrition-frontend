@@ -164,12 +164,23 @@ const ShopPage: React.FC<ShopPageProps> = ({
     // 2. Filtrar por Preço
     const min = parseFloat(minPrice);
     const max = parseFloat(maxPrice);
-    if (!isNaN(min)) {
-      currentProducts = currentProducts.filter(product => product.displayPrice >= min);
-    }
-    if (!isNaN(max)) {
-      currentProducts = currentProducts.filter(product => product.displayPrice <= max);
-    }
+
+    currentProducts = currentProducts.filter(product => {
+      const price = product.displayPrice;
+      const isMinPriceValid = !isNaN(min);
+      const isMaxPriceValid = !isNaN(max);
+
+      if (isMinPriceValid && isMaxPriceValid) {
+        return price >= min && price <= max;
+      }
+      if (isMinPriceValid) {
+        return price >= min;
+      }
+      if (isMaxPriceValid) {
+        return price <= max;
+      }
+      return true; 
+    });
 
     // 3. Filtrar por Categoria
     if (selectedCategories.length > 0) {
