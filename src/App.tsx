@@ -225,22 +225,24 @@ function App() {
           }
         />
         <Route
-          path="/produtos"
-          element={
-            <ShopPage
-              products={categorizedProducts}
-              categoriesList={categories}
-              flavorsList={flavors} 
-              onProductClick={(product) => {
-                navigate(`/produto/${product.id}`);
-              }}
-              onAddToCart={cart.addItem}
-              onQuickViewOpen={handleQuickViewOpen}
-              loading={loadingCategorizedProducts || loadingFlavors} 
-              error={errorCategorizedProducts || errorFlavors}
-              fetchProductsByCategory={fetchProductsByCategory}
-            />
-          }
+            path="/produtos"
+            element={
+                <ShopPage
+                    products={categorizedProducts}
+                    categoriesList={categories}
+                    flavorsList={flavors} 
+                    onProductClick={(product) => {
+                        navigate(`/produto/${product.id}`);
+                    }}
+                    // 💡 Pass the full cart object here
+                    cart={cart}
+                    onAddToCart={cart.addItem}
+                    onQuickViewOpen={handleQuickViewOpen}
+                    loading={loadingCategorizedProducts || loadingFlavors} 
+                    error={errorCategorizedProducts || errorFlavors}
+                    fetchProductsByCategory={fetchProductsByCategory}
+                />
+            }
         />
         <Route
           path="/produto/:id"
