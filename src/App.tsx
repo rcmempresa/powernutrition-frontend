@@ -163,7 +163,8 @@ function App() {
                 ...product,
                 displayPrice,
                 original_price: originalPrice,
-                isOutOfStock, // Adicione a propriedade aqui
+                isOutOfStock,
+                fetchCart // Adicione a propriedade aqui
             };
         });
 
