@@ -460,8 +460,11 @@ const ShopPage: React.FC<ShopPageProps> = ({
   if (loading) return <p className="text-center text-white py-20">A carregar produtos...</p>;
   if (error) return <p className="text-center text-red-500 py-20">Erro ao carregar produtos: {error.message}</p>;
 
+  console.log(`Product ID: ${product.id}, isOutOfStock: ${product.isOutOfStock}`);
+
   return (
     <>
+    
 
     {/*<pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', color: 'red' }}>
         {JSON.stringify(currentProducts[0]?.displayPrice, null, 2)}
@@ -945,6 +948,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
               'grid-cols-1'
             }`}>
               {currentProducts.map((product) => (
+                
                 <div key={product.id} className="relative group bg-gray-800 rounded-lg overflow-hidden shadow-lg transform transition-transform duration-300 hover:scale-105">
                   <div
                     className="relative overflow-hidden cursor-pointer"
@@ -952,6 +956,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                     onMouseLeave={() => setHoveredProduct(null)}
                     onClick={() => onProductClick(product)}
                   >
+                    
                     {/* Contêiner para garantir proporção e alinhar as imagens */}
                     <div className="relative w-full h-48">
                       {/* Imagem do Produto Principal */}
