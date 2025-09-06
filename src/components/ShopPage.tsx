@@ -1001,7 +1001,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                     <div className="flex items-baseline mb-2">
                     {/* Este span mostra o preço atual ou o preço da variante mais barata */}
                     <span className="text-xl font-bold text-orange-500 mr-2">
-                      €{Number(product.original_price).toFixed(2)}
+                      €{Number(product.displayPrice).toFixed(2)}
                     </span>
 
                     {/* Esta condição verifica se há um preço original e se ele é maior que o preço atual */}
