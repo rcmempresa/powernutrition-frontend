@@ -977,7 +977,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                     <div className="flex items-baseline mb-2">
                       <span className="text-xl font-bold text-orange-500 mr-2">€{product.price.toFixed(2)}</span>
                       {product.original_price && product.original_price > product.price && (
-                          <span className="text-gray-500 line-through">€{product.original_price.toFixed(2)}</span>
+                         <span className="text-xl font-bold text-orange-500 mr-2">€{product.displayPrice.toFixed(2)}</span>
                       )}
                     </div>
                     {product.rating !== undefined && (
