@@ -459,7 +459,7 @@ console.log(processedProducts);
     <>
 
     <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', color: 'red' }}>
-        {JSON.stringify(currentProducts, null, 2)}
+        {JSON.stringify(product.displayPrice, null, 2)}
       </pre>
       {/* Breadcrumb */}
       <div className="py-4 px-4">
