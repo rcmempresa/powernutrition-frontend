@@ -147,7 +147,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
 
   // --- Lógica de Filtragem e Ordenação ---
   const filteredAndSortedProducts = useMemo(() => {
-    let currentProducts = [...products];
+    let currentProducts = products.filter(product => product != null);
 
     // 1. Filtrar por Disponibilidade
     // 1. Filtrar por Disponibilidade (Versão Corrigida e mais Clara)
