@@ -25,27 +25,42 @@ import Footer from '../components/FooterPage';
 import { useFavorites } from '../hooks/useFavorites';
 
 // --- Interfaces ---
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string;
-  hoverImage?: string;
-  rating?: number;
-  soldOut?: boolean;
-  stock_quantity: number;
+interface Variant {
+  id: number;
+  preco: string;
+  quantidade_em_stock: number;
   stock_ginasio: number;
-  category_id?: string;
-  category_name?: string;
-  flavor_id?: string;
+  sku: string;
+  weight_value: string;
+  weight_unit: string;
+  flavor_id?: number;
   flavor_name?: string;
-  weight_value?: number;
-  weight_unit?: string;
+  image_url?: string;
+}
+
+// --- Produto principal ---
+interface Product {
+  id: number | string;
+  name: string;
+  description?: string;
+  image_url?: string;
+  hoverImage?: string;
+  category_id?: string | number;
+  category_name?: string;
   brand_id?: string;
-  brand?:string
   brand_name?: string;
-  created_at?: string;
-  original_price?: number;
+  is_active?: boolean;
+  original_price?: number | string;
+  rating?: number | string;
+  reviewcount?: number;
+  variants: Variant[];
+
+  // --- Propriedades derivadas para frontend ---
+  displayPrice: number;           // Preço da variante mais barata
+  displayWeight: string;          // Peso da variante mais barata (ex: "1kg")
+  displayVariantId: number | null;// Id da variante mais barata
+  totalStock?: number;            // Soma de todas as variantes
+  soldOut?: boolean;              // true se totalStock === 0
 }
 
 interface Category {
@@ -136,53 +151,61 @@ const ShopPage: React.FC<ShopPageProps> = ({
     // 1. Filtrar por Disponibilidade
     if (selectedAvailability.length > 0) {
       currentProducts = currentProducts.filter(product => {
-        const isInStock = product.stock_quantity > 0 || product.stock_ginasio > 0;
-        if (selectedAvailability.includes('Em stock') && isInStock) return true;
-        if (selectedAvailability.includes('Fora de stock') && !isInStock) return true;
+        const hasStock = product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0);
+        if (selectedAvailability.includes('Em stock') && hasStock) return true;
+        if (selectedAvailability.includes('Fora de stock') && !hasStock) return true;
         return false;
       });
     }
 
-    // 2. Filtrar por Preço
+    // 2. Filtrar por Preço (Usa o preço da variante mais barata do produto)
     const min = parseFloat(minPrice);
     const max = parseFloat(maxPrice);
     if (!isNaN(min)) {
-      currentProducts = currentProducts.filter(product => product.price >= min);
+      currentProducts = currentProducts.filter(product => {
+        const lowestPrice = Math.min(...product.variants.map(v => parseFloat(v.preco)));
+        return lowestPrice >= min;
+      });
     }
     if (!isNaN(max)) {
-      currentProducts = currentProducts.filter(product => product.price <= max);
+      currentProducts = currentProducts.filter(product => {
+        const lowestPrice = Math.min(...product.variants.map(v => parseFloat(v.preco)));
+        return lowestPrice <= max;
+      });
     }
 
-    // 3. Filtrar por Categoria
+    // 3. Filtrar por Categoria (Esta já estava correta, pois a categoria está no produto)
     if (selectedCategories.length > 0) {
       currentProducts = currentProducts.filter(product =>
         product.category_id && selectedCategories.includes(String(product.category_id))
       );
     }
 
-    // 4. Filtrar por Sabor
+    // 4. Filtrar por Sabor (CORRIGIDO)
     if (selectedFlavors.length > 0) {
       currentProducts = currentProducts.filter(product =>
-        product.flavor_id && selectedFlavors.includes(String(product.flavor_id))
+        product.variants.some(variant => variant.flavor_id && selectedFlavors.includes(String(variant.flavor_id)))
       );
     }
 
-    // 5. Filtrar por Peso
+    // 5. Filtrar por Peso (CORRIGIDO)
     if (selectedWeights.length > 0) {
       currentProducts = currentProducts.filter(product => {
-        const productWeight = `${product.weight_value}${product.weight_unit}`;
-        return selectedWeights.includes(productWeight);
+        return product.variants.some(variant => {
+          const variantWeight = `${variant.weight_value}${variant.weight_unit}`;
+          return selectedWeights.includes(variantWeight);
+        });
       });
     }
 
-    // 6. Filtrar por Marca
+    // 6. Filtrar por Marca (CORRIGIDO)
     if (selectedBrands.length > 0) {
       currentProducts = currentProducts.filter(product =>
-        product.brand && selectedBrands.includes(String(product.brand))
+        product.brand_id && selectedBrands.includes(String(product.brand_id))
       );
     }
-
-    // 7. Ordenar
+    
+    // 7. Ordenar (Usa o preço da variante mais barata para ordenar por preço)
     currentProducts.sort((a, b) => {
       switch (sortBy) {
         case 'Alfabeticamente, A-Z':
@@ -190,20 +213,20 @@ const ShopPage: React.FC<ShopPageProps> = ({
         case 'Alfabeticamente, Z-A':
           return b.name.localeCompare(a.name);
         case 'Preço, menor para maior':
-          return a.price - b.price;
+          const aPrice = Math.min(...a.variants.map(v => parseFloat(v.preco)));
+          const bPrice = Math.min(...b.variants.map(v => parseFloat(v.preco)));
+          return aPrice - bPrice;
         case 'Preço, maior para menor':
-          return b.price - a.price;
-        case 'Data, mais recente':
-          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-        case 'Data, mais antiga':
-          return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          const aPriceDesc = Math.min(...a.variants.map(v => parseFloat(v.preco)));
+          const bPriceDesc = Math.min(...b.variants.map(v => parseFloat(v.preco)));
+          return bPriceDesc - aPriceDesc;
         default:
           return 0;
       }
     });
 
     return currentProducts;
-  }, [
+}, [
     products,
     selectedAvailability,
     minPrice,
@@ -213,7 +236,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
     selectedWeights,
     selectedBrands,
     sortBy
-  ]);
+]);
 
   // Lógica de Paginação
   const totalPages = Math.ceil(filteredAndSortedProducts.length / productsPerPage);
@@ -902,15 +925,16 @@ const ShopPage: React.FC<ShopPageProps> = ({
                       >
                         <ShoppingCart className="w-5 h-5" />
                       </button>
-                      <button
-                        onClick={(e) => toggleFavorite(product.id, e)}
-                        className="p-3 bg-gray-700 text-white rounded-full hover:bg-orange-500 hover:text-white transition-colors duration-200"
-                        aria-label="Adicionar à lista de desejos"
+                      <button 
+                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
+                        aria-label="Toggle favorite"
+                        onClick={(e) => toggleFavorite(product.displayVariantId, e)}
                       >
-                        <Heart className={`w-5 h-5 transition-colors ${
-                            checkIfFavorite(product.id) ? 'text-red-500 fill-current' : 'text-gray-200'
+                      <Heart 
+                        lassName={`w-4 h-4 transition-colors ${
+                        checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
                         }`} 
-                        />
+                       />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onQuickViewOpen(product); }}
