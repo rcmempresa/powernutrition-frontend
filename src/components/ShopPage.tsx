@@ -363,27 +363,45 @@ const ShopPage: React.FC<ShopPageProps> = ({
   };
 
   const getFilterCounts = (filterType: 'category' | 'flavor' | 'weight' | 'brand' | 'availability') => {
-    const counts: { [key: string]: number } = {};
-    products.forEach(product => {
-      let key: string | undefined;
-      if (filterType === 'availability') {
-        key = (product.stock_quantity > 0 || product.stock_ginasio > 0) ? 'Em stock' : 'Fora de stock';
-      } else if (filterType === 'category' && product.category_id) {
-        key = product.category_id;
-      } else if (filterType === 'flavor' && product.flavor_id) {
-        key = product.flavor_id;
-      } else if (filterType === 'weight' && product.weight_value && product.weight_unit) {
-        key = `${(product.weight_value || '').toString().replace(/\.0+$/, '')}${product.weight_unit}`;
-      } else if (filterType === 'brand' && product.brand) {
-        key = product.brand;
-      }
+  const counts: { [key: string]: number } = {};
+  
+  // Agrupa as variantes por produto para evitar contagens duplicadas
+  const processedProducts = products.map(product => {
+    return {
+      id: product.id,
+      isAvailable: product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0),
+      category_id: product.category_id,
+      brands: [product.brand_id],
+      flavors: Array.from(new Set(product.variants.map(v => v.flavor_id).filter(Boolean))),
+      weights: Array.from(new Set(product.variants.map(v => `${v.weight_value}${v.weight_unit}`).filter(Boolean))),
+    };
+  });
 
-      if (key) {
+  processedProducts.forEach(product => {
+    if (filterType === 'availability') {
+      const key = product.isAvailable ? 'Em stock' : 'Fora de stock';
+      counts[key] = (counts[key] || 0) + 1;
+    } else if (filterType === 'category' && product.category_id) {
+      counts[product.category_id] = (counts[product.category_id] || 0) + 1;
+    } else if (filterType === 'flavor' && product.flavors.length > 0) {
+      product.flavors.forEach(flavorId => {
+        const key = String(flavorId);
         counts[key] = (counts[key] || 0) + 1;
-      }
-    });
-    return counts;
-  };
+      });
+    } else if (filterType === 'weight' && product.weights.length > 0) {
+      product.weights.forEach(weight => {
+        counts[weight] = (counts[weight] || 0) + 1;
+      });
+    } else if (filterType === 'brand' && product.brands.length > 0) {
+      product.brands.forEach(brandId => {
+        const key = String(brandId);
+        counts[key] = (counts[key] || 0) + 1;
+      });
+    }
+  });
+
+  return counts;
+};
 
   const availabilityCounts = getFilterCounts('availability');
   const categoryCounts = getFilterCounts('category');
