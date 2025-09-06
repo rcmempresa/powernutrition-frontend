@@ -51,6 +51,7 @@ interface Product {
   brand_name?: string;
   is_active?: boolean;
   original_price?: number | string;
+  created_at?: string;
   rating?: number | string;
   reviewcount?: number;
   variants: Variant[];
@@ -158,37 +159,31 @@ const ShopPage: React.FC<ShopPageProps> = ({
       });
     }
 
-    // 2. Filtrar por Preço (Usa o preço da variante mais barata do produto)
+    // 2. Filtrar por Preço
     const min = parseFloat(minPrice);
     const max = parseFloat(maxPrice);
     if (!isNaN(min)) {
-      currentProducts = currentProducts.filter(product => {
-        const lowestPrice = Math.min(...product.variants.map(v => parseFloat(v.preco)));
-        return lowestPrice >= min;
-      });
+      currentProducts = currentProducts.filter(product => product.displayPrice >= min);
     }
     if (!isNaN(max)) {
-      currentProducts = currentProducts.filter(product => {
-        const lowestPrice = Math.min(...product.variants.map(v => parseFloat(v.preco)));
-        return lowestPrice <= max;
-      });
+      currentProducts = currentProducts.filter(product => product.displayPrice <= max);
     }
 
-    // 3. Filtrar por Categoria (Esta já estava correta, pois a categoria está no produto)
+    // 3. Filtrar por Categoria
     if (selectedCategories.length > 0) {
       currentProducts = currentProducts.filter(product =>
         product.category_id && selectedCategories.includes(String(product.category_id))
       );
     }
 
-    // 4. Filtrar por Sabor (CORRIGIDO)
+    // 4. Filtrar por Sabor
     if (selectedFlavors.length > 0) {
       currentProducts = currentProducts.filter(product =>
         product.variants.some(variant => variant.flavor_id && selectedFlavors.includes(String(variant.flavor_id)))
       );
     }
 
-    // 5. Filtrar por Peso (CORRIGIDO)
+    // 5. Filtrar por Peso
     if (selectedWeights.length > 0) {
       currentProducts = currentProducts.filter(product => {
         return product.variants.some(variant => {
@@ -198,14 +193,14 @@ const ShopPage: React.FC<ShopPageProps> = ({
       });
     }
 
-    // 6. Filtrar por Marca (CORRIGIDO)
+    // 6. Filtrar por Marca
     if (selectedBrands.length > 0) {
       currentProducts = currentProducts.filter(product =>
         product.brand_id && selectedBrands.includes(String(product.brand_id))
       );
     }
-    
-    // 7. Ordenar (Usa o preço da variante mais barata para ordenar por preço)
+
+    // 7. Ordenar
     currentProducts.sort((a, b) => {
       switch (sortBy) {
         case 'Alfabeticamente, A-Z':
@@ -213,13 +208,17 @@ const ShopPage: React.FC<ShopPageProps> = ({
         case 'Alfabeticamente, Z-A':
           return b.name.localeCompare(a.name);
         case 'Preço, menor para maior':
-          const aPrice = Math.min(...a.variants.map(v => parseFloat(v.preco)));
-          const bPrice = Math.min(...b.variants.map(v => parseFloat(v.preco)));
-          return aPrice - bPrice;
+          return a.displayPrice - b.displayPrice;
         case 'Preço, maior para menor':
-          const aPriceDesc = Math.min(...a.variants.map(v => parseFloat(v.preco)));
-          const bPriceDesc = Math.min(...b.variants.map(v => parseFloat(v.preco)));
-          return bPriceDesc - aPriceDesc;
+          return b.displayPrice - a.displayPrice;
+        case 'Data, mais recente':
+          const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return dateB - dateA;
+        case 'Data, mais antiga':
+          const dateA_ = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const dateB_ = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return dateA_ - dateB_;
         default:
           return 0;
       }
