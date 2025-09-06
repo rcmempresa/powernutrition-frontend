@@ -150,13 +150,15 @@ const ShopPage: React.FC<ShopPageProps> = ({
     let currentProducts = [...products];
 
     // 1. Filtrar por Disponibilidade
-    if (selectedAvailability.length > 0) {
-      currentProducts = currentProducts.filter(product => {
-        const hasStock = product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0);
-        if (selectedAvailability.includes('Em stock') && hasStock) return true;
-        if (selectedAvailability.includes('Fora de stock') && !hasStock) return true;
-        return false;
-      });
+    // 1. Filtrar por Disponibilidade (Versão Corrigida e mais Clara)
+    if (selectedAvailability.includes('Em stock')) {
+        currentProducts = currentProducts.filter(product =>
+            product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0)
+        );
+    } else if (selectedAvailability.includes('Fora de stock')) {
+        currentProducts = currentProducts.filter(product =>
+            !product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0)
+        );
     }
 
     // 2. Filtrar por Preço
