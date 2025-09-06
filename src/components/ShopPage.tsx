@@ -62,6 +62,7 @@ interface Product {
   displayVariantId: number | null;// Id da variante mais barata
   totalStock?: number;            // Soma de todas as variantes
   soldOut?: boolean;              // true se totalStock === 0
+  isOutOfStock?: number;
 }
 
 interface Category {
@@ -394,6 +395,11 @@ const ShopPage: React.FC<ShopPageProps> = ({
     }
   }
 
+  const isOutOfStock = product.variants.every(
+    (variant: any) => (variant.quantidade_em_stock || 0) + (variant.stock_ginasio || 0) === 0
+  );
+
+
   // Define o preço original
   // Esta linha está correta e usa o `original_price`
   const originalPrice = product.original_price ? parseFloat(String(product.original_price)) : undefined;
@@ -404,6 +410,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
     ...product,
     displayPrice: displayPrice,
     original_price: originalPrice,
+    isOutOfStock,
     isAvailable: product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0),
     category_id: product.category_id,
     brands: [product.brand_id],
@@ -966,7 +973,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                       )}
                     </div>
 
-                    {product.variants.every(variant => (variant.quantidade_em_stock || 0) + (variant.stock_ginasio || 0) === 0) && (
+                    {product.isOutOfStock && (
                       <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
                         Esgotado
                       </div>
