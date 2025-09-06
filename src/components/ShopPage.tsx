@@ -89,6 +89,8 @@ interface ShopPageProps {
   onProductClick: (product: Product) => void;
   onAddToCart: (product: Product) => void;
   onQuickViewOpen: (product: Product) => void;
+  fetchCart: () => Promise<void>;
+   cart: any;
 }
 
 const ShopPage: React.FC<ShopPageProps> = ({

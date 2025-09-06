@@ -245,6 +245,7 @@ function App() {
               loading={loadingCategorizedProducts || loadingFlavors} 
               error={errorCategorizedProducts || errorFlavors}
               fetchProductsByCategory={fetchProductsByCategory}
+              fetchCart={fetchCart}
             />
           }
         />
