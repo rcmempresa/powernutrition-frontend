@@ -399,6 +399,8 @@ const ShopPage: React.FC<ShopPageProps> = ({
     (variant: any) => (variant.quantidade_em_stock || 0) + (variant.stock_ginasio || 0) === 0
   );
 
+  console.log(`Produto ID: ${product.id}`, `isOutOfStock: ${isOutOfStock}`);
+
 
   // Define o preço original
   // Esta linha está correta e usa o `original_price`
@@ -460,7 +462,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
   if (loading) return <p className="text-center text-white py-20">A carregar produtos...</p>;
   if (error) return <p className="text-center text-red-500 py-20">Erro ao carregar produtos: {error.message}</p>;
 
-  console.log(`Product ID: ${product.id}, isOutOfStock: ${product.isOutOfStock}`);
 
   return (
     <>
