@@ -89,8 +89,6 @@ interface ShopPageProps {
   onProductClick: (product: Product) => void;
   onAddToCart: (product: Product) => void;
   onQuickViewOpen: (product: Product) => void;
-  fetchCart: () => Promise<void>; 
-   cart: any;
 }
 
 const ShopPage: React.FC<ShopPageProps> = ({
@@ -102,7 +100,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
   error,
   cart,
   onProductClick,
-  fetchCart,
   onAddToCart,
   onQuickViewOpen
 }) => {
@@ -153,7 +150,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
         console.warn("Cart context or addItem function not available.");
         toast.error("Não foi possível adicionar ao carrinho.");
     }
-}, [cart, fetchCart]);
+}, [cart]);
 
   // --- Efeito para ler filtros do URL ---
   useEffect(() => {
@@ -1014,6 +1011,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                     {/* Overlay de Ações (aparece no hover) */}
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       {/* Existing Buttons */}
+                        
                       <button
                         className="p-3 bg-gray-700 text-white rounded-full hover:bg-orange-500 hover:text-white transition-colors duration-200"
                         aria-label="Add to cart"
