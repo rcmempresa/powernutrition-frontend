@@ -50,7 +50,7 @@ interface Product {
   brand_id?: string;
   brand_name?: string;
   is_active?: boolean;
-  original_price?:string;
+  original_price?: string;
   created_at?: string;
   rating?: number | string;
   reviewcount?: number;
@@ -975,7 +975,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         <p className="text-xs text-gray-400 mb-2">{product.brand_name}</p> 
                     )}
                     <div className="flex items-baseline mb-2">
-                      {product.original_price && parseFloat(product.displayPrice) < parseFloat(product.original_price) && (
+                      {product.original_price && (product.displayPrice) < parseFloat(product.original_price) && (
                         <p className="text-gray-500 line-through text-base md:text-lg">
                           €{parseFloat(product.original_price).toFixed(2)}
                         </p>
