@@ -254,19 +254,30 @@ const ShopPage: React.FC<ShopPageProps> = ({
 
   // --- Handlers de Filtros ---
   const handleAvailabilityChange = (name: string) => {
-    const currentAvailability = searchParams.get('disponibilidade')?.split(',').filter(Boolean) || [];
-    const newAvailability = currentAvailability.includes(name)
-        ? currentAvailability.filter(item => item !== name)
-        : [...currentAvailability, name];
-    
-    const newParams = { ...Object.fromEntries(searchParams.entries()) };
-    if (newAvailability.length > 0) {
-        newParams.disponibilidade = newAvailability.join(',');
-    } else {
-        delete newParams.disponibilidade;
-    }
-    setSearchParams(newParams);
-  };
+  const currentAvailability = new Set(searchParams.get('disponibilidade')?.split(',').filter(Boolean) || []);
+
+  if (currentAvailability.has(name)) {
+    // Se o filtro já estiver selecionado, remove-o
+    currentAvailability.delete(name);
+  } else {
+    // Caso contrário, adiciona o novo filtro
+    // Para filtros de disponibilidade, normalmente só se pode selecionar um de cada vez.
+    // Esta lógica garante que só um filtro pode ser aplicado
+    currentAvailability.clear();
+    currentAvailability.add(name);
+  }
+
+  const newAvailabilityArray = Array.from(currentAvailability);
+  const newParams = { ...Object.fromEntries(searchParams.entries()) };
+  
+  if (newAvailabilityArray.length > 0) {
+    newParams.disponibilidade = newAvailabilityArray.join(',');
+  } else {
+    delete newParams.disponibilidade;
+  }
+  
+  setSearchParams(newParams);
+};
 
 
   const handleCategoryChange = (id: string) => {
