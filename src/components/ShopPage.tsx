@@ -992,6 +992,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         aria-label="Adicionar ao carrinho"
                         disabled={product.isOutOfStock}
                       >
+                        
                         <ShoppingCart className="w-5 h-5" />
                       </button>
                       <button
