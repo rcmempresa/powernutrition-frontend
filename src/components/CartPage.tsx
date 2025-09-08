@@ -12,7 +12,7 @@ interface CartItem {
   price: number;
   quantity: number;
   image_url: string;
-  flavor?: string; // ✨ Propriedade 'flavor', usada na ProductPage
+  flavor_name?: string; // ✨ Propriedade 'flavor', usada na ProductPage
 }
 
 interface Product {
@@ -153,8 +153,8 @@ const CartPage: React.FC<CartPageProps> = ({ items, onUpdateQuantity, onRemoveIt
                         <div className="flex-1">
                           {/* ✨ ALTERAÇÃO: Nome e Sabor acima do preço */}
                           <h3 className="font-medium text-gray-900">{item.name}</h3>
-                          {item.flavor && (
-                            <p className="text-sm text-gray-600">Sabor: {item.flavor}</p>
+                          {item.flavor_name && (
+                            <p className="text-sm text-gray-600">Sabor: {item.flavor_name}</p>
                           )}
                           <p className="text-orange-500 font-semibold">{item.price.toFixed(2)}€</p>
                           {/* FIM DA ALTERAÇÃO */}
