@@ -5,12 +5,14 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import Footer from '../components/FooterPage';
 
+// ✨ INTERFACE CORRIGIDA ✨
 interface CartItem {
   id: string;
-  name: string;
+  product_name: string; // ✨ Propriedade 'name' do produto, usada na ProductPage
   price: number;
   quantity: number;
   image_url: string;
+  flavor_name?: string; // ✨ Propriedade 'flavor', usada na ProductPage
 }
 
 interface Product {
@@ -92,8 +94,6 @@ const CartPage: React.FC<CartPageProps> = ({ items, onUpdateQuantity, onRemoveIt
 
   useEffect(() => {
     fetchRandomProducts();
-    // Nota: O seu `useEffect` original com `productId` é para a página de detalhes do produto.
-    // Na página do carrinho, a lógica é diferente, então apenas chamamos a função de produtos aleatórios.
   }, []);
 
   return (
@@ -151,8 +151,13 @@ const CartPage: React.FC<CartPageProps> = ({ items, onUpdateQuantity, onRemoveIt
                           className="h-16 w-16 rounded-lg object-cover"
                         />
                         <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{item.name}</h3>
+                          {/* ✨ ALTERAÇÃO: Nome e Sabor acima do preço */}
+                          <h3 className="font-medium text-gray-900">{item.product_name}</h3>
+                          {item.flavor_name && (
+                            <p className="text-sm text-gray-600">Sabor: {item.flavor_name}</p>
+                          )}
                           <p className="text-orange-500 font-semibold">{item.price.toFixed(2)}€</p>
+                          {/* FIM DA ALTERAÇÃO */}
                           
                           <div className="flex items-center space-x-2 mt-2">
                             <button

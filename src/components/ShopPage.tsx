@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback} from 'react';
+import toast from 'react-hot-toast'; 
 import { useSearchParams } from 'react-router-dom';
 import {
   ChevronDown,
@@ -25,27 +26,44 @@ import Footer from '../components/FooterPage';
 import { useFavorites } from '../hooks/useFavorites';
 
 // --- Interfaces ---
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string;
-  hoverImage?: string;
-  rating?: number;
-  soldOut?: boolean;
-  stock_quantity: number;
+interface Variant {
+  id: number;
+  preco: string;
+  quantidade_em_stock: number;
   stock_ginasio: number;
-  category_id?: string;
-  category_name?: string;
-  flavor_id?: string;
+  sku: string;
+  weight_value: string;
+  weight_unit: string;
+  flavor_id?: number;
   flavor_name?: string;
-  weight_value?: number;
-  weight_unit?: string;
+  image_url?: string;
+}
+
+// --- Produto principal ---
+interface Product {
+  id: number | string;
+  name: string;
+  description?: string;
+  image_url?: string;
+  hoverImage?: string;
+  category_id?: string | number;
+  category_name?: string;
   brand_id?: string;
-  brand?:string
   brand_name?: string;
+  is_active?: boolean;
+  original_price?: number | string;
   created_at?: string;
-  original_price?: number;
+  rating?: number | string;
+  reviewcount?: number;
+  variants: Variant[];
+
+  // --- Propriedades derivadas para frontend ---
+  displayPrice: number;           // Preço da variante mais barata
+  displayWeight: string;          // Peso da variante mais barata (ex: "1kg")
+  displayVariantId: number | null;// Id da variante mais barata
+  totalStock?: number;            // Soma de todas as variantes
+  soldOut?: boolean;              // true se totalStock === 0
+  isOutOfStock?: boolean;
 }
 
 interface Category {
@@ -80,6 +98,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
   brandsList,
   loading,
   error,
+  cart,
   onProductClick,
   onAddToCart,
   onQuickViewOpen
@@ -110,6 +129,29 @@ const ShopPage: React.FC<ShopPageProps> = ({
 
   const productsPerPage = 9;
 
+  const handleAddToCart = useCallback((e, product) => {
+    e.stopPropagation();
+    if (cart && cart.addItem) {
+        const cheapestVariant = product.variants?.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco))[0];
+
+        if (cheapestVariant) {
+          console.log("➡️ O ID da variante a ser enviado é:", cheapestVariant.id);
+            cart.addItem({
+                variant_id: cheapestVariant.id,
+                name: product.name,
+                price: parseFloat(cheapestVariant.preco),
+                image_url: product.image_url
+            });
+            toast.success(`${product.name} adicionado ao carrinho!`);
+        } else {
+            toast.error("Produto sem variantes disponíveis para adicionar ao carrinho.");
+        }
+    } else {
+        console.warn("Cart context or addItem function not available.");
+        toast.error("Não foi possível adicionar ao carrinho.");
+    }
+}, [cart]);
+
   // --- Efeito para ler filtros do URL ---
   useEffect(() => {
     const categoriesFromUrl = searchParams.get('categoria')?.split(',').filter(Boolean) || [];
@@ -131,27 +173,40 @@ const ShopPage: React.FC<ShopPageProps> = ({
 
   // --- Lógica de Filtragem e Ordenação ---
   const filteredAndSortedProducts = useMemo(() => {
-    let currentProducts = [...products];
+    let currentProducts = products.filter(product => product != null);
 
     // 1. Filtrar por Disponibilidade
-    if (selectedAvailability.length > 0) {
-      currentProducts = currentProducts.filter(product => {
-        const isInStock = product.stock_quantity > 0 || product.stock_ginasio > 0;
-        if (selectedAvailability.includes('Em stock') && isInStock) return true;
-        if (selectedAvailability.includes('Fora de stock') && !isInStock) return true;
-        return false;
-      });
+    // 1. Filtrar por Disponibilidade (Versão Corrigida e mais Clara)
+    if (selectedAvailability.includes('Em stock')) {
+        currentProducts = currentProducts.filter(product =>
+            product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0)
+        );
+    } else if (selectedAvailability.includes('Fora de stock')) {
+        currentProducts = currentProducts.filter(product =>
+            !product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0)
+        );
     }
 
     // 2. Filtrar por Preço
     const min = parseFloat(minPrice);
     const max = parseFloat(maxPrice);
-    if (!isNaN(min)) {
-      currentProducts = currentProducts.filter(product => product.price >= min);
-    }
-    if (!isNaN(max)) {
-      currentProducts = currentProducts.filter(product => product.price <= max);
-    }
+
+    currentProducts = currentProducts.filter(product => {
+      const price = product.displayPrice;
+      const isMinPriceValid = !isNaN(min);
+      const isMaxPriceValid = !isNaN(max);
+
+      if (isMinPriceValid && isMaxPriceValid) {
+        return price >= min && price <= max;
+      }
+      if (isMinPriceValid) {
+        return price >= min;
+      }
+      if (isMaxPriceValid) {
+        return price <= max;
+      }
+      return true; 
+    });
 
     // 3. Filtrar por Categoria
     if (selectedCategories.length > 0) {
@@ -163,22 +218,24 @@ const ShopPage: React.FC<ShopPageProps> = ({
     // 4. Filtrar por Sabor
     if (selectedFlavors.length > 0) {
       currentProducts = currentProducts.filter(product =>
-        product.flavor_id && selectedFlavors.includes(String(product.flavor_id))
+        product.variants.some(variant => variant.flavor_id && selectedFlavors.includes(String(variant.flavor_id)))
       );
     }
 
     // 5. Filtrar por Peso
     if (selectedWeights.length > 0) {
       currentProducts = currentProducts.filter(product => {
-        const productWeight = `${product.weight_value}${product.weight_unit}`;
-        return selectedWeights.includes(productWeight);
+        return product.variants.some(variant => {
+          const variantWeight = `${variant.weight_value}${variant.weight_unit}`;
+          return selectedWeights.includes(variantWeight);
+        });
       });
     }
 
     // 6. Filtrar por Marca
     if (selectedBrands.length > 0) {
       currentProducts = currentProducts.filter(product =>
-        product.brand && selectedBrands.includes(String(product.brand))
+        product.brand_id && selectedBrands.includes(String(product.brand_id))
       );
     }
 
@@ -190,20 +247,24 @@ const ShopPage: React.FC<ShopPageProps> = ({
         case 'Alfabeticamente, Z-A':
           return b.name.localeCompare(a.name);
         case 'Preço, menor para maior':
-          return a.price - b.price;
+          return a.displayPrice - b.displayPrice;
         case 'Preço, maior para menor':
-          return b.price - a.price;
+          return b.displayPrice - a.displayPrice;
         case 'Data, mais recente':
-          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+          const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return dateB - dateA;
         case 'Data, mais antiga':
-          return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          const dateA_ = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const dateB_ = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return dateA_ - dateB_;
         default:
           return 0;
       }
     });
 
     return currentProducts;
-  }, [
+}, [
     products,
     selectedAvailability,
     minPrice,
@@ -213,7 +274,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
     selectedWeights,
     selectedBrands,
     sortBy
-  ]);
+]);
 
   // Lógica de Paginação
   const totalPages = Math.ceil(filteredAndSortedProducts.length / productsPerPage);
@@ -243,6 +304,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
     }
     setSearchParams(newParams);
   };
+
 
 
   const handleCategoryChange = (id: string) => {
@@ -340,27 +402,73 @@ const ShopPage: React.FC<ShopPageProps> = ({
   };
 
   const getFilterCounts = (filterType: 'category' | 'flavor' | 'weight' | 'brand' | 'availability') => {
-    const counts: { [key: string]: number } = {};
-    products.forEach(product => {
-      let key: string | undefined;
-      if (filterType === 'availability') {
-        key = (product.stock_quantity > 0 || product.stock_ginasio > 0) ? 'Em stock' : 'Fora de stock';
-      } else if (filterType === 'category' && product.category_id) {
-        key = product.category_id;
-      } else if (filterType === 'flavor' && product.flavor_id) {
-        key = product.flavor_id;
-      } else if (filterType === 'weight' && product.weight_value && product.weight_unit) {
-        key = `${(product.weight_value || '').toString().replace(/\.0+$/, '')}${product.weight_unit}`;
-      } else if (filterType === 'brand' && product.brand) {
-        key = product.brand;
-      }
+  const counts: { [key: string]: number } = {};
+  
+  // Agrupa as variantes por produto para evitar contagens duplicadas
+  const processedProducts = products.map(product => {
+  let displayPrice = 0; // Preço padrão caso não haja variantes
+  
+  if (product.variants && product.variants.length > 0) {
+    // Extrai e converte todos os preços das variantes para números
+    const prices = product.variants.map(v => parseFloat(v.preco));
+    // Filtra para garantir que apenas números válidos sejam considerados
+    const validPrices = prices.filter(p => !isNaN(p));
+    
+    if (validPrices.length > 0) {
+      // Encontra o preço mais baixo
+      displayPrice = Math.min(...validPrices);
+    }
+  }
 
-      if (key) {
-        counts[key] = (counts[key] || 0) + 1;
-      }
-    });
-    return counts;
+  const isOutOfStock = product.variants.every(
+    (variant: any) => (variant.quantidade_em_stock || 0) === 0
+  );
+  
+
+  // Define o preço original
+  // Esta linha está correta e usa o `original_price`
+  const originalPrice = product.original_price ? parseFloat(String(product.original_price)) : undefined;
+
+
+  // Retorna um novo objeto de produto com as propriedades calculadas
+  return {
+    ...product,
+    displayPrice: displayPrice,
+    original_price: originalPrice,
+    isOutOfStock,
+    isAvailable: product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0),
+    category_id: product.category_id,
+    brands: [product.brand_id],
+    flavors: Array.from(new Set(product.variants.map(v => v.flavor_id).filter(Boolean))),
+    weights: Array.from(new Set(product.variants.map(v => `${v.weight_value}${v.weight_unit}`).filter(Boolean))),
   };
+});
+
+  processedProducts.forEach(product => {
+    if (filterType === 'availability') {
+      const key = product.isAvailable ? 'Em stock' : 'Fora de stock';
+      counts[key] = (counts[key] || 0) + 1;
+    } else if (filterType === 'category' && product.category_id) {
+      counts[product.category_id] = (counts[product.category_id] || 0) + 1;
+    } else if (filterType === 'flavor' && product.flavors.length > 0) {
+      product.flavors.forEach(flavorId => {
+        const key = String(flavorId);
+        counts[key] = (counts[key] || 0) + 1;
+      });
+    } else if (filterType === 'weight' && product.weights.length > 0) {
+      product.weights.forEach(weight => {
+        counts[weight] = (counts[weight] || 0) + 1;
+      });
+    } else if (filterType === 'brand' && product.brands.length > 0) {
+      product.brands.forEach(brandId => {
+        const key = String(brandId);
+        counts[key] = (counts[key] || 0) + 1;
+      });
+    }
+  });
+
+  return counts;
+};
 
   const availabilityCounts = getFilterCounts('availability');
   const categoryCounts = getFilterCounts('category');
@@ -377,8 +485,14 @@ const ShopPage: React.FC<ShopPageProps> = ({
   if (loading) return <p className="text-center text-white py-20">A carregar produtos...</p>;
   if (error) return <p className="text-center text-red-500 py-20">Erro ao carregar produtos: {error.message}</p>;
 
+
   return (
     <>
+    
+
+    {/*<pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', color: 'red' }}>
+        {JSON.stringify(currentProducts[0]?.displayPrice, null, 2)}
+      </pre>*/}
       {/* Breadcrumb */}
       <div className="py-4 px-4">
         <div className="max-w-7xl mx-auto">
@@ -858,6 +972,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
               'grid-cols-1'
             }`}>
               {currentProducts.map((product) => (
+                
                 <div key={product.id} className="relative group bg-gray-800 rounded-lg overflow-hidden shadow-lg transform transition-transform duration-300 hover:scale-105">
                   <div
                     className="relative overflow-hidden cursor-pointer"
@@ -865,6 +980,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                     onMouseLeave={() => setHoveredProduct(null)}
                     onClick={() => onProductClick(product)}
                   >
+                    
                     {/* Contêiner para garantir proporção e alinhar as imagens */}
                     <div className="relative w-full h-48">
                       {/* Imagem do Produto Principal */}
@@ -886,7 +1002,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                       )}
                     </div>
 
-                    {product.stock_quantity === 0 && product.stock_ginasio === 0 && (
+                    {product.isOutOfStock && (
                       <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
                         Esgotado
                       </div>
@@ -894,22 +1010,25 @@ const ShopPage: React.FC<ShopPageProps> = ({
 
                     {/* Overlay de Ações (aparece no hover) */}
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      {/* Existing Buttons */}
+                        
                       <button
-                        onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
                         className="p-3 bg-gray-700 text-white rounded-full hover:bg-orange-500 hover:text-white transition-colors duration-200"
-                        aria-label="Adicionar ao carrinho"
-                        disabled={product.stock_quantity === 0}
+                        aria-label="Add to cart"
+                        onClick={(e) => handleAddToCart(e, product)}
+                        disabled={product.isOutOfStock}
                       >
                         <ShoppingCart className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={(e) => toggleFavorite(product.id, e)}
-                        className="p-3 bg-gray-700 text-white rounded-full hover:bg-orange-500 hover:text-white transition-colors duration-200"
-                        aria-label="Adicionar à lista de desejos"
+                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                        aria-label="Toggle favorite"
+                        onClick={(e) => toggleFavorite(product.displayVariantId, e)}
                       >
-                        <Heart className={`w-5 h-5 transition-colors ${
-                            checkIfFavorite(product.id) ? 'text-red-500 fill-current' : 'text-gray-200'
-                        }`} 
+                        <Heart
+                          lassName={`w-4 h-4 transition-colors ${
+                            checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
+                          }`}
                         />
                       </button>
                       <button
@@ -918,7 +1037,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         aria-label="Visualização rápida"
                       >
                         <Eye className="w-5 h-5" />
-                      </button>
+                      </button> 
                     </div>
                   </div>
 
@@ -932,11 +1051,19 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         <p className="text-xs text-gray-400 mb-2">{product.brand_name}</p> 
                     )}
                     <div className="flex items-baseline mb-2">
-                      <span className="text-xl font-bold text-orange-500 mr-2">€{product.price.toFixed(2)}</span>
-                      {product.original_price && product.original_price > product.price && (
-                          <span className="text-gray-500 line-through">€{product.original_price.toFixed(2)}</span>
-                      )}
-                    </div>
+                    {/* Este span mostra o preço atual ou o preço da variante mais barata */}
+                    <span className="text-xl font-bold text-orange-500 mr-2">
+                      €{Number(product.displayPrice).toFixed(2)}
+                    </span>
+
+                    {/* Esta condição verifica se há um preço original e se ele é maior que o preço atual */}
+                    {product.original_price && Number(product.original_price) > product.displayPrice && (
+                      /* Este span mostra o preço original, riscado, e com estilo mais discreto */
+                      <span className="text-gray-500 line-through">
+                        €{Number(product.original_price).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
                     {product.rating !== undefined && (
                       <div className="flex items-center text-yellow-500">
                         {Array.from({ length: 5 }, (_, i) => (

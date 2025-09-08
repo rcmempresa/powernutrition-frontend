@@ -18,7 +18,7 @@ import Footer from '../components/FooterPage';
 interface CheckoutPageProps {
   items: Array<{
     id: string;
-    name: string;
+    product_name: string;
     price: number;
     quantity: number;
     image_url: string;
@@ -722,7 +722,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                     <div className="relative">
                       <img
                         src={item.image_url}
-                        alt={item.name}
+                        alt={item.product_name}
                         className="w-16 h-16 object-cover rounded-lg"
                       />
                       <div className="absolute -top-2 -right-2 bg-gray-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -730,7 +730,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                       </div>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-800">{item.name}</h4>
+                      <h4 className="font-medium text-gray-800">{item.product_name}</h4>
                     </div>
                     <div className="text-lg font-bold text-gray-800">
                       €{(item.price * item.quantity).toFixed(2)}

@@ -1,18 +1,12 @@
+// src/pages/FavoriteProductsPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  HeartCrack, 
-  Loader2, 
-  XCircle, 
-  ShoppingCart, 
-  Eye, 
-  Twitter, 
-  Instagram, 
-  Facebook, 
-  MapPin, 
-  User, 
-  Mail 
+import {
+  HeartCrack,
+  Loader2,
+  XCircle,
+  Eye
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
@@ -20,70 +14,49 @@ import toast from 'react-hot-toast';
 import { useFavorites } from '../hooks/useFavorites';
 import Footer from '../components/FooterPage';
 
-
-// Tipagem básica para um produto favorito, tal como usado no componente (após processamento)
-interface FavoriteProduct {
-  id: number;
-  name: string;
+// Tipagem para a resposta bruta da API
+interface RawFavoriteProductApiResponse {
+  product_id: number;
+  variant_id: number;
+  product_name: string;
   description: string;
-  price: number; 
-  stock_quantity: number;
-  sku: string;
   image_url: string;
-  category_id: number;
-  category_name?: string;
-  brand?: string;
+  original_price?: string | number;
+  preco: string | number; // ✨ Ajustado para o nome da coluna no backend
   weight_unit?: string;
   weight_value?: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  flavor_id?: number;
+  brand_name?: string;
+  category_name?: string;
+  favorited_at: string;
   flavor_name?: string;
-  original_price?: number; 
-  stock_ginasio?: number;
-  rating?: number;
-  reviewcount?: number;
-  favorited_at: string; 
 }
 
-// Tipagem para a resposta bruta da API (onde price pode vir como string)
-interface RawFavoriteProductApiResponse {
-  id: number;
+// Tipagem para o estado processado no frontend
+interface FavoriteProduct {
+  product_id: number;
+  variant_id: number;
   name: string;
   description: string;
-  price: string | number; 
-  stock_quantity: number;
-  sku: string;
   image_url: string;
-  category_id: number;
-  category_name?: string;
-  brand?: string;
+  original_price?: number;
+  preco: number; // ✨ Ajustado para o nome da propriedade processada
   weight_unit?: string;
   weight_value?: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  flavor_id?: number;
-  flavor_name?: string;
-  original_price?: string | number; 
-  stock_ginasio?: number;
-  rating?: number;
-  reviewcount?: number;
+  brand_name?: string;
+  category_name?: string;
   favorited_at: string;
+  flavor_name?: string;
 }
 
 const FavoriteProductsPage: React.FC = () => {
   const navigate = useNavigate();
   const { getAuthToken, isAuthenticated, loadingAuth } = useAuth();
-  const { favoriteProductIds, refreshFavorites, loadingFavorites: loadingFavoritesHook } = useFavorites(); 
+  const { refreshFavorites, loadingFavorites: loadingFavoritesHook } = useFavorites();
 
-  const [allFetchedProductsDetails, setAllFetchedProductsDetails] = useState<FavoriteProduct[]>([]);
-  const [displayedFavoriteProducts, setDisplayedFavoriteProducts] = useState<FavoriteProduct[]>([]);
-  const [loadingLocal, setLoadingLocal] = useState<boolean>(true); 
+  const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
+  const [loadingLocal, setLoadingLocal] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Variantes de animação para Framer Motion
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
@@ -98,24 +71,21 @@ const FavoriteProductsPage: React.FC = () => {
     setLoadingLocal(true);
     setError(null);
 
-    if (loadingAuth || loadingFavoritesHook) { 
+    if (loadingAuth || loadingFavoritesHook) {
       setLoadingLocal(true);
       return;
     }
-    
-    // A verificação de autenticação agora será feita na lógica de renderização
-    // Apenas fetcha se estiver autenticado
+
     if (!isAuthenticated) {
-        setLoadingLocal(false);
-        return;
+      setLoadingLocal(false);
+      return;
     }
 
     const token = getAuthToken();
     if (!token) {
-        // Isso não deve acontecer se isAuthenticated for true, mas é um bom fallback
-        setError('Token de autenticação não encontrado. Por favor, faça login.');
-        setLoadingLocal(false);
-        return;
+      setError('Token de autenticação não encontrado. Por favor, faça login.');
+      setLoadingLocal(false);
+      return;
     }
 
     try {
@@ -125,16 +95,28 @@ const FavoriteProductsPage: React.FC = () => {
         },
       });
 
-      const processedFavorites: FavoriteProduct[] = response.data.map(product => ({
-        ...product,
-        price: parseFloat(product.price as string), 
-        original_price: product.original_price ? parseFloat(product.original_price as string) : undefined,
+      const processedFavorites: FavoriteProduct[] = response.data.map(item => ({
+        product_id: item.product_id,
+        variant_id: item.variant_id,
+        name: item.product_name, // Nome do produto
+        description: item.description,
+        image_url: item.image_url,
+        // ✨ Processa o preço da variante e o preço original, se existirem
+        preco: parseFloat(item.preco as string),
+        original_price: item.original_price ? parseFloat(item.original_price as string) : undefined,
+        weight_unit: item.weight_unit,
+        weight_value: item.weight_value,
+        brand_name: item.brand_name,
+        category_name: item.category_name,
+        favorited_at: item.favorited_at,
+        flavor_name: item.flavor_name,
       }));
 
-      setAllFetchedProductsDetails(processedFavorites);
+      setFavoriteProducts(processedFavorites);
     } catch (err: any) {
       console.error('Erro ao buscar produtos favoritos:', err);
       setError(err.response?.data?.message || 'Erro ao carregar os seus produtos favoritos.');
+      setFavoriteProducts([]);
     } finally {
       setLoadingLocal(false);
     }
@@ -144,14 +126,8 @@ const FavoriteProductsPage: React.FC = () => {
     fetchProductsDetails();
   }, [fetchProductsDetails]);
 
-  useEffect(() => {
-    setDisplayedFavoriteProducts(
-      allFetchedProductsDetails.filter(product => favoriteProductIds.has(product.id))
-    );
-  }, [allFetchedProductsDetails, favoriteProductIds]);
-
-  const handleRemoveFavorite = useCallback(async (productId: number) => {
-    let removingToastId: string | undefined; 
+  const handleRemoveFavorite = useCallback(async (variantId: number) => {
+    let removingToastId: string | undefined;
     try {
       const token = getAuthToken();
       if (!token) {
@@ -159,19 +135,20 @@ const FavoriteProductsPage: React.FC = () => {
         return;
       }
 
-      removingToastId = toast.loading('A remover dos favoritos...'); 
+      removingToastId = toast.loading('A remover dos favoritos...');
 
-      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/remove/${productId}`, {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/favorites/remove/${variantId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       toast.success('Produto removido dos favoritos!', { id: removingToastId });
-      refreshFavorites(); 
+      setFavoriteProducts(prev => prev.filter(product => product.variant_id !== variantId));
+      refreshFavorites();
     } catch (err: any) {
       console.error('Erro ao remover favorito:', err);
-      if (removingToastId) { 
+      if (removingToastId) {
         toast.error(err.response?.data?.message || 'Erro ao remover produto dos favoritos.', { id: removingToastId });
       } else {
         toast.error(err.response?.data?.message || 'Erro ao remover produto dos favoritos.');
@@ -179,7 +156,6 @@ const FavoriteProductsPage: React.FC = () => {
     }
   }, [getAuthToken, refreshFavorites]);
 
-  // Novo layout para usuário não autenticado
   if (!loadingAuth && !isAuthenticated) {
     return (
       <>
@@ -191,7 +167,7 @@ const FavoriteProductsPage: React.FC = () => {
           <p className="text-lg text-gray-600 mb-6">
             Para ver e gerir os seus produtos favoritos, por favor, faça login ou crie uma conta.
           </p>
-          <motion.button 
+          <motion.button
             onClick={() => navigate('/login')}
             className="w-full sm:w-auto px-8 py-4 bg-orange-500 text-white font-semibold rounded-lg shadow-lg hover:bg-orange-600 transition-all duration-300 transform hover:scale-105"
             whileHover={{ scale: 1.05 }}
@@ -205,8 +181,7 @@ const FavoriteProductsPage: React.FC = () => {
     );
   }
 
-  // Layout de carregamento (mantido)
-  if (loadingLocal || loadingFavoritesHook) { 
+  if (loadingLocal || loadingFavoritesHook) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] bg-gray-50 rounded-lg shadow-xl animate-pulse">
         <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
@@ -214,8 +189,7 @@ const FavoriteProductsPage: React.FC = () => {
       </div>
     );
   }
-  
-  // Layout de erro (após a tentativa de fetch)
+
   if (error) {
     return (
       <>
@@ -228,7 +202,6 @@ const FavoriteProductsPage: React.FC = () => {
     );
   }
 
-  // Layout principal (lista de produtos favoritos)
   return (
     <div className="flex flex-col min-h-screen">
       <motion.div
@@ -243,11 +216,11 @@ const FavoriteProductsPage: React.FC = () => {
         </h1>
         <p className="text-lg text-gray-700 mb-8">Aqui está a lista de produtos que marcou como favoritos.</p>
 
-        {displayedFavoriteProducts.length === 0 ? (
+        {favoriteProducts.length === 0 ? (
           <div className="text-center p-8 bg-gray-50 rounded-lg shadow-md border border-gray-200">
             <p className="text-xl text-gray-700 font-semibold mb-4">Ainda não tem produtos favoritos.</p>
             <p className="text-gray-600 mb-6">Comece a explorar a nossa loja e adicione alguns produtos!</p>
-            <motion.button 
+            <motion.button
               onClick={() => navigate('/produtos')}
               className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg shadow-md hover:bg-orange-600 transition-all duration-300 transform hover:scale-105"
               whileHover={{ scale: 1.05 }}
@@ -259,9 +232,9 @@ const FavoriteProductsPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatePresence>
-              {displayedFavoriteProducts.map((product, index) => (
+              {favoriteProducts.map((product, index) => (
                 <motion.div
-                  key={product.id}
+                  key={product.variant_id}
                   className="bg-gray-50 rounded-lg shadow-lg border border-gray-200 flex flex-col overflow-hidden transform hover:scale-105 transition-transform duration-200 ease-in-out"
                   variants={itemVariants}
                   initial="hidden"
@@ -269,14 +242,14 @@ const FavoriteProductsPage: React.FC = () => {
                   exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
                   custom={index}
                 >
-                  <Link to={`/produto/${product.id}`} className="block relative h-48 overflow-hidden rounded-t-lg">
+                  <Link to={`/produto/${product.product_id}`} className="block relative h-48 overflow-hidden rounded-t-lg">
                     <img
                       src={product.image_url || 'https://placehold.co/400x300/FDBA74/FFFFFF?text=Sem+Imagem'}
                       alt={product.name}
                       className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
                       onError={(e: any) => { e.target.onerror = null; e.target.src="https://placehold.co/400x300/FDBA74/FFFFFF?text=Imagem+Indisponível"; }}
                     />
-                    {product.original_price && product.price < product.original_price && (
+                    {product.original_price && product.preco < product.original_price && (
                       <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
                         PROMOÇÃO
                       </span>
@@ -284,30 +257,30 @@ const FavoriteProductsPage: React.FC = () => {
                   </Link>
                   <div className="p-4 flex flex-col flex-grow">
                     <h3 className="text-lg font-bold text-gray-900 mb-2 truncate">
-                      <Link to={`/produto/${product.id}`} className="hover:text-orange-600 transition-colors">
+                      <Link to={`/produto/${product.product_id}`} className="hover:text-orange-600 transition-colors">
                         {product.name}
                       </Link>
                     </h3>
-                    {product.brand && <p className="text-sm text-gray-600 mb-1">{product.brand}</p>}
+                    {product.brand_name && <p className="text-sm text-gray-600 mb-1">{product.brand_name}</p>}
                     {product.flavor_name && <p className="text-sm text-gray-600 mb-1">Sabor: {product.flavor_name}</p>}
                     <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
-                    
+
                     <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-200">
                       <div>
-                        {product.original_price && product.price < product.original_price ? (
+                        {product.original_price && product.preco < product.original_price ? (
                           <>
-                            <span className="text-xl font-bold text-orange-600 mr-2">€{product.price.toFixed(2)}</span>
+                            <span className="text-xl font-bold text-orange-600 mr-2">€{product.preco.toFixed(2)}</span>
                             <span className="text-gray-500 line-through text-sm">€{product.original_price.toFixed(2)}</span>
                           </>
                         ) : (
-                          <span className="text-xl font-bold text-gray-900">€{product.price.toFixed(2)}</span>
+                          <span className="text-xl font-bold text-gray-900">€{product.preco.toFixed(2)}</span>
                         )}
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between mt-4">
                       <motion.button
-                        onClick={() => navigate(`/produto/${product.id}`)}
+                        onClick={() => navigate(`/produto/${product.product_id}`)}
                         className="flex-1 mr-2 px-4 py-2 bg-orange-500 text-white rounded-lg shadow-md hover:bg-orange-600 transition-colors duration-200 flex items-center justify-center text-sm"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -315,7 +288,7 @@ const FavoriteProductsPage: React.FC = () => {
                         <Eye className="w-4 h-4 mr-2" /> Ver Detalhes
                       </motion.button>
                       <motion.button
-                        onClick={() => handleRemoveFavorite(product.id)}
+                        onClick={() => handleRemoveFavorite(product.variant_id)}
                         className="px-3 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition-colors duration-200 flex items-center justify-center text-sm"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}

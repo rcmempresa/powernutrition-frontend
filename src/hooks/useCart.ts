@@ -2,9 +2,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
+// A tipagem foi atualizada para usar variant_id, que é o identificador único do item no carrinho
 interface CartItem {
   id: string; // Este é o ID do ITEM do carrinho na sua DB (cart_item_id)
-  product_id: number; // Este é o ID do PRODUTO na sua DB
+  variant_id: number; // ✨ Este é o ID da variante na sua DB
   name: string;
   price: number;
   quantity: number;
@@ -45,37 +46,32 @@ export const useCart = (getToken: () => string | null) => {
       });
 
       if (!response.ok) {
-        // Tenta parsear o erro apenas se houver conteúdo
-        const errorText = await response.text(); // Lê como texto primeiro
+        const errorText = await response.text();
         let errorMessage = `Erro da API: ${response.statusText}`;
         try {
-          const errorData = JSON.parse(errorText); // Tenta parsear JSON
+          const errorData = JSON.parse(errorText);
           errorMessage = errorData.message || errorMessage;
           console.error(`Erro da API para ${endpoint}:`, errorData);
         } catch (parseError) {
-          // Se não for JSON, usa o texto bruto ou a mensagem padrão
           console.error(`Erro da API para ${endpoint} (não JSON):`, errorText);
-          errorMessage = errorText || errorMessage; // Usa o texto se houver
+          errorMessage = errorText || errorMessage;
         }
         throw new Error(errorMessage);
       }
 
-      // --- Lógica de parsing de sucesso mais robusta ---
-      const responseText = await response.text(); // Leia o corpo como texto primeiro
+      const responseText = await response.text();
       const contentType = response.headers.get('content-type');
       const hasJsonContent = contentType && contentType.includes('application/json');
-      const hasBody = responseText.length > 0; // Verifica se o corpo não está vazio
+      const hasBody = responseText.length > 0;
 
       if (response.status !== 204 && hasBody && hasJsonContent) {
         try {
-          return JSON.parse(responseText); // Tenta parsear o texto lido como JSON
+          return JSON.parse(responseText);
         } catch (jsonParseError) {
-          // Captura erros de parsing JSON para respostas OK que deveriam ser JSON
           console.error(`Erro ao parsear JSON da API para ${endpoint}:`, jsonParseError, 'Texto recebido:', responseText);
           throw new Error('Formato de resposta inesperado do servidor.');
         }
       }
-      // Retorna null para 204 No Content, ou se não houver cabeçalho JSON, ou se o corpo estiver vazio
       return null;
 
     } catch (err: any) {
@@ -111,60 +107,19 @@ export const useCart = (getToken: () => string | null) => {
     fetchCart();
   }, [fetchCart]);
 
-  // --- MODIFICAÇÃO CHAVE: Remover item passando apenas product_id no body ---
-  const removeItem = useCallback(async (cartItemId: string) => {
+  // A função addItem foi corrigida para usar o ID da variante
+  const addItem = useCallback(async (product: {
+    variant_id: number; // ✨ A função agora recebe explicitamente o variant_id
+    name: string;
+    price: number;
+    image_url: string;
+    weight_value?: string;
+    flavor?: string;
+  }) => {
     try {
-      // Encontra o item para obter o product_id
-      const itemToRemove = items.find(item => item.id === cartItemId);
-
-      if (!itemToRemove) {
-        console.error(`Item com ID ${cartItemId} não encontrado no carrinho local para remoção.`);
-        toast.error('Item não encontrado no carrinho.');
-        return;
-      }
-
-     
-      // Chama a API com o product_id no corpo da requisição DELETE
-       await callApi(`/cart/remover/${itemToRemove.product_id}`, 'DELETE', {
-        product_id: itemToRemove.product_id,
-      }, false);
-
-      toast.success('Item removido com sucesso!');
-      await fetchCart();
-    } catch (e) {
-      console.error("Erro ao remover item do carrinho:", e);
-      toast.error('Erro ao remover item do carrinho.');
-    }
-  }, [callApi, fetchCart, items]); // Adicionado 'items' nas dependências
-
-  const updateQuantity = useCallback(async (cartItemId: string, newQuantity: number) => {
-    const itemToUpdate = items.find(item => item.id === cartItemId);
-    if (!itemToUpdate) {
-        console.error(`Item com ID ${cartItemId} não encontrado no carrinho local.`);
-        return;
-    }
-
-    if (newQuantity <= 0) {
-        await removeItem(cartItemId);
-        return;
-    }
-
-    try {
-        await callApi('/cart/atualizar', 'PATCH', {
-            productId: itemToUpdate.product_id,
-            quantity: newQuantity,
-        }, false);
-        toast.success('Quantidade atualizada!');
-        await fetchCart();
-    } catch (e) {
-        console.error("Erro ao atualizar quantidade do item:", e);
-    }
-  }, [callApi, removeItem, items, fetchCart]);
-
-  const addItem = useCallback(async (product: Omit<CartItem, 'quantity' | 'id' | 'product_id'> & { id: number; name: string; price: number; image_url: string; }) => {
-    try {
+      console.log("➡️ addItem está a receber:", product);
       await callApi('/cart/adicionar', 'POST', {
-        product_id: product.id,
+        variant_id: product.variant_id, // ✨ Envia o variant_id para a API
         quantity: 1,
       });
       toast.success('Produto adicionado ao carrinho!');
@@ -174,6 +129,47 @@ export const useCart = (getToken: () => string | null) => {
       console.error("Erro ao adicionar item ao carrinho:", e);
     }
   }, [callApi, fetchCart]);
+
+  // A função removeItem foi corrigida para usar o variant_id
+  const removeItem = useCallback(async (cartItemId: string) => {
+    try {
+      const itemToRemove = items.find(item => item.id === cartItemId);
+      if (!itemToRemove) {
+        console.error(`Item com ID ${cartItemId} não encontrado no carrinho local para remoção.`);
+        toast.error('Item não encontrado no carrinho.');
+        return;
+      }
+      await callApi(`/cart/remover/${itemToRemove.variant_id}`, 'DELETE', undefined, false);
+      toast.success('Item removido com sucesso!');
+      await fetchCart();
+    } catch (e) {
+      console.error("Erro ao remover item do carrinho:", e);
+      toast.error('Erro ao remover item do carrinho.');
+    }
+  }, [callApi, fetchCart, items]);
+
+  // A função updateQuantity foi corrigida para usar o variant_id
+  const updateQuantity = useCallback(async (cartItemId: string, newQuantity: number) => {
+    const itemToUpdate = items.find(item => item.id === cartItemId);
+    if (!itemToUpdate) {
+      console.error(`Item com ID ${cartItemId} não encontrado no carrinho local.`);
+      return;
+    }
+    if (newQuantity <= 0) {
+      await removeItem(cartItemId);
+      return;
+    }
+    try {
+      await callApi('/cart/atualizar', 'PATCH', {
+        variantId: itemToUpdate.variant_id, // ✨ Usa o variant_id para atualizar a quantidade
+        quantity: newQuantity,
+      }, false);
+      toast.success('Quantidade atualizada!');
+      await fetchCart();
+    } catch (e) {
+      console.error("Erro ao atualizar quantidade do item:", e);
+    }
+  }, [callApi, removeItem, items, fetchCart]);
 
   const openCart = useCallback(() => {
     setIsOpen(true);
