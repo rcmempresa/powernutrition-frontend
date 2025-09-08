@@ -164,12 +164,31 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
     fetchProductData();
     fetchRandomProducts();
   }, [productId]);
-
-  // ✨ FUNÇÃO DE SELEÇÃO CORRIGIDA E SIMPLIFICADA ✨
-  const handleSelectVariant = useCallback((variant: Variant) => {
-    setSelectedVariant(variant);
-    setMainImageUrl(variant.image_url || product?.image_url || null);
-  }, [product]);
+  
+  // 💡 Funções de seleção corrigidas
+  const handleSelectFlavor = useCallback((flavorId: number) => {
+    if (product) {
+      const variantsWithSameFlavor = product.variants.filter(v => v.sabor_id === flavorId);
+      if (variantsWithSameFlavor.length > 0) {
+        // Encontra a variante que corresponde ao sabor e ao peso atual.
+        const newVariant = variantsWithSameFlavor.find(v => v.weight_value === selectedVariant?.weight_value) || variantsWithSameFlavor[0];
+        setSelectedVariant(newVariant);
+        setMainImageUrl(newVariant.image_url || product.image_url || null);
+      }
+    }
+  }, [product, selectedVariant]);
+  
+  const handleSelectWeight = useCallback((weightValue: string) => {
+    if (product) {
+      const newVariant = product.variants.find(v => 
+        v.weight_value === weightValue && v.sabor_id === selectedVariant?.sabor_id
+      );
+      if (newVariant) {
+        setSelectedVariant(newVariant);
+        setMainImageUrl(newVariant.image_url || product.image_url || null);
+      }
+    }
+  }, [product, selectedVariant]);
 
   const handleAddToCart = useCallback(() => {
     if (selectedVariant && product) {
@@ -207,7 +226,6 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
     } catch (error) {
       console.error('Erro ao decodificar o token:', error);
       toast.error('Sessão inválida. Por favor, faça login novamente.');
-      navigate('/login');
       return;
     }
 
@@ -371,7 +389,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                   {allFlavors.map(variant => (
                     <button
                       key={variant.sabor_id}
-                      onClick={() => handleSelectVariant(variant)}
+                      onClick={() => handleSelectFlavor(variant.sabor_id as number)}
                       className={`px-3 md:px-4 py-2 border rounded text-sm md:text-base ${
                         selectedVariant.sabor_id === variant.sabor_id
                           ? 'bg-gray-800 text-white border-gray-800'
@@ -395,7 +413,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                   {allWeights.map(variant => (
                     <button
                       key={variant.weight_value}
-                      onClick={() => handleSelectVariant(variant)}
+                      onClick={() => handleSelectWeight(variant.weight_value)}
                       className={`px-3 md:px-4 py-2 border rounded text-sm md:text-base ${
                         selectedVariant.weight_value === variant.weight_value
                           ? 'bg-gray-800 text-white border-gray-800'
