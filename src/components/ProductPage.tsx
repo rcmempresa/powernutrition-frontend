@@ -113,30 +113,24 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
         const productResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${productId}`);
         const productData: Product = productResponse.data;
 
-        // 1. O seu API já traz as variantes, por isso basta usá-las diretamente
         const productWithVariants = { ...productData, variants: productData.variants || [] };
         setProduct(productWithVariants);
 
-        // 2. Definir a primeira variante como padrão
         if (productWithVariants.variants.length > 0) {
           const defaultVariant = productWithVariants.variants[0];
           setSelectedVariant(defaultVariant);
           
-          // 3. Buscar imagens
           const imagesResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/product_images/byProductId/${productId}`);
           const allImages = imagesResponse.data;
           const primaryImage = allImages.find((img: any) => img.is_primary);
           const secondary = allImages.filter((img: any) => !img.is_primary);
           setSecondaryImages(secondary);
           
-          // Usar a imagem da variante ou a imagem principal do produto
           setMainImageUrl(defaultVariant.image_url || primaryImage?.image_url || productData.image_url);
         } else {
-          // Se não houverem variantes, mostre a imagem principal do produto
           setMainImageUrl(productData.image_url);
         }
 
-        // 4. Buscar avaliações
         const reviewsResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/reviews/byProductId/${productId}`);
         const reviewsData = reviewsResponse.data;
         setReviews(reviewsData);
@@ -171,21 +165,11 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
     fetchRandomProducts();
   }, [productId]);
 
-  // Handlers para selecionar variante (por sabor ou peso)
-  const handleSelectVariant = useCallback((flavorId?: number, weightValue?: string) => {
-    if (product) {
-      const newVariant = product.variants.find(v => 
-        (v.sabor_id === flavorId || (flavorId === undefined && !v.sabor_id)) && 
-        v.weight_value === (weightValue || selectedVariant?.weight_value)
-      );
-
-      if (newVariant) {
-        setSelectedVariant(newVariant);
-        setMainImageUrl(newVariant.image_url || product.image_url);
-      }
-    }
-  }, [product, selectedVariant, mainImageUrl]);
-
+  // ✨ FUNÇÃO DE SELEÇÃO CORRIGIDA E SIMPLIFICADA ✨
+  const handleSelectVariant = useCallback((variant: Variant) => {
+    setSelectedVariant(variant);
+    setMainImageUrl(variant.image_url || product?.image_url || null);
+  }, [product]);
 
   const handleAddToCart = useCallback(() => {
     if (selectedVariant && product) {
@@ -202,7 +186,6 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
       toast.error('Por favor, selecione uma variante do produto.');
     }
   }, [onAddToCart, selectedVariant, product, mainImageUrl]);
-
 
   const handleSubmitReview = async () => {
     const token = localStorage.getItem('authToken'); 
@@ -290,11 +273,9 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
     );
   }
 
-  // Obter os valores únicos de sabor e peso das variantes
   const allFlavors = [...new Map(product.variants.map(v => [v.sabor_id, v])).values()];
   const allWeights = [...new Map(product.variants.map(v => [v.weight_value, v])).values()];
 
-  // Função auxiliar para formatar o peso
   const formatWeight = (grams: string, unit: string) => {
     if (unit === 'g' && Number(grams) >= 1000) {
       return `${(Number(grams) / 1000).toFixed(1)} kg`;
@@ -302,7 +283,6 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
     return `${grams} ${unit}`;
   };
 
-  // Função para calcular a percentagem de estrelas para o resumo
   const calculateStarPercentage = (starCount: number) => {
     const count = reviews.filter(r => r.rating === starCount).length;
     return reviews.length > 0 ? (count / reviews.length) * 100 : 0;
@@ -310,7 +290,6 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb */}
       <div className="bg-white py-4 px-4 border-b">
         <div className="max-w-7xl mx-auto">
           <nav className="text-sm text-gray-600" aria-label="Breadcrumb">
@@ -323,7 +302,6 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Product Images */}
           <div className="space-y-4">
             <div className="bg-white rounded-2xl p-8 border">
               {mainImageUrl ? (
@@ -359,7 +337,6 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
             )}
           </div>
 
-          {/* Product Details */}
           <div className="space-y-6">
             <div className="text-sm text-gray-600">
               Ref: {selectedVariant.sku}
@@ -387,14 +364,14 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
               Apenas {selectedVariant.quantidade_em_stock + selectedVariant.stock_ginasio} itens em stock!
             </div>
             
-            {allFlavors.length > 0 && (
+            {allFlavors.length > 1 && (
               <div className="space-y-2">
                 <div className="text-sm font-medium text-gray-800">Sabor: {selectedVariant.flavor_name || 'N/A'}</div>
                 <div className="flex flex-wrap gap-2">
                   {allFlavors.map(variant => (
                     <button
                       key={variant.sabor_id}
-                      onClick={() => handleSelectVariant(variant.sabor_id, selectedVariant.weight_value)}
+                      onClick={() => handleSelectVariant(variant)}
                       className={`px-3 md:px-4 py-2 border rounded text-sm md:text-base ${
                         selectedVariant.sabor_id === variant.sabor_id
                           ? 'bg-gray-800 text-white border-gray-800'
@@ -418,7 +395,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                   {allWeights.map(variant => (
                     <button
                       key={variant.weight_value}
-                      onClick={() => handleSelectVariant(selectedVariant.sabor_id, variant.weight_value)}
+                      onClick={() => handleSelectVariant(variant)}
                       className={`px-3 md:px-4 py-2 border rounded text-sm md:text-base ${
                         selectedVariant.weight_value === variant.weight_value
                           ? 'bg-gray-800 text-white border-gray-800'
