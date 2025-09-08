@@ -738,6 +738,31 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                 answer="Os resultados podem variar dependendo do produto, da sua condição de saúde individual e do seu estilo de vida. A consistência é fundamental. Consulte a descrição do produto para obter informações mais detalhadas."
               />
             </div>
+
+            <div className="relative p-6 rounded-2xl bg-blue-100 flex flex-col justify-end min-h-[300px] lg:min-h-[450px] overflow-hidden">
+        <img
+          src="/suplementos_1.jpg"
+          alt="Vitamins and supplements"
+          className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+          style={{ zIndex: 0 }}
+        />
+        <div className="absolute inset-0 bg-blue-400/20 rounded-2xl" style={{ zIndex: 1 }}></div>
+
+        <div className="relative z-10 p-6 bg-white rounded-lg shadow-xl text-center md:text-left">
+          <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">
+            Ainda Tem Questões?
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Sinta-se à vontade para nos fazer qualquer pergunta!
+          </p>
+          <a
+            href="/contacto"
+            className="inline-block bg-orange-500 text-white font-medium px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            CLIQUE PARA AJUDA
+          </a>
+        </div>
+      </div>
           </div>
         </div>
       </div>
