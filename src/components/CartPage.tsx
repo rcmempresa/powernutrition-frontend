@@ -8,7 +8,7 @@ import Footer from '../components/FooterPage';
 // ✨ INTERFACE CORRIGIDA ✨
 interface CartItem {
   id: string;
-  name: string; // ✨ Propriedade 'name' do produto, usada na ProductPage
+  product_name: string; // ✨ Propriedade 'name' do produto, usada na ProductPage
   price: number;
   quantity: number;
   image_url: string;
@@ -152,7 +152,7 @@ const CartPage: React.FC<CartPageProps> = ({ items, onUpdateQuantity, onRemoveIt
                         />
                         <div className="flex-1">
                           {/* ✨ ALTERAÇÃO: Nome e Sabor acima do preço */}
-                          <h3 className="font-medium text-gray-900">{item.name}</h3>
+                          <h3 className="font-medium text-gray-900">{item.product_name}</h3>
                           {item.flavor_name && (
                             <p className="text-sm text-gray-600">Sabor: {item.flavor_name}</p>
                           )}
