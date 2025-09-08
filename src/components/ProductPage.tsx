@@ -19,45 +19,37 @@ import {
   ArrowRight,
   StepForward
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion'; // 👈 Importar para animações
+import toast from 'react-hot-toast'; // 👈 Importar para notificações
 import { jwtDecode } from 'jwt-decode';
 import FAQItem from './FAQItem';
 import Footer from '../components/FooterPage';
-import axios from 'axios';
 
-// --- Interfaces Corrigidas e mais detalhadas para as Variantes ---
-interface Variant {
-  id: string; // O ID da variante
-  preco: string; // O preço da variante
-  quantidade_em_stock: number;
-  stock_ginasio: number;
-  weight_value: string;
-  weight_unit: string;
-  flavor_id?: string;
-  flavor_name?: string; // Nome do sabor associado
-  image_url?: string;
-}
-
-// --- Produto Principal com Variantes ---
+// --- Interface para o Produto ---
 interface Product {
   id: string;
   name: string;
-  description?: string;
-  original_price?: number;
-  variants: Variant[]; // O produto tem um array de variantes
+  price: number;
+  sku: string;
   rating: number; // Nota média
   reviewCount: number; // Contagem total
+  stock: number;
+  flavor_id: string;
+  image_url: string;
+  description?: string;
+  weight_value: string;
+  available_weight_values?: string[];
+  original_price?: number;
 }
 
 interface MyTokenPayload {
   id: number;
 }
 
-// --- Interface para as Avaliações ---
+// 👈 NOVA INTERFACE: Para as avaliações
 interface Review {
   id: string;
-  user_id: string;
+  user_id: string; // Usar o ID do utilizador (pode ser o nome para simplificar)
   rating: number;
   comment: string;
   created_at: string;
@@ -67,15 +59,14 @@ interface Review {
 // --- Interface para as Props do Componente ProductPage ---
 interface ProductPageProps {
   onBack: () => void;
-  // onAddToCart agora espera um objeto com os dados da VARIANTE
   onAddToCart: (product: {
-    variant_id: string;
+    id: string;
     name: string;
     price: number;
-    image_url: string;
+    image: string;
     weight_value?: string;
     flavor?: string;
-  }) => void;
+  }, quantity: number) => void;
 }
 
 // --- Componente Principal ProductPage ---
@@ -87,19 +78,16 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedWeightValue, setSelectedWeightValue] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [showDescription, setShowDescription] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [flavorName, setFlavorName] = useState<string | null>(null);
   const [randomProducts, setRandomProducts] = useState<Product[]>([]);
-  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
   const [secondaryImages, setSecondaryImages] = useState<any[]>([]);
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
 
-  // 💡 NOVOS ESTADOS PARA VARIANTE SELECIONADA
-  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
-  const [availableFlavors, setAvailableFlavors] = useState<any[]>([]);
-  const [availableWeights, setAvailableWeights] = useState<string[]>([]);
-
-  // --- Estados para Avaliações ---
+  // 👈 NOVOS ESTADOS PARA AVALIAÇÕES
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [userComment, setUserComment] = useState('');
@@ -107,15 +95,16 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
 
-  // --- Efeito para buscar Dados do Produto ---
+  // --- Efeito para buscar Dados do Produto, Imagens, Sabor e Avaliações ---
   useEffect(() => {
     const fetchProductData = async () => {
       setLoading(true);
       setError(null);
-      setProduct(null);
+      setFlavorName(null);
       setSecondaryImages([]);
       setReviews([]);
       setAverageRating(0);
+      setQuantity(1);
 
       if (!productId) {
         setLoading(false);
@@ -123,56 +112,54 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
       }
 
       try {
-        const productResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${productId}`);
-        const productData = productResponse.data;
+        // 1. Buscar dados do produto principal
+        const productResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${productId}`);
+        if (!productResponse.ok) {
+          throw new Error(`Erro HTTP ao buscar produto! Status: ${productResponse.status}`);
+        }
+        const productData: any = await productResponse.json();
+        setProduct(productData);
+        setSelectedWeightValue(productData.weight_value);
+        setMainImageUrl(productData.image_url);
 
-        // 1. Fetch de todas as variantes e imagens do produto
-        const variantsResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/variants/byProductId/${productId}`);
-        const variantsData = variantsResponse.data;
-
-        const imagesResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/product_images/byProductId/${productId}`);
-        const allImages = imagesResponse.data;
+        // 2. Buscar todas as imagens do produto
+        const imagesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/product_images/byProductId/${productId}`);
+        if (!imagesResponse.ok) {
+          throw new Error(`Erro HTTP ao buscar imagens! Status: ${imagesResponse.status}`);
+        }
+        const allImages = await imagesResponse.json();
         const primaryImage = allImages.find((img: any) => img.is_primary);
         const secondary = allImages.filter((img: any) => !img.is_primary);
+        
+        if (primaryImage && primaryImage.image_url !== productData.image_url) {
+          setProduct({...productData, image_url: primaryImage.image_url});
+          setMainImageUrl(primaryImage.image_url);
+        }
         setSecondaryImages(secondary);
 
-        // 2. Fetch dos nomes dos sabores para as variantes
-        const flavorIds = [...new Set(variantsData.map(v => v.flavor_id).filter(Boolean))];
-        const flavorsPromises = flavorIds.map(id => axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/flavors/listar/${id}`));
-        const flavorsResponses = await Promise.allSettled(flavorsPromises);
-        const flavorsMap = new Map();
-        flavorsResponses.forEach(res => {
-          if (res.status === 'fulfilled') {
-            flavorsMap.set(res.value.data.id, res.value.data.name);
+        // 3. Se houver flavor_id, buscar o nome do sabor
+        if (productData.flavor_id) {
+          const flavorResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/flavors/listar/${productData.flavor_id}`);
+          if (!flavorResponse.ok) {
+            console.warn(`Erro HTTP ao buscar sabor para ID ${productData.flavor_id}. Status: ${flavorResponse.status}`);
+            setFlavorName('Desconhecido');
+          } else {
+            const flavorData = await flavorResponse.json();
+            setFlavorName(flavorData.name);
           }
-        });
-
-        const fullVariants = variantsData.map(v => ({
-          ...v,
-          flavor_name: v.flavor_id ? flavorsMap.get(v.flavor_id) : 'Padrão'
-        }));
-
-        setProduct({
-          ...productData,
-          variants: fullVariants
-        });
-
-        // 3. Set a primeira variante como selecionada por padrão
-        if (fullVariants.length > 0) {
-          const defaultVariant = fullVariants[0];
-          setSelectedVariant(defaultVariant);
-          setMainImageUrl(defaultVariant.image_url || primaryImage?.image_url || productData.image_url);
         } else {
-            setMainImageUrl(primaryImage?.image_url || productData.image_url);
+          setFlavorName('N/A');
         }
 
-        // 4. Buscar avaliações
-        const reviewsResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/reviews/byProductId/${productId}`);
-        const reviewsData = reviewsResponse.data;
-        setReviews(reviewsData);
-        if (reviewsData.length > 0) {
-          const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
-          setAverageRating(totalRating / reviewsData.length);
+        // 4. 👈 NOVO: Buscar avaliações do produto
+        const reviewsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews/byProductId/${productId}`);
+        if (reviewsResponse.ok) {
+          const reviewsData = await reviewsResponse.json();
+          setReviews(reviewsData);
+          if (reviewsData.length > 0) {
+            const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
+            setAverageRating(totalRating / reviewsData.length);
+          }
         }
 
       } catch (err: any) {
@@ -185,20 +172,13 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
 
     const fetchRandomProducts = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
-        const allProducts = response.data;
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar`);
+        if (!response.ok) {
+          throw new Error('Erro ao buscar a lista de produtos.');
+        }
+        const allProducts: Product[] = await response.json();
 
-        // O seu código original aqui assumia que 'allProducts' já tinha variantes.
-        // Vamos buscar as variantes para os produtos aleatórios.
-        const productsWithVariants = await Promise.all(allProducts.map(async (p: any) => {
-          const variantsResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/variants/byProductId/${p.id}`);
-          return {
-            ...p,
-            variants: variantsResponse.data,
-          };
-        }));
-        
-        const otherProducts = productsWithVariants.filter(p => p.id !== productId);
+        const otherProducts = allProducts.filter(p => p.id !== productId);
         const shuffled = otherProducts.sort(() => 0.5 - Math.random());
         setRandomProducts(shuffled.slice(0, 4));
 
@@ -211,107 +191,77 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
     fetchRandomProducts();
   }, [productId]);
 
-  // 💡 Handlers para selecionar variante
-  const handleSelectFlavor = (flavorId: string) => {
-    if (product) {
-        const variant = product.variants.find(v => v.flavor_id === flavorId && v.weight_value === selectedVariant?.weight_value);
-        if (variant) {
-            setSelectedVariant(variant);
-            setMainImageUrl(variant.image_url || mainImageUrl);
-        }
+  // 👈 NOVA FUNÇÃO: Submeter avaliação
+ const handleSubmitReview = async () => {
+  const token = localStorage.getItem('authToken'); 
+
+  if (!token) {
+    toast.error('É necessário fazer login para submeter uma avaliação.');
+    navigate('/login');
+    return;
+  }
+
+  let userId;
+  try {
+    // Decodifica o token usando a sua nova interface personalizada
+    const decoded = jwtDecode<MyTokenPayload>(token);
+    userId = decoded.id; // 👈 Use 'decoded.id' para aceder ao valor
+
+    if (!userId) {
+      throw new Error('ID do utilizador não encontrado no token.');
     }
-  };
+  } catch (error) {
+    console.error('Erro ao decodificar o token:', error);
+    toast.error('Sessão inválida. Por favor, faça login novamente.');
+    navigate('/login');
+    return;
+  }
 
-  const handleSelectWeight = (weightValue: string) => {
-    if (product) {
-        const variant = product.variants.find(v => v.weight_value === weightValue && v.flavor_id === selectedVariant?.flavor_id);
-        if (variant) {
-            setSelectedVariant(variant);
-            setMainImageUrl(variant.image_url || mainImageUrl);
-        }
-    }
-  };
+  if (!userComment || userRating === 0) {
+    toast.error('Por favor, preencha a avaliação e a nota.');
+    return;
+  }
+  setIsSubmittingReview(true);
 
-  const handleAddToCart = useCallback(() => {
-    if (selectedVariant && product) {
-        const productData = {
-            variant_id: selectedVariant.id,
-            name: product.name,
-            price: Number(selectedVariant.preco),
-            image_url: selectedVariant.image_url || mainImageUrl || '',
-            weight_value: selectedVariant.weight_value,
-            flavor: selectedVariant.flavor_name,
-        };
-        onAddToCart(productData);
-    } else {
-        toast.error('Por favor, selecione uma variante do produto.');
-    }
-  }, [onAddToCart, selectedVariant, product, mainImageUrl]);
-
-
-  const handleSubmitReview = async () => {
-    // ... (Esta função não foi alterada)
-    const token = localStorage.getItem('authToken'); 
-
-    if (!token) {
-      toast.error('É necessário fazer login para submeter uma avaliação.');
-      navigate('/login');
-      return;
-    }
-
-    let userId;
-    try {
-      const decoded = jwtDecode<MyTokenPayload>(token);
-      userId = decoded.id; 
-
-      if (!userId) {
-        throw new Error('ID do utilizador não encontrado no token.');
-      }
-    } catch (error) {
-      console.error('Erro ao decodificar o token:', error);
-      toast.error('Sessão inválida. Por favor, faça login novamente.');
-      navigate('/login');
-      return;
-    }
-
-    if (!userComment || userRating === 0) {
-      toast.error('Por favor, preencha a avaliação e a nota.');
-      return;
-    }
-    setIsSubmittingReview(true);
-
-    try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/reviews/add`, {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
         product_id: productId,
         user_id: userId,
         rating: userRating,
         comment: userComment,
-      }, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      }),
+    });
 
-      if (response.status !== 201) {
-        throw new Error('Falha ao submeter a avaliação.');
-      }
+    if (!response.ok) {
+      throw new Error('Falha ao submeter a avaliação.');
+    }
 
-      toast.success('Avaliação submetida com sucesso!');
-      setUserComment('');
-      setUserRating(0);
-      setShowReviewForm(false);
-
-      const reviewsResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/reviews/byProductId/${productId}`);
-      const reviewsData = reviewsResponse.data;
+    toast.success('Avaliação submetida com sucesso!');
+    setUserComment('');
+    setUserRating(0);
+    setShowReviewForm(false);
+    // Re-fetch reviews para atualizar a lista
+    const reviewsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews/byProductId/${productId}`);
+    if (reviewsResponse.ok) {
+      const reviewsData = await reviewsResponse.json();
       setReviews(reviewsData);
       if (reviewsData.length > 0) {
         const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
         setAverageRating(totalRating / reviewsData.length);
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao submeter a avaliação.');
-    } finally {
-      setIsSubmittingReview(false);
     }
-  };
+  } catch (err) {
+    toast.error(err.message || 'Erro ao submeter a avaliação.');
+  } finally {
+    setIsSubmittingReview(false);
+  }
+};
 
   // --- Renderização Condicional de Estados de Carregamento/Erro/Ausência de Produto ---
   if (loading) {
@@ -330,17 +280,17 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
     );
   }
 
-  if (!product || !selectedVariant) {
+  if (!product) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-700 text-lg">Produto não encontrado ou sem variantes disponíveis.</p>
+        <p className="text-gray-700 text-lg">Produto não encontrado.</p>
       </div>
     );
   }
 
-  const allFlavors = [...new Set(product.variants.map(v => ({ id: v.flavor_id, name: v.flavor_name })))]
-    .filter(f => f.id);
-  const allWeights = [...new Set(product.variants.map(v => v.weight_value))];
+  const weightsToDisplay = (product.available_weight_values && product.available_weight_values.length > 0)
+    ? product.available_weight_values
+    : [product.weight_value];
 
   // Função auxiliar para formatar o peso
   const formatWeight = (grams) => {
@@ -351,7 +301,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
     }
   };
   
-  // Função para calcular a percentagem de estrelas para o resumo
+  // 👈 Função para calcular a percentagem de estrelas para o resumo
   const calculateStarPercentage = (starCount) => {
     const count = reviews.filter(r => r.rating === starCount).length;
     return reviews.length > 0 ? (count / reviews.length) * 100 : 0;
@@ -373,47 +323,47 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Product Images */}
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-8 border">
-              {mainImageUrl ? (
-                <img
-                  src={mainImageUrl}
-                  alt={product.name}
-                  className="w-full h-64 md:h-80 lg:h-96 object-contain rounded-lg"
-                />
-              ) : (
-                <div className="w-full h-64 md:h-80 lg:h-96 flex items-center justify-center bg-gray-200 text-gray-500 rounded-lg">
-                  Imagem indisponível
-                </div>
-              )}
-            </div>
-            {/* Galeria de Imagens Secundárias */}
-            {secondaryImages.length > 0 && (
-              <div className="flex space-x-2 overflow-x-auto p-2 -m-2">
-                {secondaryImages.map((image, index) => (
-                  <div
-                    key={index}
-                    className={`w-32 h-32 flex-shrink-0 cursor-pointer rounded-md overflow-hidden border-2 transition-all ${
-                      mainImageUrl === image.image_url ? 'border-orange-500' : 'border-transparent hover:border-gray-300'
-                    }`}
-                    onClick={() => setMainImageUrl(image.image_url)}
-                  >
-                    <img
-                      src={image.image_url}
-                      alt={`Imagem secundária ${index + 1}`}
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+<div className="space-y-4">
+  <div className="bg-white rounded-2xl p-8 border">
+    {mainImageUrl ? (
+      <img
+        src={mainImageUrl}
+        alt={product.name}
+        className="w-full h-64 md:h-80 lg:h-96 object-contain rounded-lg"
+      />
+    ) : (
+      <div className="w-full h-64 md:h-80 lg:h-96 flex items-center justify-center bg-gray-200 text-gray-500 rounded-lg">
+        Imagem indisponível
+      </div>
+    )}
+  </div>
+  
+  {/* Galeria de Imagens Secundárias */}
+  {secondaryImages.length > 0 && (
+    <div className="flex space-x-2 overflow-x-auto p-2 -m-2">
+      {secondaryImages.map((image, index) => (
+        <div
+          key={index}
+          className={`w-32 h-32 flex-shrink-0 cursor-pointer rounded-md overflow-hidden border-2 transition-all ${
+            mainImageUrl === image.image_url ? 'border-orange-500' : 'border-transparent hover:border-gray-300'
+          }`}
+          onClick={() => setMainImageUrl(image.image_url)}
+        >
+          <img
+            src={image.image_url}
+            alt={`Imagem secundária ${index + 1}`}
+            className="w-full h-full object-contain"
+          />
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
           {/* Product Details */}
           <div className="space-y-6">
             <div className="text-sm text-gray-600">
-              {/* O SKU deve vir da variante */}
-              Ref: {selectedVariant.sku}
+              Ref: {product.sku}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -431,67 +381,54 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
             <h1 className="text-3xl font-bold text-gray-800">{product.name}</h1>
 
             <div className="text-2xl md:text-3xl font-bold text-orange-500">
-              € {Number(selectedVariant.preco).toFixed(2)}
+              € {(Number(product.price) || 0).toFixed(2)}
             </div>
 
             <div className="text-sm text-gray-600">
-              Apenas {selectedVariant.quantidade_em_stock + selectedVariant.stock_ginasio} itens em stock!
+              Apenas {product.stock} itens em stock!
             </div>
-            
-            {/* 💡 Seletor de Sabor */}
-            {allFlavors.length > 0 && (
-                <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-800">Sabor: {selectedVariant.flavor_name}</div>
-                    <div className="flex flex-wrap gap-2">
-                        {allFlavors.map(flavor => (
-                            <button
-                                key={flavor.id}
-                                onClick={() => handleSelectFlavor(flavor.id)}
-                                className={`px-3 md:px-4 py-2 border rounded text-sm md:text-base ${
-                                    selectedVariant.flavor_id === flavor.id
-                                        ? 'bg-gray-800 text-white border-gray-800'
-                                        : 'bg-white text-gray-800 border-gray-300 hover:border-orange-500'
-                                }`}
-                                aria-label={`Selecionar sabor ${flavor.name}`}
-                            >
-                                {flavor.name}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
 
-            {/* 💡 Seletor de Peso */}
-            {allWeights.length > 1 && (
-                <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-800">
-                        Peso: {formatWeight(selectedVariant.weight_value)}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {allWeights.map(value => (
-                            <button
-                                key={value}
-                                onClick={() => handleSelectWeight(value)}
-                                className={`px-3 md:px-4 py-2 border rounded text-sm md:text-base ${
-                                    selectedVariant.weight_value === value
-                                        ? 'bg-gray-800 text-white border-gray-800'
-                                        : 'bg-white text-gray-800 border-gray-300 hover:border-orange-500'
-                                }`}
-                                aria-label={`Selecionar peso ${value} g`}
-                            >
-                                {formatWeight(value)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+            {/* Flavor */}
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-800">Sabor: {flavorName || 'Carregando...'}</div>
+            </div>
+
+            {/* Weight Value Selection */}
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-800">
+                Peso: {formatWeight(selectedWeightValue)}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {weightsToDisplay.map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => setSelectedWeightValue(value)}
+                    className={`px-3 md:px-4 py-2 border rounded text-sm md:text-base ${
+                      selectedWeightValue === value
+                        ? 'bg-gray-800 text-white border-gray-800'
+                        : 'bg-white text-gray-800 border-gray-300 hover:border-orange-500'
+                    }`}
+                    aria-label={`Selecionar peso ${value} g`}
+                  >
+                    {formatWeight(value)}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Botão Adicionar ao Carrinho */}
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
                   className="bg-orange-500 text-white px-6 md:px-8 py-3 rounded font-medium hover:bg-orange-600 transition-colors flex-1 text-sm md:text-base"
-                  onClick={handleAddToCart}
+                  onClick={() => onAddToCart({
+                    id: product.id,
+                    name: product.name,
+                    price: Number(product.price) || 0,
+                    image: product.image_url || '',
+                    weight_value: selectedWeightValue,
+                    flavor: flavorName || product.flavor_id
+                  }, quantity)}
                 >
                   ADICIONAR AO CARRINHO
                 </button>
@@ -502,7 +439,14 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
             <button
               className="w-full bg-orange-600 text-white py-3 rounded font-medium hover:bg-orange-700 transition-colors text-sm md:text-base"
               onClick={() => {
-                handleAddToCart();
+                onAddToCart({
+                  id: product.id,
+                  name: product.name,
+                  price: Number(product.price) || 0,
+                  image: product.image_url || '',
+                  weight_value: selectedWeightValue,
+                  flavor: flavorName || product.flavor_id
+                }, quantity);
                 navigate('/checkout');
               }}
             >
@@ -511,25 +455,27 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
 
             {/* Guaranteed Safe Checkout */}
             <div className="text-center">
-              <div className="text-sm text-gray-600 mb-2">Checkout seguro garantido</div>
-              <div className="flex justify-center flex-wrap gap-2">
-                <img
-                  src="/cartao.png" 
-                  alt="Visa"
-                  className="w-10 h-6 object-contain"
-                />
-                <img
-                  src="/mbway.png"
-                  alt="Mastercard"
-                  className="w-10 h-6 object-contain"
-                />
-                <img
-                  src="/multibanco.png"
-                  alt="PayPal"
-                  className="w-10 h-6 object-contain"
-                />
-              </div>
+            <div className="text-sm text-gray-600 mb-2">Checkout seguro garantido</div>
+            <div className="flex justify-center flex-wrap gap-2">
+              {/* Substitua estas linhas pelas tags <img> com os seus URLs */}
+              <img
+                src="/cartao.png" 
+                alt="Visa"
+                className="w-10 h-6 object-contain"
+              />
+              <img
+                src="/mbway.png"
+                alt="Mastercard"
+                className="w-10 h-6 object-contain"
+              />
+              <img
+                src="/multibanco.png"
+                alt="PayPal"
+                className="w-10 h-6 object-contain"
+              />
+              {/* Adicione mais imagens aqui, se necessário */}
             </div>
+          </div>
 
             {/* Product Description */}
             <div className="border-t pt-6">
@@ -580,6 +526,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
         {/* Customer Reviews */}
         <div className="mt-8 lg:mt-16">
           <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-8">Avaliações de Clientes</h2>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Review Summary */}
             <div className="bg-white rounded-lg p-6 border">
@@ -592,6 +539,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                 </div>
                 <div className="text-sm text-gray-600">{reviews.length} Avaliações</div>
               </div>
+
               <div className="mt-6 space-y-2">
                 {[5, 4, 3, 2, 1].map((stars) => (
                   <div key={stars} className="flex items-center space-x-2">
@@ -609,6 +557,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                   </div>
                 ))}
               </div>
+
               <button
                 onClick={() => setShowReviewForm(!showReviewForm)}
                 className="w-full mt-6 bg-gray-800 text-white py-2 rounded hover:bg-gray-700 transition-colors"
@@ -616,6 +565,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                 Escrever avaliação
               </button>
             </div>
+
             {/* Review Filters & List */}
             <div className="lg:col-span-2">
               <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4 mb-6">
@@ -633,6 +583,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                 </div>
               </div>
 
+              {/* 👈 NOVO: Formulário de avaliação */}
               <AnimatePresence>
                 {showReviewForm && (
                   <motion.div
@@ -644,6 +595,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                   >
                     <h3 className="text-lg font-bold mb-4">Escrever a sua Avaliação</h3>
                     <div className="space-y-4">
+                      {/* Seletor de Estrelas */}
                       <div className="flex items-center space-x-1">
                         <span className="text-sm font-medium">Sua nota:</span>
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -654,6 +606,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                           />
                         ))}
                       </div>
+                      {/* Campo de Comentário */}
                       <textarea
                         value={userComment}
                         onChange={(e) => setUserComment(e.target.value)}
@@ -680,84 +633,86 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                   </motion.div>
                 )}
               </AnimatePresence>
-              
+
+              {/* 👈 LISTA DINÂMICA DE AVALIAÇÕES */}
               {reviews.length > 0 ? (
-                reviews.map(review => (
-                  <div key={review.id} className="bg-white rounded-lg p-6 border mb-4">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-white font-bold">
-                        {review.username ? review.username.charAt(0).toUpperCase() : 'U'}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-800">
-                          {review.username}
-                        </div>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'text-orange-500 fill-current' : 'text-gray-300'}`} />
-                            ))}
-                          </div>
-                          <span className="text-sm text-gray-600">
-                            {new Date(review.created_at).toLocaleDateString('pt-PT')}
-                          </span>
-                        </div>
-                        <div className="mt-2 text-gray-800 font-medium">{review.comment.substring(0, 50)}...</div>
-                        <div className="mt-1 text-gray-600">{review.comment}</div>
-                        <div className="flex items-center space-x-4 mt-4">
-                          <button className="text-sm text-gray-600 hover:text-gray-800">👍 (0)</button>
-                          <button className="text-sm text-gray-600 hover:text-gray-800">Reportar</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="bg-white rounded-lg p-6 border text-center text-gray-500">
-                  Ainda não há avaliações para este produto. Seja o primeiro a escrever uma!
-                </div>
-              )}
+  reviews.map(review => (
+    <div key={review.id} className="bg-white rounded-lg p-6 border mb-4">
+      <div className="flex items-start space-x-4">
+        <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-white font-bold">
+          {/* Exibe a primeira letra do username */}
+          {review.username ? review.username.charAt(0).toUpperCase() : 'U'}
+        </div>
+        <div className="flex-1">
+          <div className="font-medium text-gray-800">
+            {/* Exibe o nome de utilizador */}
+            {review.username}
+          </div>
+          <div className="flex items-center space-x-2 mt-1">
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'text-orange-500 fill-current' : 'text-gray-300'}`} />
+              ))}
+            </div>
+            <span className="text-sm text-gray-600">
+              {/* Formata a data de submissão */}
+              {new Date(review.created_at).toLocaleDateString('pt-PT')}
+            </span>
+          </div>
+          <div className="mt-2 text-gray-800 font-medium">{review.comment.substring(0, 50)}...</div>
+          <div className="mt-1 text-gray-600">{review.comment}</div>
+          <div className="flex items-center space-x-4 mt-4">
+            <button className="text-sm text-gray-600 hover:text-gray-800">👍 (0)</button>
+            <button className="text-sm text-gray-600 hover:text-gray-800">Reportar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  ))
+) : (
+  <div className="bg-white rounded-lg p-6 border text-center text-gray-500">
+    Ainda não há avaliações para este produto. Seja o primeiro a escrever uma!
+  </div>
+)}
             </div>
           </div>
         </div>
-
         {/* Why Choose Us Section */}
         <div className="mt-8 lg:mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          <div className="flex justify-center relative bg-gradient-to-r from-orange-400 to-yellow-400 rounded-2xl p-4 overflow-hidden">
-            <video
-              controls={false}
-              loop
-              autoPlay
-              muted
-              className="w-full h-80 lg:h-[400px] object-cover rounded-lg shadow-lg"
-            >
-              <source src="https://res.cloudinary.com/dheovknbt/video/upload/v1756742429/Loja_kcg9uj.mp4" type="video/mp4" />
-              O teu navegador não suporta a tag de vídeo.
-            </video>
-          </div>
-          <div className="space-y-6">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Porquê Escolher-nos?</h2>
-            <p className="text-gray-600 leading-relaxed">
-              Acreditamos que se colhe o que se semeia — é por isso que os nossos produtos são feitos com os mais altos padrões de qualidade.
-            </p>
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Qualidade Premium</h3>
-                <p className="text-gray-600">
-                  Apresentamos as nossas vitaminas e suplementos de alta qualidade com um design limpo e profissional que constrói confiança.
-                </p>
-              </div>
-              <div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Confiança & Transparência</h3>
-                <p className="text-gray-600">
-                  Destacamos ingredientes, benefícios e certificações claramente, garantindo confiança em cada compra.
-                </p>
-              </div>
-            </div>
-          </div>
+    <div className="flex justify-center relative bg-gradient-to-r from-orange-400 to-yellow-400 rounded-2xl p-4 overflow-hidden">
+      <video
+        controls={false}
+        loop
+        autoPlay
+        muted
+        className="w-full h-80 lg:h-[400px] object-cover rounded-lg shadow-lg"
+      >
+        <source src="https://res.cloudinary.com/dheovknbt/video/upload/v1756742429/Loja_kcg9uj.mp4" type="video/mp4" />
+        O teu navegador não suporta a tag de vídeo.
+      </video>
+    </div>
+    <div className="space-y-6">
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Porquê Escolher-nos?</h2>
+      <p className="text-gray-600 leading-relaxed">
+        Acreditamos que se colhe o que se semeia — é por isso que os nossos produtos são feitos com os mais altos padrões de qualidade.
+      </p>
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Qualidade Premium</h3>
+          <p className="text-gray-600">
+            Apresentamos as nossas vitaminas e suplementos de alta qualidade com um design limpo e profissional que constrói confiança.
+          </p>
         </div>
-
-        {/* You May Also Like */}
+        <div>
+          <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Confiança & Transparência</h3>
+          <p className="text-gray-600">
+            Destacamos ingredientes, benefícios e certificações claramente, garantindo confiança em cada compra.
+          </p>
+        </div>
+      </div>
+    </div>
+</div>
+        {/* You May Also Like (agora dinâmico com a API e navegação) */}
         {randomProducts.length > 0 && (
           <div className="mt-8 lg:mt-16">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-800 text-center mb-8 lg:mb-12">Pode Também Gostar</h2>
@@ -771,9 +726,9 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                   onClick={() => navigate(`/produto/${relatedProduct.id}`)}
                 >
                   <div className="bg-white rounded-2xl p-8 mb-4 group-hover:shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-200">
-                    <div className="relative w-full pb-[100%]">
+                    <div className="relative w-full pb-[100%]"> {/* Esta div tem uma proporção de 1:1 (quadrada) */}
                       <img
-                        src={relatedProduct.variants[0]?.image_url}
+                        src={relatedProduct.image_url}
                         alt={relatedProduct.name}
                         className="absolute inset-0 w-full h-full object-contain rounded-lg mb-4"
                       />
@@ -789,7 +744,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
                   </div>
                   <h3 className="text-lg font-bold text-gray-800 mb-2">{relatedProduct.name}</h3>
                   <p className="text-orange-500 font-bold text-lg md:text-xl">
-                    € {Number(relatedProduct.variants[0]?.preco).toFixed(2)}
+                    € {(Number(relatedProduct.price) || 0).toFixed(2)}
                   </p>
                 </div>
               ))}
@@ -797,34 +752,62 @@ const ProductPage: React.FC<ProductPageProps> = ({ onBack, onAddToCart }) => {
           </div>
         )}
       </div>
+      {/* --- Secção de Perguntas Frequentes (FAQ) --- */}
+<div className="mt-8 lg:mt-16">
+  <div className="max-w-7xl mx-auto px-4"> {/* Adicione este container */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+      {/* Conteúdo da esquerda (Perguntas e Respostas) */}
+      <div className="space-y-6">
+        <div className="text-gray-600 uppercase font-semibold text-sm tracking-wide">
+          Perguntas Frequentes
+        </div>
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
+          Tem Alguma Questão?
+        </h2>
 
-      {/* Secção de Perguntas Frequentes (FAQ) */}
-      <div className="mt-8 lg:mt-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <div className="space-y-6">
-              <div className="text-gray-600 uppercase font-semibold text-sm tracking-wide">
-                Perguntas Frequentes
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
-                Tem Alguma Questão?
-              </h2>
-              <FAQItem
-                question="Como escolho as vitaminas certas para mim?"
-                answer="Recomendamos consultar um profissional de saúde para determinar quais vitaminas ou suplementos melhor se adaptam às suas necessidades."
-              />
-              <FAQItem
-                question="As suas vitaminas são certificadas e seguras para usar?"
-                answer="Sim, os nossos produtos são submetidos a rigorosos testes de qualidade e certificação para garantir que são seguros e eficazes. A nossa prioridade é a sua saúde e bem-estar."
-              />
-              <FAQItem
-                question="Quanto tempo leva para ver resultados?"
-                answer="Os resultados podem variar dependendo do produto, da sua condição de saúde individual e do seu estilo de vida. A consistência é fundamental. Consulte a descrição do produto para obter informações mais detalhadas."
-              />
-            </div>
-          </div>
+        {/* Item de Acordeão para cada pergunta */}
+        <FAQItem
+          question="Como escolho as vitaminas certas para mim?"
+          answer="Recomendamos consultar um profissional de saúde para determinar quais vitaminas ou suplementos melhor se adaptam às suas necessidades."
+        />
+        <FAQItem
+          question="As suas vitaminas são certificadas e seguras para usar?"
+          answer="Sim, os nossos produtos são submetidos a rigorosos testes de qualidade e certificação para garantir que são seguros e eficazes. A nossa prioridade é a sua saúde e bem-estar."
+        />
+        <FAQItem
+          question="Quanto tempo leva para ver resultados?"
+          answer="Os resultados podem variar dependendo do produto, da sua condição de saúde individual e do seu estilo de vida. A consistência é fundamental. Consulte a descrição do produto para obter informações mais detalhadas."
+        />
+      </div>
+
+      {/* Conteúdo da direita (Imagem e CTA) */}
+      <div className="relative p-6 rounded-2xl bg-blue-100 flex flex-col justify-end min-h-[300px] lg:min-h-[450px] overflow-hidden">
+        <img
+          src="/suplementos_1.jpg"
+          alt="Vitamins and supplements"
+          className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+          style={{ zIndex: 0 }}
+        />
+        <div className="absolute inset-0 bg-blue-400/20 rounded-2xl" style={{ zIndex: 1 }}></div>
+
+        <div className="relative z-10 p-6 bg-white rounded-lg shadow-xl text-center md:text-left">
+          <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">
+            Ainda Tem Questões?
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Sinta-se à vontade para nos fazer qualquer pergunta!
+          </p>
+          <a
+            href="/contacto"
+            className="inline-block bg-orange-500 text-white font-medium px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            CLIQUE PARA AJUDA
+          </a>
         </div>
       </div>
+    </div>
+  </div>
+</div>
       <Footer />
     </div>
   );
