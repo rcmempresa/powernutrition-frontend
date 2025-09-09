@@ -11,17 +11,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2, Save, XCircle, Plus, Minus } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../hooks/useAuth';
 
 // 💡 IMPORTANTE: Substitua este mock pelo seu hook de autenticação real.
 // O erro 401 que você recebeu é esperado, pois este 'fake-token' não é válido no seu backend.
 // A solução é integrar o seu sistema de autenticação aqui para obter um token real.
-const useAuth = () => ({
-  getAuthToken: () => {
-    console.warn("Utilizando um token de autenticação falso. Por favor, substitua-o pelo seu token real.");
-    // 👈 Substitua 'fake-token' pelo seu token de autenticação real, obtido após o login do usuário.
-    return 'fake-token';
-  }
-});
+
 
 // 💡 CORRIGIDO: URL do backend agora é uma constante para evitar o erro de 'import.meta'
 const VITE_BACKEND_URL = "https://powernutrition-backend-production-7883.up.railway.app"; // 👈 Mude esta URL para o seu backend
