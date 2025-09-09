@@ -12,11 +12,13 @@ import { motion } from 'framer-motion';
 import { Loader2, Save, XCircle, Plus, Minus } from 'lucide-react';
 import axios from 'axios';
 
-// 💡 CORRIGIDO: Substituindo o import externo por um mock para que o código seja autossuficiente.
+// 💡 IMPORTANTE: Substitua este mock pelo seu hook de autenticação real.
+// O erro 401 que você recebeu é esperado, pois este 'fake-token' não é válido no seu backend.
+// A solução é integrar o seu sistema de autenticação aqui para obter um token real.
 const useAuth = () => ({
   getAuthToken: () => {
-    // 💡 IMPORTANTE: Substitua 'fake-token' pelo token de autenticação real da sua aplicação.
     console.warn("Utilizando um token de autenticação falso. Por favor, substitua-o pelo seu token real.");
+    // 👈 Substitua 'fake-token' pelo seu token de autenticação real, obtido após o login do usuário.
     return 'fake-token';
   }
 });
