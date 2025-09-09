@@ -25,17 +25,20 @@ interface ProductFormData {
   brand_id: number;
   is_active: boolean;
   original_price?: number;
+  // 💡 NOVO: Adicionado rating e reviewcount
+  rating?: number;
+  reviewcount?: number;
 }
 
 interface VariantFormData {
   id?: number; // Para edição de variantes existentes
-  price: number;
-  stock_quantity: number;
+  preco: number; // 💡 NOVO: Preço agora é "preco"
+  quantidade_em_stock: number; // 💡 NOVO: Quantidade em stock agora é "quantidade_em_stock"
   stock_ginasio: number;
   sku: string;
   weight_unit: string;
   weight_value: number;
-  flavor_id?: number;
+  sabor_id?: number; // 💡 NOVO: Sabor agora é "sabor_id"
 }
 
 // Tipagem para as opções de categoria, sabor e marca
@@ -75,12 +78,14 @@ const ProductForm = () => {
     category_id: 0,
     brand_id: 0,
     is_active: true,
+    rating: 0,
+    reviewcount: 0,
   });
 
   const [variantsData, setVariantsData] = useState<VariantFormData[]>([
     {
-      price: 0,
-      stock_quantity: 0,
+      preco: 0,
+      quantidade_em_stock: 0,
       sku: '',
       weight_unit: 'g',
       weight_value: 0,
@@ -182,18 +187,20 @@ const ProductForm = () => {
         brand_id: product.brand_id,
         is_active: product.is_active,
         original_price: product.original_price ? Number(product.original_price) : undefined,
+        rating: product.rating,
+        reviewcount: product.reviewcount,
       });
 
       // 💡 NOVO: Preencher o array de variantes com os dados do backend
       const formattedVariants = variants.map(v => ({
         id: v.id,
-        price: Number(v.preco),
-        stock_quantity: v.quantidade_em_stock,
+        preco: Number(v.preco),
+        quantidade_em_stock: v.quantidade_em_stock,
         sku: v.sku,
         weight_unit: v.weight_unit,
         weight_value: Number(v.weight_value),
         stock_ginasio: v.stock_ginasio,
-        flavor_id: v.sabor_id || undefined,
+        sabor_id: v.sabor_id || undefined,
       }));
       setVariantsData(formattedVariants);
 
@@ -232,8 +239,8 @@ const ProductForm = () => {
   // 💡 NOVO: Funções para adicionar e remover variantes
   const addVariant = () => {
     setVariantsData([...variantsData, {
-      price: 0,
-      stock_quantity: 0,
+      preco: 0,
+      quantidade_em_stock: 0,
       sku: '',
       weight_unit: 'g',
       weight_value: 0,
@@ -304,7 +311,7 @@ const ProductForm = () => {
 
       // Validação das variantes
       for (const variant of variantsData) {
-        if (!variant.price || !variant.sku || (variant.stock_quantity <= 0 && variant.stock_ginasio <= 0)) {
+        if (!variant.preco || !variant.sku || (variant.quantidade_em_stock <= 0 && variant.stock_ginasio <= 0)) {
           setSubmitError('Por favor, preencha todos os campos obrigatórios para cada variante (Preço, SKU, e pelo menos um stock).');
           setLoading(false);
           return;
@@ -325,6 +332,7 @@ const ProductForm = () => {
       }
       
       // 💡 NOVO: Construir os objetos aninhados 'product' e 'variants' para o backend
+      // Os nomes das propriedades agora correspondem às colunas da BD
       const payload = {
         product: {
           name: productData.name,
@@ -334,18 +342,20 @@ const ProductForm = () => {
           brand_id: productData.brand_id,
           is_active: productData.is_active,
           original_price: productData.original_price ? String(productData.original_price) : undefined,
+          rating: productData.rating,
+          reviewcount: productData.reviewcount,
         },
         variants: variantsData.map(v => ({
           ...v,
-          price: String(v.price),
+          preco: String(v.preco),
           weight_value: String(v.weight_value),
-          flavor_id: v.flavor_id && v.flavor_id !== 0 ? v.flavor_id : null,
+          quantidade_em_stock: v.quantidade_em_stock,
+          sabor_id: v.sabor_id && v.sabor_id !== 0 ? v.sabor_id : null,
         })),
       };
 
       let response;
       if (isEditing) {
-        // ✨ NOTA: O seu backend precisará de uma nova rota de atualização que lide com o objeto de variantes
         response = await axios.put(`${VITE_BACKEND_URL}/api/products/atualizar/${id}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -580,12 +590,12 @@ const ProductForm = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Preço */}
                   <motion.div variants={itemVariants}>
-                    <label htmlFor={`price-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Preço (€) <span className="text-red-500">*</span></label>
+                    <label htmlFor={`preco-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Preço (€) <span className="text-red-500">*</span></label>
                     <input
                       type="number"
-                      id={`price-${index}`}
-                      name="price"
-                      value={variant.price === 0 ? '' : variant.price} 
+                      id={`preco-${index}`}
+                      name="preco"
+                      value={variant.preco === 0 ? '' : variant.preco} 
                       onChange={(e) => handleVariantChange(index, e)}
                       required
                       min="0"
@@ -610,11 +620,11 @@ const ProductForm = () => {
                   
                   {/* Sabor */}
                   <motion.div variants={itemVariants}>
-                    <label htmlFor={`flavor_id-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Sabor</label>
+                    <label htmlFor={`sabor_id-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Sabor</label>
                     <select
-                      id={`flavor_id-${index}`}
-                      name="flavor_id"
-                      value={variant.flavor_id || ''}
+                      id={`sabor_id-${index}`}
+                      name="sabor_id"
+                      value={variant.sabor_id || ''}
                       onChange={(e) => handleVariantChange(index, e)}
                       className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500 text-gray-900 bg-white transition-all duration-200"
                     >
@@ -627,12 +637,12 @@ const ProductForm = () => {
 
                   {/* Stock Online */}
                   <motion.div variants={itemVariants}>
-                    <label htmlFor={`stock_quantity-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Stock Online <span className="text-red-500">*</span></label>
+                    <label htmlFor={`quantidade_em_stock-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Stock Online <span className="text-red-500">*</span></label>
                     <input
                       type="number"
-                      id={`stock_quantity-${index}`}
-                      name="stock_quantity"
-                      value={variant.stock_quantity === 0 ? '' : variant.stock_quantity} 
+                      id={`quantidade_em_stock-${index}`}
+                      name="quantidade_em_stock"
+                      value={variant.quantidade_em_stock === 0 ? '' : variant.quantidade_em_stock} 
                       onChange={(e) => handleVariantChange(index, e)}
                       min="0"
                       className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500 text-gray-900 transition-all duration-200"
