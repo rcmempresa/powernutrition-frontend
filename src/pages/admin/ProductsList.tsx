@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, Loader2, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, Loader2, Edit, Trash2, CheckCircle, XCircle, ArrowRight, ArrowDown } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
@@ -45,11 +45,9 @@ interface ProductForDisplay {
   name: string;
   category_id: number;
   category_display: string;
-  // Preço para exibição (o mais baixo entre as variantes)
-  displayPrice: number; 
+  displayPrice: number;
   original_price?: number;
-  // 'stock' aqui representa o stock TOTAL combinado para efeitos de ordenação/filtragem geral.
-  stock: number; 
+  stock: number;
   status_display: 'Ativo' | 'Inativo';
   flavor_display: string;
   description: string;
@@ -57,11 +55,12 @@ interface ProductForDisplay {
   image_url: string;
   brand: string;
   stock_ginasio: number;
-  stock_online: number; // Novo campo para o stock online total
+  stock_online: number;
   rating?: number;
   reviewcount?: number;
   created_at: string;
   updated_at: string;
+  variants: ProductVariant[]; // Mantém as variantes para exibição
 }
 
 const ProductsList: React.FC = () => {
@@ -89,6 +88,9 @@ const ProductsList: React.FC = () => {
   // Estados para ordenação
   const [sortKey, setSortKey] = useState<keyof ProductForDisplay>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // Estado para controlar a expansão das variantes
+  const [expandedProductId, setExpandedProductId] = useState<number | null>(null);
 
   // Função para buscar produtos do backend
   const fetchProducts = useCallback(async () => {
@@ -145,7 +147,7 @@ const ProductsList: React.FC = () => {
           name: product.name,
           description: product.description,
           displayPrice: lowestPrice,
-          original_price: (originalPrice && originalPrice > lowestPrice) ? originalPrice : undefined, // Só mostra se for maior que o preço de venda
+          original_price: originalPrice || undefined,
           stock: totalOnlineStock + totalGinasioStock,
           sku: product.sku,
           image_url: product.image_url,
@@ -160,6 +162,7 @@ const ProductsList: React.FC = () => {
           stock_ginasio: totalGinasioStock,
           rating: product.rating ? Number(product.rating) : undefined,
           reviewcount: product.reviewcount,
+          variants: product.variants,
         };
       });
 
@@ -294,6 +297,11 @@ const ProductsList: React.FC = () => {
   const uniqueCategories = Array.from(new Set(products.map(p => p.category_display))).sort();
   const uniqueFlavors = Array.from(new Set(products.map(p => p.flavor_display))).sort();
 
+  // Função para alternar a exibição das variantes
+  const toggleVariants = (productId: number) => {
+    setExpandedProductId(prevId => (prevId === productId ? null : productId));
+  };
+
   // Variantes de animação para Framer Motion
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -316,6 +324,11 @@ const ProductsList: React.FC = () => {
         ease: "easeOut" 
       } 
     }),
+  };
+  
+  const variantsContainerVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: { opacity: 1, height: 'auto', transition: { duration: 0.5, ease: "easeOut" } },
   };
 
   const getStatusColorClass = (status: 'Ativo' | 'Inativo') => {
@@ -508,73 +521,109 @@ const ProductsList: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {currentProducts.map((product, index) => (
-                <motion.tr 
-                  key={product.id} 
-                  className={`border-b border-gray-100 last:border-b-0 hover:bg-orange-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  custom={index}
-                >
-                  <td className="py-3 px-4 text-sm text-gray-800">{String(product.id).substring(0, 8)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">
-                    <img src={product.image_url} alt={product.name} className="h-12 w-12 object-cover rounded-md" />
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-800 font-medium">{product.name}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">{product.category_display}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">{product.flavor_display}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">
-                    <div className="flex flex-col items-start">
-                      {product.original_price && (
-                        <span className="text-xs text-gray-500 line-through">
-                          €{product.original_price.toFixed(2)}
-                        </span>
-                      )}
-                      <span className="font-semibold text-gray-900">
-                        €{product.displayPrice.toFixed(2)}
+                <React.Fragment key={product.id}>
+                  <motion.tr 
+                    className={`border-b border-gray-100 last:border-b-0 hover:bg-orange-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    custom={index}
+                  >
+                    <td className="py-3 px-4 text-sm text-gray-800">{String(product.id).substring(0, 8)}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      <img src={product.image_url} alt={product.name} className="h-12 w-12 object-cover rounded-md" />
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-800 font-medium">{product.name}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{product.category_display}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{product.flavor_display}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      {product.original_price ? `€${product.original_price.toFixed(2)}` : 'N/A'}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{product.stock_online}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{product.stock_ginasio}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColorClass(product.status_display)}`}>
+                        {product.status_display}
                       </span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-800">{product.stock_online}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">{product.stock_ginasio}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColorClass(product.status_display)}`}>
-                      {product.status_display}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-800">
-                    <div className="flex items-center space-x-2">
-                      <motion.button
-                        onClick={() => navigate(`/admin/products/edit/${product.id}`)}
-                        className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        title="Editar Produto"
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      <div className="flex items-center space-x-2">
+                        <motion.button
+                          onClick={() => toggleVariants(product.id)}
+                          className="text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Ver Variantes"
+                        >
+                          {expandedProductId === product.id ? <ArrowDown className="h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
+                        </motion.button>
+                        <motion.button
+                          onClick={() => navigate(`/admin/products/edit/${product.id}`)}
+                          className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Editar Produto"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </motion.button>
+                        <motion.button
+                          onClick={() => openDeleteModal(product.id)}
+                          className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Remover Produto"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </motion.button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                  {/* Secção de Variantes Expansível */}
+                  <AnimatePresence>
+                    {expandedProductId === product.id && product.variants.length > 0 && (
+                      <motion.tr
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        variants={variantsContainerVariants}
+                        className="bg-gray-100 border-b border-gray-200"
                       >
-                        <Edit className="h-5 w-5" />
-                      </motion.button>
-                      <motion.button
-                        onClick={() => navigate(`/admin/products/add-images/${product.id}`)}
-                        className="text-orange-600 hover:text-orange-900 p-2 rounded-full hover:bg-orange-100 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        title="Adicionar/Gerir Imagens"
-                      >
-                        <Loader2 className="h-5 w-5" />
-                      </motion.button>
-                      <motion.button
-                        onClick={() => openDeleteModal(product.id)}
-                        className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        title="Remover Produto"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </motion.button>
-                    </div>
-                  </td>
-                </motion.tr>
+                        <td colSpan={11} className="p-4">
+                          <h4 className="text-lg font-bold text-gray-800 mb-4">Variantes de {product.name}</h4>
+                          <div className="overflow-x-auto rounded-lg">
+                            <table className="min-w-full bg-white rounded-lg shadow-sm">
+                              <thead className="bg-gray-200">
+                                <tr>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">ID</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Sabor</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Peso</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Preço</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">SKU</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Stock Online</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Stock Ginásio</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {product.variants.map((variant) => (
+                                  <tr key={variant.id} className="border-b border-gray-100 last:border-b-0">
+                                    <td className="py-2 px-4 text-sm text-gray-700">{variant.id}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700 font-medium">{variant.flavor_name || 'N/A'}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700">{variant.weight_value} {variant.weight_unit}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700">€{variant.preco.toFixed(2)}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700">{variant.sku}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700">{variant.quantidade_em_stock || 0}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700">{variant.stock_ginasio}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    )}
+                  </AnimatePresence>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
