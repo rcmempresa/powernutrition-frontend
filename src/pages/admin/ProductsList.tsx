@@ -454,9 +454,12 @@ const ProductsList: React.FC = () => {
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Nome</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Categoria</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Sabor</th>
+                {/* Antigo "Stock Total", agora "Stock Online" */}
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Preço</th>
-                <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Total</th>
+                <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Online</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Ginásio</th>
+                {/* Nova coluna para o Stock Total (stock_quantity + stock_ginasio) */}
+                <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Total</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Ativo</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Ações</th>
               </tr>
@@ -481,6 +484,7 @@ const ProductsList: React.FC = () => {
                   <td className="py-3 px-4 text-sm text-gray-800">€{product.price.toFixed(2)}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">{product.stock_quantity}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">{product.stock_ginasio}</td>
+                  <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColorClass(product.status_display)}`}>
                       {product.status_display}
