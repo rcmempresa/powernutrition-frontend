@@ -147,7 +147,7 @@ const ProductsList: React.FC = () => {
           name: product.name,
           description: product.description,
           displayPrice: lowestPrice,
-          original_price: originalPrice || undefined,
+          original_price: (originalPrice && originalPrice > lowestPrice) ? originalPrice : undefined,
           stock: totalOnlineStock + totalGinasioStock,
           sku: product.sku,
           image_url: product.image_url,
@@ -537,7 +537,16 @@ const ProductsList: React.FC = () => {
                     <td className="py-3 px-4 text-sm text-gray-800">{product.category_display}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">{product.flavor_display}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">
-                      {product.original_price ? `€${product.original_price.toFixed(2)}` : 'N/A'}
+                      <div className="flex flex-col items-start">
+                        {product.original_price && (
+                          <span className="text-xs text-gray-500 line-through">
+                            €{product.original_price.toFixed(2)}
+                          </span>
+                        )}
+                        <span className="font-semibold text-gray-900">
+                          €{product.displayPrice.toFixed(2)}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-sm text-gray-800">{product.stock_online}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">{product.stock_ginasio}</td>
@@ -566,6 +575,15 @@ const ProductsList: React.FC = () => {
                           title="Editar Produto"
                         >
                           <Edit className="h-5 w-5" />
+                        </motion.button>
+                        <motion.button
+                          onClick={() => navigate(`/admin/products/add-images/${product.id}`)}
+                          className="text-orange-600 hover:text-orange-900 p-2 rounded-full hover:bg-orange-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Adicionar/Gerir Imagens"
+                        >
+                          <Loader2 className="h-5 w-5" />
                         </motion.button>
                         <motion.button
                           onClick={() => openDeleteModal(product.id)}
