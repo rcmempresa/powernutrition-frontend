@@ -1,34 +1,35 @@
+// src/components/ProductForm.tsx
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Save, XCircle } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 
-// Tipagem para os dados do produto a serem enviados
+// Tipagem para os dados do formulário a serem enviados
 interface ProductFormData {
   name: string;
   description: string;
-  price: number;
-  stock_quantity: number;
-  sku: string;
+  original_price?: number;
   image_url: string;
   category_id: number;
   brand: string;
+  is_active: boolean;
+  // Campos da variante
+  price: number;
+  stock_quantity: number;
+  stock_ginasio: number;
+  sku: string;
   weight_unit: string;
   weight_value: number;
-  is_active: boolean;
   flavor_id?: number;
-  original_price?: number;
-  stock_ginasio: number;
-  rating?: number;
-  reviewcount?: number;
 }
 
 // Tipagem para a resposta do backend ao criar um produto
 interface CreatedProductResponse {
-  id: number;
-  // ... outras propriedades do produto retornado pelo backend
+  product: { id: number; name: string; };
+  variant: { id: number; sku: string; };
 }
 
 // Tipagem para as opções de categoria e sabor
@@ -40,6 +41,28 @@ interface CategoryOption {
 interface FlavorOption {
   id: number;
   name: string;
+}
+
+// Tipagem para a resposta do backend ao carregar um produto para edição
+interface BackendProduct {
+  id: number;
+  name: string;
+  description: string;
+  original_price?: string;
+  image_url: string;
+  category_id: number;
+  is_active: boolean;
+  brand_id: number;
+  brand_name: string;
+  variants: Array<{
+    sabor_id?: number;
+    weight_value: number;
+    weight_unit: string;
+    preco: number;
+    quantidade_em_stock: number;
+    stock_ginasio: number;
+    sku: string;
+  }>;
 }
 
 const ProductForm: React.FC = () => {
@@ -68,7 +91,6 @@ const ProductForm: React.FC = () => {
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   
-  // ✨ Novo estado para o ficheiro de imagem e o status do upload ✨
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState<boolean>(false);
 
@@ -137,28 +159,31 @@ const ProductForm: React.FC = () => {
         return;
       }
 
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${id}`, {
+      // 💡 O endpoint agora retorna um objeto de produto com um array de variantes
+      const response = await axios.get<BackendProduct>(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const productData = response.data;
       
+      // Assumimos que o formulário é para uma única variante, então usamos a primeira
+      const mainVariant = productData.variants[0];
+
       setFormData({
-        name: productData.name || '',
-        description: productData.description || '',
-        price: Number(productData.price) || 0,
-        stock_quantity: productData.stock_quantity || 0,
-        sku: productData.sku || '',
-        image_url: productData.image_url || '',
-        category_id: productData.category_id || 0,
-        brand: productData.brand || '',
-        weight_unit: productData.weight_unit || 'g',
-        weight_value: Number(productData.weight_value) || 0,
+        name: productData.name,
+        description: productData.description,
+        image_url: productData.image_url,
+        category_id: productData.category_id,
+        brand: productData.brand_name,
         is_active: productData.is_active,
-        flavor_id: productData.flavor_id || undefined,
         original_price: productData.original_price ? Number(productData.original_price) : undefined,
-        stock_ginasio: productData.stock_ginasio || 0,
-        rating: productData.rating ? Number(productData.rating) : undefined,
-        reviewcount: productData.reviewcount || undefined,
+        // Preenche os campos da variante com os dados da primeira variante
+        price: Number(mainVariant.preco),
+        stock_quantity: mainVariant.quantidade_em_stock,
+        stock_ginasio: mainVariant.stock_ginasio,
+        sku: mainVariant.sku,
+        weight_unit: mainVariant.weight_unit,
+        weight_value: mainVariant.weight_value,
+        flavor_id: mainVariant.sabor_id || undefined,
       });
     } catch (err: any) {
       console.error('Erro ao carregar dados do produto:', err);
@@ -182,17 +207,15 @@ const ProductForm: React.FC = () => {
     }));
   };
   
-  // ✨ Novo handler para o input de ficheiro ✨
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
-      setSubmitError(null); // Limpa o erro ao selecionar um novo ficheiro
+      setSubmitError(null);
     } else {
       setSelectedFile(null);
     }
   };
   
-  // ✨ Nova função para fazer o upload da imagem para o backend ✨
   const uploadImage = async (file: File) => {
     const token = getAuthToken();
     const uploadUrl = `${import.meta.env.VITE_BACKEND_URL}/api/images/upload`;
@@ -244,34 +267,53 @@ const ProductForm: React.FC = () => {
         setLoading(false);
         return;
       }
-
-      // ✨ Novo: Lógica de upload da imagem ✨
+      
       let finalImageUrl = formData.image_url;
       if (selectedFile) {
         setUploadingImage(true);
         setSubmitSuccess('A carregar imagem...');
         finalImageUrl = await uploadImage(selectedFile);
         setUploadingImage(false);
-        setSubmitSuccess(null); // Limpa a mensagem de sucesso temporária
+        setSubmitSuccess(null);
       } else if (!isEditing && !formData.image_url) {
-        // Se estiver a criar um produto e não tiver nem ficheiro nem URL
         setSubmitError('Por favor, selecione um ficheiro de imagem ou insira uma URL.');
         setLoading(false);
         return;
       }
       
-      const dataToSend = {
-        ...formData,
+      // 💡 NOVO: Construir os objetos aninhados 'product' e 'variant' para o backend
+      const productPayload = {
+        name: formData.name,
+        description: formData.description,
+        brand_id: 1, // ✨ Assumir brand_id, idealmente seria um campo de formulário
         image_url: finalImageUrl,
-        price: String(formData.price),
+        category_id: formData.category_id,
         original_price: formData.original_price ? String(formData.original_price) : undefined,
+        is_active: formData.is_active,
+      };
+
+      const variantPayload = {
+        sabor_id: formData.flavor_id && formData.flavor_id !== 0 ? formData.flavor_id : null,
         weight_value: String(formData.weight_value),
-        flavor_id: formData.flavor_id && formData.flavor_id !== 0 ? formData.flavor_id : undefined,
+        weight_unit: formData.weight_unit,
+        preco: String(formData.price),
+        quantidade_em_stock: formData.stock_quantity,
+        stock_ginasio: formData.stock_ginasio,
+        sku: formData.sku,
+      };
+
+      const dataToSend = {
+        product: productPayload,
+        variant: variantPayload,
       };
 
       let response;
       if (isEditing) {
-        response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/products/atualizar/${id}`, dataToSend, {
+        // ✨ Para a edição, o endpoint ainda deve ser o de atualização.
+        // O backend precisa de uma rota que trate a atualização de produto e variantes em conjunto.
+        // Por agora, mantemos a estrutura atual.
+        // Recomenda-se criar um endpoint específico para este tipo de atualização.
+        response = await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/products/atualizar/${id}`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -280,14 +322,15 @@ const ProductForm: React.FC = () => {
         setSubmitSuccess('Produto atualizado com sucesso!');
         setTimeout(() => navigate('/admin/products'), 1500); 
       } else {
+        // ✨ NOVO: Enviar o objeto aninhado para o endpoint de criação
         response = await axios.post<CreatedProductResponse>(`${import.meta.env.VITE_BACKEND_URL}/api/products/criar`, dataToSend, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
-        const newProductId = response.data.id;
-        setSubmitSuccess('Produto adicionado com sucesso! Redirecionando para adicionar imagens...');
+        const newProductId = response.data.product.id;
+        setSubmitSuccess('Produto adicionado com sucesso!');
         setTimeout(() => navigate(`/admin/products/add-images/${newProductId}`), 1500);
       }
       
@@ -325,14 +368,16 @@ const ProductForm: React.FC = () => {
       </motion.button>
 
       {/* Exibe loaders e erros combinados */}
-      {loadingOptions || loading || uploadingImage ? (
+      {(loadingOptions || loading || uploadingImage) && (
         <div className="flex items-center justify-center min-h-[30vh] bg-gray-50 rounded-lg shadow-md">
           <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
           <p className="ml-4 text-md text-gray-700">
             {uploadingImage ? 'A carregar imagem...' : `A carregar ${isEditing ? 'dados do produto e' : 'opções de'} categoria e sabor...`}
           </p>
         </div>
-      ) : optionsError || submitError ? (
+      )}
+
+      {optionsError || submitError ? (
         <div className="p-4 bg-red-100 text-red-700 border border-red-300 rounded-lg mb-6">
           <p>Erro: {optionsError || submitError}</p>
           {(optionsError || (submitError && isEditing)) && (
@@ -456,7 +501,7 @@ const ProductForm: React.FC = () => {
 
             {/* Stock Total */}
             <motion.div variants={itemVariants}>
-              <label htmlFor="stock_quantity" className="block text-sm font-medium text-gray-700 mb-1">Stock Total <span className="text-red-500">*</span></label>
+              <label htmlFor="stock_quantity" className="block text-sm font-medium text-gray-700 mb-1">Stock Online <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 id="stock_quantity"
@@ -528,7 +573,7 @@ const ProductForm: React.FC = () => {
               />
             </motion.div>
             
-            {/* ✨ Novo campo de upload de imagem ✨ */}
+            {/* Campo de upload de imagem */}
             <motion.div variants={itemVariants} className="md:col-span-2">
               <label htmlFor="image_file" className="block text-sm font-medium text-gray-700 mb-1">Imagem do Produto <span className="text-red-500">*</span></label>
               <input
@@ -539,7 +584,6 @@ const ProductForm: React.FC = () => {
                 onChange={handleFileChange}
                 className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500 text-gray-900 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
               />
-              {/* Opção de inserir URL em vez de upload, se necessário */}
               <p className="mt-2 text-sm text-gray-500">Ou, se preferir, insira uma URL da imagem existente:</p>
               <input
                 type="url"
