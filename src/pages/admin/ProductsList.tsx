@@ -6,40 +6,50 @@ import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
 
-// Tipagem para um produto, refletindo a estrutura exata da resposta do backend
+// Nova tipagem para uma variante do produto
+interface ProductVariant {
+  id: number;
+  sku: string;
+  price: string;
+  stock_quantity: number;
+  is_active: boolean;
+  flavor_id?: number;
+  flavor_name?: string;
+  weight_unit: string;
+  weight_value: string;
+}
+
+// Tipagem para um produto, refletindo a estrutura exata da resposta do backend com variantes
 interface BackendProduct {
   id: number;
   name: string;
   description: string;
-  price: string;
-  stock_quantity: number; // Stock total online
+  original_price: string;
   sku: string;
   image_url: string;
   category_id: number;
   category_name?: string;
   brand: string;
-  weight_unit: string;
-  weight_value: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  flavor_id?: number;
-  flavor_name?: string;
-  original_price?: string;
-  stock_ginasio: number; // Stock específico do ginásio
+  stock_ginasio: number;
   rating?: string;
   reviewcount?: number;
+  // O backend agora devolve uma lista de variantes
+  variants: ProductVariant[];
 }
 
-// Tipagem para o produto como será usado no estado do frontend (inclui campos para filtros)
+// Tipagem para o produto como será usado no estado do frontend
 interface ProductForDisplay {
   id: number;
   name: string;
   category_id: number;
   category_display: string;
-  price: number;
+  // Preço para exibição (o mais baixo entre as variantes)
+  displayPrice: number; 
+  original_price?: number;
   // 'stock' aqui representa o stock TOTAL combinado para efeitos de ordenação/filtragem geral.
-  // Os valores 'stock_quantity' e 'stock_ginasio' são mantidos para exibição individual.
   stock: number; 
   status_display: 'Ativo' | 'Inativo';
   flavor_id?: number;
@@ -48,11 +58,8 @@ interface ProductForDisplay {
   sku: string;
   image_url: string;
   brand: string;
-  weight_unit: string;
-  weight_value: number;
-  original_price?: number;
   stock_ginasio: number;
-  stock_quantity: number; // Manter stock_quantity também aqui para exibir separadamente
+  stock_online: number; // Novo campo para o stock online total
   rating?: number;
   reviewcount?: number;
   created_at: string;
@@ -103,35 +110,56 @@ const ProductsList: React.FC = () => {
         },
       });
 
-      const fetchedProducts: ProductForDisplay[] = response.data.map(product => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        // Corrigido para garantir que o valor é um número, usando 0 como fallback
-        price: Number(product.price) || 0,
-        // Calcular o stock total com fallback para 0 para evitar NaN
-        stock: (product.stock_quantity || 0) + (product.stock_ginasio || 0), 
-        sku: product.sku,
-        image_url: product.image_url,
-        category_id: product.category_id,
-        category_display: product.category_name || `ID: ${product.category_id}`,
-        brand: product.brand,
-        weight_unit: product.weight_unit,
-        // Corrigido para garantir que o valor é um número
-        weight_value: Number(product.weight_value) || 0,
-        status_display: product.is_active ? 'Ativo' : 'Inativo',
-        created_at: product.created_at,
-        updated_at: product.updated_at,
-        flavor_id: product.flavor_id,
-        flavor_display: product.flavor_name || 'N/A',
-        // Corrigido para garantir que o valor é um número
-        original_price: product.original_price ? (Number(product.original_price) || 0) : undefined,
-        stock_ginasio: product.stock_ginasio || 0,
-        stock_quantity: product.stock_quantity || 0,
-        // Corrigido para garantir que o valor é um número
-        rating: product.rating ? (Number(product.rating) || 0) : undefined,
-        reviewcount: product.reviewcount,
-      }));
+      const fetchedProducts: ProductForDisplay[] = response.data.map(product => {
+        // Encontrar o preço mais baixo e o stock total online de todas as variantes
+        let lowestPrice = Infinity;
+        let totalOnlineStock = 0;
+        let flavorDisplay = 'N/A';
+
+        if (product.variants && product.variants.length > 0) {
+          product.variants.forEach(variant => {
+            const variantPrice = Number(variant.price);
+            if (!isNaN(variantPrice) && variantPrice < lowestPrice) {
+              lowestPrice = variantPrice;
+            }
+            totalOnlineStock += variant.stock_quantity || 0;
+
+            // Se for o primeiro produto ou um com sabor, usa o nome do sabor
+            if (variant.flavor_name) {
+              flavorDisplay = variant.flavor_name;
+            }
+          });
+        }
+        
+        // Tratar o caso em que não há variantes ou preços válidos
+        if (lowestPrice === Infinity) {
+          lowestPrice = 0;
+        }
+
+        const originalPrice = Number(product.original_price) || 0;
+
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          displayPrice: lowestPrice,
+          original_price: originalPrice > lowestPrice ? originalPrice : undefined, // Só mostra se for maior que o preço de venda
+          stock: (totalOnlineStock || 0) + (product.stock_ginasio || 0),
+          sku: product.sku,
+          image_url: product.image_url,
+          category_id: product.category_id,
+          category_display: product.category_name || `ID: ${product.category_id}`,
+          brand: product.brand,
+          status_display: product.is_active ? 'Ativo' : 'Inativo',
+          created_at: product.created_at,
+          updated_at: product.updated_at,
+          flavor_display: flavorDisplay,
+          stock_online: totalOnlineStock,
+          stock_ginasio: product.stock_ginasio || 0,
+          rating: product.rating ? Number(product.rating) : undefined,
+          reviewcount: product.reviewcount,
+        };
+      });
 
       setProducts(fetchedProducts);
     } catch (err: any) {
@@ -223,8 +251,8 @@ const ProductsList: React.FC = () => {
         const dateA = parseISO(a.created_at);
         const dateB = parseISO(b.created_at);
         return sortDirection === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
-      } else if (sortKey === 'price') {
-        return sortDirection === 'asc' ? a.price - b.price : b.price - a.price;
+      } else if (sortKey === 'displayPrice') {
+        return sortDirection === 'asc' ? a.displayPrice - b.displayPrice : b.displayPrice - a.displayPrice;
       } else if (sortKey === 'name') {
         return sortDirection === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
       } else if (sortKey === 'stock') { // 'stock' aqui refere-se ao stock TOTAL combinado
@@ -412,8 +440,8 @@ const ProductsList: React.FC = () => {
           <option value="created_at-asc">Data Criação (Antiga)</option>
           <option value="name-asc">Nome (A-Z)</option>
           <option value="name-desc">Nome (Z-A)</option>
-          <option value="price-asc">Preço (Crescente)</option>
-          <option value="price-desc">Preço (Decrescente)</option>
+          <option value="displayPrice-asc">Preço (Crescente)</option>
+          <option value="displayPrice-desc">Preço (Decrescente)</option>
           <option value="stock-asc">Stock (Crescente)</option>
           <option value="stock-desc">Stock (Decrescente)</option>
         </select>
@@ -495,8 +523,19 @@ const ProductsList: React.FC = () => {
                   <td className="py-3 px-4 text-sm text-gray-800 font-medium">{product.name}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">{product.category_display}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">{product.flavor_display}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">€{product.price.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">{product.stock_quantity}</td>
+                  <td className="py-3 px-4 text-sm text-gray-800">
+                    <div className="flex flex-col items-start">
+                      {product.original_price && (
+                        <span className="text-xs text-gray-500 line-through">
+                          €{product.original_price.toFixed(2)}
+                        </span>
+                      )}
+                      <span className="font-semibold text-gray-900">
+                        €{product.displayPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-800">{product.stock_online}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">{product.stock_ginasio}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
                   <td className="py-3 px-4 text-sm text-gray-800">
