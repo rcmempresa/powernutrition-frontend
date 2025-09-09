@@ -14,7 +14,7 @@ const useAuth = () => ({
 });
 
 // 💡 CORRIGIDO: URL do backend agora é uma constante para evitar o erro de 'import.meta'
-const VITE_BACKEND_URL = "https://your-api-url.com"; // 👈 Mude esta URL para o seu backend
+const VITE_BACKEND_URL = "https://powernutrition-backend-production-7883.up.railway.app"; // 👈 Mude esta URL para o seu backend
 
 // Tipagem para os dados do formulário a serem enviados (com múltiplas variantes)
 interface ProductFormData {
