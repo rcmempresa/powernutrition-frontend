@@ -1,3 +1,11 @@
+/**
+ * ProductForm.jsx
+ *
+ * Componente de formulário para criar ou editar um produto. Permite a gestão
+ * de dados do produto, múltiplas variantes, upload de imagens e seleção de
+ * categorias, marcas e sabores a partir de APIs.
+ */
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -63,9 +71,9 @@ interface CreatedProductResponse {
   variants: Array<{ id: number; sku: string; }>;
 }
 
-const ProductForm = () => {
+const ProductForm: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const { getAuthToken } = useAuth();
 
   const isEditing = !!id;
@@ -93,19 +101,19 @@ const ProductForm = () => {
     }
   ]);
 
-  const [loading, setLoading] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(null);
-  const [submitError, setSubmitError] = useState(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
 
-  const [categories, setCategories] = useState([]);
-  const [flavors, setFlavors] = useState([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [flavors, setFlavors] = useState<FlavorOption[]>([]);
   // 💡 NOVO: Estado para as marcas
-  const [brands, setBrands] = useState([]);
-  const [loadingOptions, setLoadingOptions] = useState(true);
-  const [optionsError, setOptionsError] = useState(null);
+  const [brands, setBrands] = useState<BrandOption[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState<boolean>(true);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
 
   // Variantes de animação
   const containerVariants = {
@@ -151,7 +159,7 @@ const ProductForm = () => {
       setFlavors(flavorsResponse.data);
       setBrands(brandsResponse.data);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao buscar opções:', err);
       setOptionsError('Erro ao carregar opções de categorias/sabores/marcas.');
     } finally {
@@ -192,7 +200,7 @@ const ProductForm = () => {
       });
 
       // 💡 NOVO: Preencher o array de variantes com os dados do backend
-      const formattedVariants = variants.map(v => ({
+      const formattedVariants = variants.map((v: any) => ({
         id: v.id,
         preco: Number(v.preco),
         quantidade_em_stock: v.quantidade_em_stock,
@@ -204,7 +212,7 @@ const ProductForm = () => {
       }));
       setVariantsData(formattedVariants);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao carregar dados do produto:', err);
       setSubmitError(err.response?.data?.message || 'Erro ao carregar dados do produto.');
     } finally {
@@ -217,8 +225,8 @@ const ProductForm = () => {
     fetchProductData();
   }, [fetchOptions, fetchProductData]);
 
-  const handleProductChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleProductChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type, checked } = e.target as HTMLInputElement;
     setProductData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : (type === 'number' ? Number(value) : value),
@@ -226,8 +234,8 @@ const ProductForm = () => {
   };
 
   // 💡 NOVO: Handler para alterações em variantes específicas
-  const handleVariantChange = (index, e) => {
-    const { name, value, type } = e.target;
+  const handleVariantChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target as HTMLInputElement;
     const newVariants = [...variantsData];
     newVariants[index] = {
       ...newVariants[index],
@@ -248,13 +256,13 @@ const ProductForm = () => {
     }]);
   };
 
-  const removeVariant = (index) => {
+  const removeVariant = (index: number) => {
     const newVariants = [...variantsData];
     newVariants.splice(index, 1);
     setVariantsData(newVariants);
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
       setSubmitError(null);
@@ -263,7 +271,7 @@ const ProductForm = () => {
     }
   };
 
-  const uploadImage = async (file) => {
+  const uploadImage = async (file: File) => {
     const token = getAuthToken();
     const uploadUrl = `${VITE_BACKEND_URL}/api/images/upload`;
 
@@ -275,7 +283,7 @@ const ProductForm = () => {
     data.append('image', file);
 
     try {
-      const response = await axios.post(uploadUrl, data, {
+      const response = await axios.post<{ url: string }>(uploadUrl, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`,
@@ -288,7 +296,7 @@ const ProductForm = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSubmitSuccess(null);
@@ -365,7 +373,7 @@ const ProductForm = () => {
         setSubmitSuccess('Produto atualizado com sucesso!');
         setTimeout(() => navigate('/admin/products'), 1500); 
       } else {
-        response = await axios.post(`${VITE_BACKEND_URL}/api/products/criar`, payload, {
+        response = await axios.post<CreatedProductResponse>(`${VITE_BACKEND_URL}/api/products/criar`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -376,7 +384,7 @@ const ProductForm = () => {
         setTimeout(() => navigate(`/admin/products/add-images/${newProductId}`), 1500);
       }
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao guardar produto:', err);
       setSubmitError(err.response?.data?.message || err.message || 'Erro ao guardar produto. Verifique os dados e tente novamente.');
     } finally {
