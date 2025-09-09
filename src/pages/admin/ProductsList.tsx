@@ -66,6 +66,8 @@ const ProductsList: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [productToDelete, setProductToDelete] = useState<number | null>(null);
 
   // Estados para paginação
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -105,25 +107,29 @@ const ProductsList: React.FC = () => {
         id: product.id,
         name: product.name,
         description: product.description,
-        price: Number(product.price),
-        // Calcular o stock total para a propriedade 'stock' usada na ordenação/filtragem
-        stock: product.stock_quantity + product.stock_ginasio, 
+        // Corrigido para garantir que o valor é um número, usando 0 como fallback
+        price: Number(product.price) || 0,
+        // Calcular o stock total com fallback para 0 para evitar NaN
+        stock: (product.stock_quantity || 0) + (product.stock_ginasio || 0), 
         sku: product.sku,
         image_url: product.image_url,
         category_id: product.category_id,
         category_display: product.category_name || `ID: ${product.category_id}`,
         brand: product.brand,
         weight_unit: product.weight_unit,
-        weight_value: Number(product.weight_value),
+        // Corrigido para garantir que o valor é um número
+        weight_value: Number(product.weight_value) || 0,
         status_display: product.is_active ? 'Ativo' : 'Inativo',
         created_at: product.created_at,
         updated_at: product.updated_at,
         flavor_id: product.flavor_id,
         flavor_display: product.flavor_name || 'N/A',
-        original_price: product.original_price ? Number(product.original_price) : undefined,
-        stock_ginasio: product.stock_ginasio,
-        stock_quantity: product.stock_quantity, // Manter o stock_quantity original do backend
-        rating: product.rating ? Number(product.rating) : undefined,
+        // Corrigido para garantir que o valor é um número
+        original_price: product.original_price ? (Number(product.original_price) || 0) : undefined,
+        stock_ginasio: product.stock_ginasio || 0,
+        stock_quantity: product.stock_quantity || 0,
+        // Corrigido para garantir que o valor é um número
+        rating: product.rating ? (Number(product.rating) || 0) : undefined,
         reviewcount: product.reviewcount,
       }));
 
@@ -140,14 +146,22 @@ const ProductsList: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Função para lidar com a eliminação de produtos
-  const handleDeleteProduct = useCallback(async (productId: number) => {
-    // IMPORTANTE: Para uma aplicação real, use um modal personalizado em vez de window.confirm
-    const confirmDelete = window.confirm(`Tem certeza que deseja eliminar o produto com ID: ${productId}?`);
-    if (!confirmDelete) {
-      return;
-    }
+  // Lógica do modal de confirmação
+  const openDeleteModal = (productId: number) => {
+    setProductToDelete(productId);
+    setShowDeleteModal(true);
+  };
 
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setProductToDelete(null);
+  };
+
+  // Função para lidar com a eliminação de produtos
+  const handleDeleteProduct = useCallback(async () => {
+    if (!productToDelete) return;
+
+    closeDeleteModal();
     setDeleteStatus(null);
     setLoading(true);
 
@@ -159,14 +173,14 @@ const ProductsList: React.FC = () => {
         return;
       }
 
-      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/products/eliminar/${productId}`, {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/products/eliminar/${productToDelete}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       setDeleteStatus('Produto eliminado com sucesso!');
-      setProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
+      setProducts(prevProducts => prevProducts.filter(p => p.id !== productToDelete));
     } catch (err: any) {
       console.error('Erro ao eliminar produto:', err);
       setDeleteStatus(err.response?.data?.message || 'Erro ao eliminar produto. Tente novamente.');
@@ -174,7 +188,7 @@ const ProductsList: React.FC = () => {
       setLoading(false);
       setTimeout(() => setDeleteStatus(null), 3000);
     }
-  }, [getAuthToken]);
+  }, [getAuthToken, productToDelete]);
 
   // Lógica de filtragem e ordenação no frontend
   const sortedAndFilteredProducts = products
@@ -511,7 +525,7 @@ const ProductsList: React.FC = () => {
                         <Loader2 className="h-5 w-5" />
                       </motion.button>
                       <motion.button
-                        onClick={() => handleDeleteProduct(product.id)}
+                        onClick={() => openDeleteModal(product.id)}
                         className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -564,6 +578,46 @@ const ProductsList: React.FC = () => {
           </motion.button>
         </div>
       )}
+
+      {/* Modal de Confirmação */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: -50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 50 }}
+              className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-sm"
+            >
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Confirmar Eliminação</h3>
+              <p className="text-gray-700 mb-6">Tem certeza que deseja eliminar este produto? Esta ação é irreversível.</p>
+              <div className="flex justify-end space-x-4">
+                <motion.button
+                  onClick={closeDeleteModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Cancelar
+                </motion.button>
+                <motion.button
+                  onClick={handleDeleteProduct}
+                  className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Eliminar
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
