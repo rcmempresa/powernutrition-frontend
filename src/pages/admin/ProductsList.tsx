@@ -9,14 +9,15 @@ import { format, parseISO, isAfter, isBefore } from 'date-fns';
 // Nova tipagem para uma variante do produto
 interface ProductVariant {
   id: number;
-  sku: string;
-  price: string;
-  stock_quantity: number;
-  is_active: boolean;
-  flavor_id?: number;
-  flavor_name?: string;
+  produto_id: number;
+  sabor_id: number | null;
+  weight_value: number;
   weight_unit: string;
-  weight_value: string;
+  preco: number;
+  quantidade_em_stock: number | null; // Stock online
+  stock_ginasio: number;
+  sku: string;
+  flavor_name: string | null;
 }
 
 // Tipagem para um produto, refletindo a estrutura exata da resposta do backend com variantes
@@ -24,19 +25,17 @@ interface BackendProduct {
   id: number;
   name: string;
   description: string;
-  original_price: string;
-  sku: string;
+  original_price: string | null;
   image_url: string;
   category_id: number;
-  category_name?: string;
-  brand: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  stock_ginasio: number;
   rating?: string;
   reviewcount?: number;
-  // O backend agora devolve uma lista de variantes
+  brand_id: number;
+  category_name: string;
+  brand_name: string;
   variants: ProductVariant[];
 }
 
@@ -52,7 +51,6 @@ interface ProductForDisplay {
   // 'stock' aqui representa o stock TOTAL combinado para efeitos de ordenação/filtragem geral.
   stock: number; 
   status_display: 'Ativo' | 'Inativo';
-  flavor_id?: number;
   flavor_display: string;
   description: string;
   sku: string;
@@ -111,21 +109,25 @@ const ProductsList: React.FC = () => {
       });
 
       const fetchedProducts: ProductForDisplay[] = response.data.map(product => {
-        // Encontrar o preço mais baixo e o stock total online de todas as variantes
+        // Encontrar o preço mais baixo e o stock total de todas as variantes
         let lowestPrice = Infinity;
         let totalOnlineStock = 0;
+        let totalGinasioStock = 0;
         let flavorDisplay = 'N/A';
 
         if (product.variants && product.variants.length > 0) {
           product.variants.forEach(variant => {
-            const variantPrice = Number(variant.price);
-            if (!isNaN(variantPrice) && variantPrice < lowestPrice) {
-              lowestPrice = variantPrice;
+            if (variant.preco !== undefined && variant.preco !== null) {
+              const variantPrice = Number(variant.preco);
+              if (!isNaN(variantPrice) && variantPrice < lowestPrice) {
+                lowestPrice = variantPrice;
+              }
             }
-            totalOnlineStock += variant.stock_quantity || 0;
-
-            // Se for o primeiro produto ou um com sabor, usa o nome do sabor
-            if (variant.flavor_name) {
+            totalOnlineStock += variant.quantidade_em_stock || 0;
+            totalGinasioStock += variant.stock_ginasio || 0;
+            
+            // Apenas para exibição, pegamos o primeiro sabor encontrado
+            if (variant.flavor_name && flavorDisplay === 'N/A') {
               flavorDisplay = variant.flavor_name;
             }
           });
@@ -136,26 +138,26 @@ const ProductsList: React.FC = () => {
           lowestPrice = 0;
         }
 
-        const originalPrice = Number(product.original_price) || 0;
-
+        const originalPrice = product.original_price ? Number(product.original_price) : null;
+        
         return {
           id: product.id,
           name: product.name,
           description: product.description,
           displayPrice: lowestPrice,
-          original_price: originalPrice > lowestPrice ? originalPrice : undefined, // Só mostra se for maior que o preço de venda
-          stock: (totalOnlineStock || 0) + (product.stock_ginasio || 0),
+          original_price: (originalPrice && originalPrice > lowestPrice) ? originalPrice : undefined, // Só mostra se for maior que o preço de venda
+          stock: totalOnlineStock + totalGinasioStock,
           sku: product.sku,
           image_url: product.image_url,
           category_id: product.category_id,
           category_display: product.category_name || `ID: ${product.category_id}`,
-          brand: product.brand,
+          brand: product.brand_name,
           status_display: product.is_active ? 'Ativo' : 'Inativo',
           created_at: product.created_at,
           updated_at: product.updated_at,
           flavor_display: flavorDisplay,
           stock_online: totalOnlineStock,
-          stock_ginasio: product.stock_ginasio || 0,
+          stock_ginasio: totalGinasioStock,
           rating: product.rating ? Number(product.rating) : undefined,
           reviewcount: product.reviewcount,
         };
@@ -496,11 +498,9 @@ const ProductsList: React.FC = () => {
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Nome</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Categoria</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Sabor</th>
-                {/* Antigo "Stock Total", agora "Stock Online" */}
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Preço</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Online</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Ginásio</th>
-                {/* Nova coluna para o Stock Total (stock_quantity + stock_ginasio) */}
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Total</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Ativo</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Ações</th>
