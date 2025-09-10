@@ -5,10 +5,6 @@ import { Loader2, Edit, Save, PlusCircle, XCircle, ArrowLeft } from 'lucide-reac
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 
-// Mock do hook useAuth para simular a autenticação
-// Numa aplicação real, este hook seria importado de um ficheiro separado
-
-
 // Nova tipagem para uma variante do produto
 interface ProductVariant {
   id: number;
@@ -125,8 +121,7 @@ const EditForm: React.FC = () => {
       formData.append('is_active', String(product.is_active));
       formData.append('brand_id', String(product.brand_id));
       formData.append('category_id', String(product.category_id));
-      // Correção: Converte o preço para número antes de enviar
-      formData.append('original_price', parseFloat(product.original_price).toString());
+      formData.append('original_price', product.original_price);
       
       if (selectedImage) {
         formData.append('image', selectedImage);
