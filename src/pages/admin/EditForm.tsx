@@ -105,27 +105,6 @@ const EditForm: React.FC = () => {
     }
   };
 
-  // Função para lidar com o upload da imagem
-  const handleImageUpload = async (file: File) => {
-    try {
-      const token = getAuthToken();
-      const formData = new FormData();
-      formData.append('image', file);
-
-      // Assumindo um endpoint de upload de imagem na sua API
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/upload/image`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      return response.data.imageUrl; // Retorna a URL da imagem guardada
-    } catch (err) {
-      console.error('Erro ao fazer upload da imagem:', err);
-      throw new Error('Falha no upload da imagem.');
-    }
-  };
-
   // Função para lidar com a atualização do produto principal
   const handleUpdateProduct = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -135,23 +114,26 @@ const EditForm: React.FC = () => {
     setSaveStatus(null);
     try {
       const token = getAuthToken();
-      let newImageUrl = product.image_url;
 
+      const formData = new FormData();
+      formData.append('name', product.name);
+      formData.append('description', product.description);
+      formData.append('is_active', String(product.is_active));
+      formData.append('brand_id', String(product.brand_id));
+      formData.append('category_id', String(product.category_id));
+      formData.append('original_price', product.original_price);
+      
       if (selectedImage) {
-        newImageUrl = await handleImageUpload(selectedImage);
+        formData.append('image', selectedImage);
+      } else {
+        // Se não houver nova imagem, enviar a URL existente
+        formData.append('image_url', product.image_url);
       }
 
-      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/products/atualizar/${id}`, {
-        name: product.name,
-        description: product.description,
-        is_active: product.is_active,
-        image_url: newImageUrl,
-        brand_id: product.brand_id,
-        category_id: product.category_id,
-        original_price: product.original_price,
-      }, {
+      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/products/atualizar/${id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
       });
       setSaveStatus('Produto principal atualizado com sucesso!');
