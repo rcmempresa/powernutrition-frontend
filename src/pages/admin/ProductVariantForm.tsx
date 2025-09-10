@@ -22,29 +22,6 @@ const ProductVariantForm = () => {
     sku: '',
   });
 
-  // `useEffect` para carregar os dados do produto ao montar o componente.
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // Chamada real à API para obter os detalhes do produto
-        const response = await axios.get(`https://powernutrition-backend-production-7883.up.railway.app/api/products/${productId}`);
-        
-        if (response.data) {
-          setProduct(response.data);
-        } else {
-          setError('Produto não encontrado.');
-        }
-      } catch (err) {
-        setError('Erro ao carregar detalhes do produto.');
-        console.error('Erro na requisição:', err.response ? err.response.data : err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProduct();
-  }, [productId]);
 
   // Função para lidar com a mudança nos campos do formulário.
   const handleChange = (e) => {
