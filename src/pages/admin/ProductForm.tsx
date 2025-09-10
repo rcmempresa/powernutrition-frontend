@@ -11,7 +11,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2, Save, XCircle, Plus, Minus } from 'lucide-react';
 import axios from 'axios';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 // 💡 IMPORTANTE: Substitua este mock pelo seu hook de autenticação real.
 // O erro 401 que você recebeu é esperado, pois este 'fake-token' não é válido no seu backend.
