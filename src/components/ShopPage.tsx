@@ -215,12 +215,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
       );
     }
 
-    // 4. Filtrar por Sabor
-    if (selectedFlavors.length > 0) {
-      currentProducts = currentProducts.filter(product =>
-        product.variants.some(variant => variant.flavor_id && selectedFlavors.includes(String(variant.flavor_id)))
-      );
-    }
+
 
     // 5. Filtrar por Peso
     if (selectedWeights.length > 0) {
@@ -327,26 +322,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
     setSearchParams(newParams);
 };
 
-  const handleFlavorChange = (id: string) => {
-    const currentFlavors = new Set(searchParams.get('sabor')?.split(',').filter(Boolean) || []);
-
-    if (currentFlavors.has(id)) {
-        currentFlavors.delete(id);
-    } else {
-        currentFlavors.add(id);
-    }
-
-    const newFlavorsArray = Array.from(currentFlavors);
-
-    const newParams = { ...Object.fromEntries(searchParams.entries()) };
-    if (newFlavorsArray.length > 0) {
-        newParams.sabor = newFlavorsArray.join(',');
-    } else {
-        delete newParams.sabor;
-    }
-    setSearchParams(newParams);
-};
-
+ 
   const handleWeightChange = (name: string) => {
     const currentWeights = new Set(searchParams.get('peso')?.split(',').filter(Boolean) || []);
 
@@ -627,31 +603,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
                       </div>
                     </div>
 
-                    {/* Sabor Mobile (se houver) */}
-                    {flavorsList && flavorsList.length > 0 && (
-                      <div className="py-6">
-                        <div className="flex items-center justify-between cursor-pointer" onClick={() => { /* Toggle expand/collapse */ }}>
-                          <span className="text-lg text-white font-normal">Sabor</span>
-                          <ChevronRight className="w-5 h-5 text-gray-400" />
-                        </div>
-                        <div className="mt-4 space-y-2">
-                          {flavorsList.map((flavor, index) => (
-                            <div key={index} className="flex items-center justify-between">
-                              <label className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  className="mr-2"
-                                  checked={selectedFlavors.includes(String(flavor.id || ''))}
-                                  onChange={() => handleFlavorChange(String(flavor.id || ''))}
-                                />
-                                <span className="text-gray-300">{flavor.name}</span>
-                              </label>
-                              <span className="text-gray-500">({flavorCounts[flavor.id || ''] || 0})</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Peso Mobile (se houver) */}
                     {products.some(p => p.weight_value && p.weight_unit) && (
@@ -857,36 +808,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
               </div>
             </div>
 
-            {/* Filtro de Sabor Desktop (com "Ver Mais") */}
-            {flavorsList && flavorsList.length > 0 && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-white mb-4">Sabor</h3>
-                <div className="space-y-2">
-                  {(showAllFlavors ? flavorsList : flavorsList.slice(0, 5)).map((flavor, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          className="mr-2"
-                          checked={selectedFlavors.includes(String(flavor.id || ''))}
-                          onChange={() => handleFlavorChange(String(flavor.id || ''))}
-                        />
-                        <span className="text-gray-300">{flavor.name}</span>
-                      </label>
-                      <span className="text-gray-500">({flavorCounts[flavor.id || ''] || 0})</span>
-                    </div>
-                  ))}
-                  {flavorsList.length > 5 && (
-                    <button
-                      onClick={() => setShowAllFlavors(!showAllFlavors)}
-                      className="w-full text-left text-orange-500 mt-2 font-medium hover:underline"
-                    >
-                      {showAllFlavors ? 'Ver menos' : `Ver todos os sabores (+${flavorsList.length - 5})`}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Filtro de Peso Desktop */}
             {products.some(p => p.weight_value && p.weight_unit) && (
