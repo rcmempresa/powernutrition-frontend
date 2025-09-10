@@ -216,6 +216,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
     }
 
 
+
     // 5. Filtrar por Peso
     if (selectedWeights.length > 0) {
       currentProducts = currentProducts.filter(product => {
@@ -411,7 +412,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
     displayPrice: displayPrice,
     original_price: originalPrice,
     isOutOfStock,
-    isAvailable: product.variants.some(v => v.quantidade_em_stock > 0),
+    isAvailable: product.variants.some(v => v.quantidade_em_stock > 0 || v.stock_ginasio > 0),
     category_id: product.category_id,
     brands: [product.brand_id],
     flavors: Array.from(new Set(product.variants.map(v => v.flavor_id).filter(Boolean))),
