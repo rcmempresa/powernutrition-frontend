@@ -3,15 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Loader2, Edit, Trash2, CheckCircle, XCircle, ArrowRight, ArrowDown } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../hooks/useAuth';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
-
-// A mock function to simulate authentication since the original hook cannot be resolved
-// Função 'mock' para simular a autenticação, já que o gancho original não pode ser resolvido no ambiente de um único ficheiro.
-const useAuth = () => {
-  return {
-    getAuthToken: () => 'dummy-auth-token'
-  };
-};
 
 // Nova tipagem para uma variante do produto
 interface ProductVariant {
@@ -636,7 +629,6 @@ const ProductsList: React.FC = () => {
                                   <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">SKU</th>
                                   <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Stock Online</th>
                                   <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Stock Ginásio</th>
-                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Ações</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -649,17 +641,6 @@ const ProductsList: React.FC = () => {
                                     <td className="py-2 px-4 text-sm text-gray-700">{variant.sku}</td>
                                     <td className="py-2 px-4 text-sm text-gray-700">{variant.quantidade_em_stock || 0}</td>
                                     <td className="py-2 px-4 text-sm text-gray-700">{variant.stock_ginasio}</td>
-                                    <td className="py-2 px-4 text-sm text-gray-700">
-                                      <motion.button
-                                        onClick={() => navigate(`/admin/products/edit-variant/${variant.id}`)}
-                                        className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 transition-colors"
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        title="Editar Variante"
-                                      >
-                                        <Edit className="h-5 w-5" />
-                                      </motion.button>
-                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -713,27 +694,27 @@ const ProductsList: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de confirmação de exclusão */}
+      {/* Modal de Confirmação */}
       <AnimatePresence>
         {showDeleteModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 50 }}
+              initial={{ scale: 0.9, y: -50 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 50 }}
-              className="bg-white p-8 rounded-lg shadow-2xl max-w-sm text-center"
+              className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-sm"
             >
-              <h3 className="text-xl font-bold mb-4">Confirmar Exclusão</h3>
-              <p className="text-gray-600 mb-6">Tem certeza de que deseja eliminar este produto? Esta ação é irreversível.</p>
-              <div className="flex justify-center space-x-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Confirmar Eliminação</h3>
+              <p className="text-gray-700 mb-6">Tem certeza de que deseja eliminar este produto? Esta ação é irreversível.</p>
+              <div className="flex justify-end space-x-4">
                 <motion.button
                   onClick={closeDeleteModal}
-                  className="px-5 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  className="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -741,11 +722,11 @@ const ProductsList: React.FC = () => {
                 </motion.button>
                 <motion.button
                   onClick={handleDeleteProduct}
-                  className="px-5 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                  className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  Confirmar
+                  Eliminar
                 </motion.button>
               </div>
             </motion.div>
