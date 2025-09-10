@@ -5,7 +5,6 @@ import { Loader2, Edit, Save, PlusCircle, XCircle } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 
-
 // Nova tipagem para uma variante do produto
 interface ProductVariant {
   id: number;
@@ -20,7 +19,7 @@ interface ProductVariant {
   flavor_name: string | null;
 }
 
-// Tipagem para uma categoria e marca (da API)
+// Tipagem para uma categoria, marca e sabor (da API)
 interface ApiItem {
   id: number;
   name: string;
@@ -47,13 +46,13 @@ const EditForm: React.FC = () => {
   const [product, setProduct] = useState<FullProduct | null>(null);
   const [categories, setCategories] = useState<ApiItem[]>([]);
   const [brands, setBrands] = useState<ApiItem[]>([]);
+  const [flavors, setFlavors] = useState<ApiItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [apiDataLoading, setApiDataLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
-  // Carrega os dados do produto, categorias e marcas em simultâneo
+  // Carrega os dados do produto, categorias, marcas e sabores em simultâneo
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
@@ -61,7 +60,7 @@ const EditForm: React.FC = () => {
       const token = getAuthToken();
 
       try {
-        const [productResponse, categoriesResponse, brandsResponse] = await Promise.all([
+        const [productResponse, categoriesResponse, brandsResponse, flavorsResponse] = await Promise.all([
           axios.get<FullProduct>(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
@@ -71,13 +70,16 @@ const EditForm: React.FC = () => {
           axios.get<ApiItem[]>(`${import.meta.env.VITE_BACKEND_URL}/api/brands/listar`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
+          axios.get<ApiItem[]>(`${import.meta.env.VITE_BACKEND_URL}/api/flavors/listar`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
         ]);
         
-        // Adiciona original_price para simular dados existentes
         const productData = { ...productResponse.data, original_price: '59.99' };
         setProduct(productData);
         setCategories(categoriesResponse.data);
         setBrands(brandsResponse.data);
+        setFlavors(flavorsResponse.data);
       } catch (err: any) {
         console.error('Erro ao buscar dados:', err);
         setError(err.response?.data?.message || 'Erro ao carregar dados. Verifique a URL da API ou a sua ligação.');
@@ -161,13 +163,13 @@ const EditForm: React.FC = () => {
   };
 
   // Função para lidar com a mudança nos campos do formulário das variantes
-  const handleVariantChange = (variantId: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVariantChange = (variantId: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setProduct(prev => {
       if (!prev) return null;
       const updatedVariants = prev.variants.map(variant => {
         if (variant.id === variantId) {
-          if (type === 'number') {
+          if (type === 'number' || name === 'sabor_id') {
             return { ...variant, [name]: Number(value) };
           }
           return { ...variant, [name]: value };
@@ -384,6 +386,21 @@ const EditForm: React.FC = () => {
                   e.preventDefault();
                   handleUpdateVariant(variant.id, variant);
                 }}>
+                  <div>
+                    <label htmlFor={`sabor_id-${variant.id}`} className="block text-sm font-medium text-gray-700">Sabor</label>
+                    <select
+                      name="sabor_id"
+                      id={`sabor_id-${variant.id}`}
+                      value={variant.sabor_id || ''}
+                      onChange={(e) => handleVariantChange(variant.id, e)}
+                      className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="">Selecione o Sabor</option>
+                      {flavors.map(flavor => (
+                        <option key={flavor.id} value={flavor.id}>{flavor.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label htmlFor={`preco-${variant.id}`} className="block text-sm font-medium text-gray-700">Preço</label>
                     <input
