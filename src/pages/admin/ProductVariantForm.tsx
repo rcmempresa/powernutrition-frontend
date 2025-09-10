@@ -58,18 +58,22 @@ const ProductVariantForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Aqui você faria a chamada real para a sua API, por exemplo:
-      // await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/products/${productId}/variants`, variant);
+      // Usando o URL real com o productId dinâmico da URL.
+      const response = await axios.post(
+        `https://powernutrition-backend-production-7883.up.railway.app/api/products/adicionar-variante/${productId}`,
+        variant
+      );
       
-      console.log('Dados da variante a serem enviados:', { ...variant, productId });
-      toast.success('Variante adicionada com sucesso! (Ação simulada)');
+      console.log('Dados da variante enviados com sucesso:', response.data);
+      toast.success('Variante adicionada com sucesso!');
       
       // Opcional: Limpar o formulário após a submissão bem-sucedida.
       setVariant({ name: '', sku: '', price: '', stock: '' });
       
     } catch (err) {
       toast.error('Erro ao adicionar variante.');
-      console.error(err);
+      // Adicione um log mais detalhado para depuração
+      console.error('Erro na requisição:', err.response ? err.response.data : err.message);
     }
   };
 
