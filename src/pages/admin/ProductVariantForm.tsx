@@ -13,10 +13,13 @@ const ProductVariantForm = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [variant, setVariant] = useState({
-    name: '', // Nome da variante (ex: "Sabor Chocolate")
-    sku: '', // SKU (Stock Keeping Unit)
-    price: '', // Preço da variante
-    stock: '', // Quantidade em stock
+    sabor_id: '',
+    weight_value: '',
+    weight_unit: 'g', // Definido como 'g' por padrão
+    preco: '',
+    quantidade_em_stock: '',
+    stock_ginasio: '',
+    sku: '',
   });
 
   // `useEffect` para carregar os dados do produto ao montar o componente.
@@ -25,22 +28,17 @@ const ProductVariantForm = () => {
       try {
         setLoading(true);
         setError(null);
-        // Simulação de chamada de API para obter os detalhes do produto
-        // Substitua este bloco pela sua chamada `axios` real.
-        const mockProducts = {
-          '34': { id: 34, name: 'Whey Protein RD', description: 'O melhor whey do mercado.', variants: [] },
-          '101': { id: 101, name: 'Creatina Monohidratada', description: 'Creatina de alta pureza.', variants: [] },
-        };
-        const fetchedProduct = mockProducts[productId];
+        // Chamada real à API para obter os detalhes do produto
+        const response = await axios.get(`https://powernutrition-backend-production-7883.up.railway.app/api/products/${productId}`);
         
-        if (fetchedProduct) {
-          setProduct(fetchedProduct);
+        if (response.data) {
+          setProduct(response.data);
         } else {
           setError('Produto não encontrado.');
         }
       } catch (err) {
         setError('Erro ao carregar detalhes do produto.');
-        console.error(err);
+        console.error('Erro na requisição:', err.response ? err.response.data : err.message);
       } finally {
         setLoading(false);
       }
@@ -58,21 +56,40 @@ const ProductVariantForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Usando o URL real com o productId dinâmico da URL.
+      // Monta o corpo da requisição com a chave "variant"
+      const requestBody = {
+        variant: {
+          sabor_id: parseInt(variant.sabor_id),
+          weight_value: parseFloat(variant.weight_value),
+          weight_unit: variant.weight_unit,
+          preco: parseFloat(variant.preco),
+          quantidade_em_stock: parseInt(variant.quantidade_em_stock),
+          stock_ginasio: parseInt(variant.stock_ginasio),
+          sku: variant.sku,
+        }
+      };
+
       const response = await axios.post(
         `https://powernutrition-backend-production-7883.up.railway.app/api/products/adicionar-variante/${productId}`,
-        variant
+        requestBody
       );
       
       console.log('Dados da variante enviados com sucesso:', response.data);
       toast.success('Variante adicionada com sucesso!');
       
       // Opcional: Limpar o formulário após a submissão bem-sucedida.
-      setVariant({ name: '', sku: '', price: '', stock: '' });
+      setVariant({
+        sabor_id: '',
+        weight_value: '',
+        weight_unit: 'g',
+        preco: '',
+        quantidade_em_stock: '',
+        stock_ginasio: '',
+        sku: '',
+      });
       
     } catch (err) {
       toast.error('Erro ao adicionar variante.');
-      // Adicione um log mais detalhado para depuração
       console.error('Erro na requisição:', err.response ? err.response.data : err.message);
     }
   };
@@ -99,15 +116,81 @@ const ProductVariantForm = () => {
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-lg">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label htmlFor="name" className="block text-gray-700 font-bold mb-2">Nome da Variante</label>
+            <label htmlFor="sabor_id" className="block text-gray-700 font-bold mb-2">ID do Sabor</label>
             <input
-              type="text"
-              id="name"
-              name="name"
-              value={variant.name}
+              type="number"
+              id="sabor_id"
+              name="sabor_id"
+              value={variant.sabor_id}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ex: Sabor Chocolate"
+              placeholder="Ex: 1"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="weight_value" className="block text-gray-700 font-bold mb-2">Valor do Peso</label>
+            <input
+              type="number"
+              id="weight_value"
+              name="weight_value"
+              value={variant.weight_value}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ex: 200"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="weight_unit" className="block text-gray-700 font-bold mb-2">Unidade do Peso</label>
+            <input
+              type="text"
+              id="weight_unit"
+              name="weight_unit"
+              value={variant.weight_unit}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ex: g ou kg"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="preco" className="block text-gray-700 font-bold mb-2">Preço (€)</label>
+            <input
+              type="number"
+              id="preco"
+              name="preco"
+              value={variant.preco}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ex: 39.99"
+              step="0.01"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="quantidade_em_stock" className="block text-gray-700 font-bold mb-2">Stock Total</label>
+            <input
+              type="number"
+              id="quantidade_em_stock"
+              name="quantidade_em_stock"
+              value={variant.quantidade_em_stock}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ex: 100"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="stock_ginasio" className="block text-gray-700 font-bold mb-2">Stock em Ginásio</label>
+            <input
+              type="number"
+              id="stock_ginasio"
+              name="stock_ginasio"
+              value={variant.stock_ginasio}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ex: 50"
               required
             />
           </div>
@@ -120,34 +203,7 @@ const ProductVariantForm = () => {
               value={variant.sku}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ex: WHEY-CHOC-500G"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="price" className="block text-gray-700 font-bold mb-2">Preço (€)</label>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              value={variant.price}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ex: 29.99"
-              step="0.01"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="stock" className="block text-gray-700 font-bold mb-2">Stock</label>
-            <input
-              type="number"
-              id="stock"
-              name="stock"
-              value={variant.stock}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ex: 50"
+              placeholder="Ex: WHEY-CHOC-200G-25"
               required
             />
           </div>
