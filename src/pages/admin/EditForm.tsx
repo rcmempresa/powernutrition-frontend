@@ -3,14 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Edit, Save, PlusCircle, XCircle } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../hooks/useAuth';
 
-// Nota: A função 'useAuth' é uma simulação para permitir que o componente
-// funcione de forma autónoma. Na sua aplicação real, deve importá-la do seu hook.
-const useAuth = () => {
-  return {
-    getAuthToken: () => 'dummy-auth-token' // Token simulado
-  };
-};
 
 // Nova tipagem para uma variante do produto
 interface ProductVariant {
