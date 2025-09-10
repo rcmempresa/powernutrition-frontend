@@ -352,7 +352,7 @@ const AdminDashboard: React.FC = () => {
                       <img src={product.image_url} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
                       <div>
                         <h3 className="text-lg font-semibold text-gray-800">{product.name}</h3>
-                        <p className="text-sm text-gray-600">Stock Total: <span className="font-bold text-red-500">{product.total_stock_ginasio + product.total_quantidade_em_stock}</span></p>
+                        <p className="text-sm text-gray-600">Stock: <span className="font-bold text-red-500">Ginásio: {product.total_stock_ginasio} | Loja: {product.total_quantidade_em_stock}</span></p>
                       </div>
                     </div>
                   ))}
