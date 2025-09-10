@@ -568,7 +568,7 @@ const ProductsList: React.FC = () => {
                           {expandedProductId === product.id ? <ArrowDown className="h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
                         </motion.button>
                         <motion.button
-                          onClick={() => navigate(`/admin/products/add-variant/${product.id}`)}
+                          onClick={() => navigate(`/admin/products/adicionar-variante/${product.id}`)}
                           className="text-emerald-600 hover:text-emerald-900 p-2 rounded-full hover:bg-emerald-100 transition-colors"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
