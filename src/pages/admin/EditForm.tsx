@@ -131,7 +131,7 @@ const EditForm: React.FC = () => {
     setSaveStatus(null);
     try {
       const token = getAuthToken();
-      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/products/${id}/variantes/atualizar/${variantId}`, updatedData, {
+      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/products/atualizar/${id}/variantes/${variantId}`, updatedData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
