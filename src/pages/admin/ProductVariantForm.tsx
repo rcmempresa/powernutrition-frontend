@@ -56,7 +56,7 @@ const ProductVariantForm = () => {
         }
 
         // Requisição para obter a lista de sabores
-        const flavorsResponse = await axios.get(`https://powernutrition-backend-production-7883.up.railway.app/api/flavors`, { headers });
+        const flavorsResponse = await axios.get(`https://powernutrition-backend-production-7883.up.railway.app/api/flavors/listar`, { headers });
         if (flavorsResponse.data) {
           setFlavors(flavorsResponse.data);
         }
