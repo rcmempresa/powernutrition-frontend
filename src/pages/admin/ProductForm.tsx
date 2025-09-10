@@ -1,10 +1,3 @@
-/**
- * ProductForm.jsx
- *
- * Componente de formulário para criar ou editar um produto. Permite a gestão
- * de dados do produto, múltiplas variantes, upload de imagens e seleção de
- * categorias, marcas e sabores a partir de APIs.
- */
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -12,10 +5,10 @@ import { motion } from 'framer-motion';
 import { Loader2, Save, XCircle, Plus, Minus } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
-
-// 💡 IMPORTANTE: Substitua este mock pelo seu hook de autenticação real.
-// O erro 401 que você recebeu é esperado, pois este 'fake-token' não é válido no seu backend.
-// A solução é integrar o seu sistema de autenticação aqui para obter um token real.
+// 💡 CORREÇÃO: O hook `useAuth` não pode ser importado neste ambiente.
+// Criamos uma versão "mock" dele abaixo.
+// Por favor, substitua esta implementação pela sua versão real quando usar o código.
+// O erro 401 que você recebeu anteriormente é esperado, pois este 'fake-token' não é válido no seu backend.
 
 
 // 💡 CORRIGIDO: URL do backend agora é uma constante para evitar o erro de 'import.meta'
@@ -336,8 +329,7 @@ const ProductForm: React.FC = () => {
         return;
       }
       
-      // 💡 NOVO: Construir os objetos aninhados 'product' e 'variants' para o backend
-      // Os nomes das propriedades agora correspondem às colunas da BD
+      // ✨ AQUI: Construímos o payload com a estrutura correta para o backend
       const payload = {
         product: {
           name: productData.name,
@@ -350,13 +342,15 @@ const ProductForm: React.FC = () => {
           rating: productData.rating,
           reviewcount: productData.reviewcount,
         },
-        variants: variantsData.map(v => ({
-          ...v,
-          preco: String(v.preco),
-          weight_value: String(v.weight_value),
-          quantidade_em_stock: v.quantidade_em_stock,
-          sabor_id: v.sabor_id && v.sabor_id !== 0 ? v.sabor_id : null,
-        })),
+        // O backend espera um único objeto 'variant', não um array
+        variant: {
+          ...variantsData[0], // Usamos o primeiro (e único) item do array de variantes
+          preco: String(variantsData[0].preco),
+          weight_value: String(variantsData[0].weight_value),
+          quantidade_em_stock: variantsData[0].quantidade_em_stock,
+          stock_ginasio: variantsData[0].stock_ginasio,
+          sabor_id: variantsData[0].sabor_id && variantsData[0].sabor_id !== 0 ? variantsData[0].sabor_id : null,
+        }
       };
 
       let response;
@@ -740,3 +734,4 @@ const ProductForm: React.FC = () => {
 };
 
 export default ProductForm;
+
