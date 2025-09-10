@@ -3,13 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Edit, Save, PlusCircle, XCircle } from 'lucide-react';
 import axios from 'axios';
-
-// A mock function to simulate authentication
-const useAuth = () => {
-  return {
-    getAuthToken: () => 'dummy-auth-token'
-  };
-};
+import { useAuth } from '../../hooks/useAuth';
 
 // Nova tipagem para uma variante do produto
 interface ProductVariant {
