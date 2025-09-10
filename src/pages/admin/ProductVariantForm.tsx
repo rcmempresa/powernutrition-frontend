@@ -161,7 +161,7 @@ const ProductVariantForm = () => {
               name="sabor_id"
               value={variant.sabor_id}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               required
             >
               <option value="">Selecione um sabor</option>
@@ -178,7 +178,7 @@ const ProductVariantForm = () => {
               name="weight_value"
               value={variant.weight_value}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="Ex: 200"
               required
             />
@@ -191,7 +191,7 @@ const ProductVariantForm = () => {
               name="weight_unit"
               value={variant.weight_unit}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="Ex: g ou kg"
               required
             />
@@ -204,7 +204,7 @@ const ProductVariantForm = () => {
               name="preco"
               value={variant.preco}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="Ex: 39.99"
               step="0.01"
               required
@@ -218,7 +218,7 @@ const ProductVariantForm = () => {
               name="quantidade_em_stock"
               value={variant.quantidade_em_stock}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="Ex: 100"
               required
             />
@@ -231,7 +231,7 @@ const ProductVariantForm = () => {
               name="stock_ginasio"
               value={variant.stock_ginasio}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="Ex: 50"
               required
             />
@@ -244,7 +244,7 @@ const ProductVariantForm = () => {
               name="sku"
               value={variant.sku}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               placeholder="Ex: WHEY-CHOC-200G-25"
               required
             />
@@ -252,12 +252,12 @@ const ProductVariantForm = () => {
         </div>
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-600 transition duration-300"
+          className="w-full bg-orange-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-orange-600 transition duration-300"
         >
           Adicionar Variante
         </button>
       </form>
-      <Link to="/admin/products" className="mt-6 inline-block text-blue-500 hover:underline">
+      <Link to="/admin/products" className="mt-6 inline-block text-orange-500 hover:underline">
         &larr; Voltar para a lista de produtos
       </Link>
     </div>
