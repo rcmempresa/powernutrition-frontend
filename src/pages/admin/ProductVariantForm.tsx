@@ -29,7 +29,7 @@ const ProductVariantForm = () => {
         setLoading(true);
         setError(null);
         // Chamada real à API para obter os detalhes do produto
-        const response = await axios.get(`https://powernutrition-backend-production-7883.up.railway.app/api/products/${productId}`);
+        const response = await axios.get(`https://powernutrition-backend-production-7883.up.railway.app/api/products/listar/${productId}`);
         
         if (response.data) {
           setProduct(response.data);
