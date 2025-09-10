@@ -5,6 +5,9 @@ import { Loader2, Edit, Save, PlusCircle, XCircle, ArrowLeft } from 'lucide-reac
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 
+// Use a URL base do seu backend, como import.meta.env.VITE_BACKEND_URL
+const VITE_BACKEND_URL = "https://powernutrition-backend-production-7883.up.railway.app";
+
 // Nova tipagem para uma variante do produto
 interface ProductVariant {
   id: number;
@@ -51,6 +54,10 @@ const EditForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  
+  // --- NOVOS ESTADOS PARA O UPLOAD DE IMAGEM ---
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
 
   // Carrega os dados do produto, categorias, marcas e sabores em simultâneo
   useEffect(() => {
@@ -61,16 +68,16 @@ const EditForm: React.FC = () => {
 
       try {
         const [productResponse, categoriesResponse, brandsResponse, flavorsResponse] = await Promise.all([
-          axios.get<FullProduct>(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${id}`, {
+          axios.get<FullProduct>(`${VITE_BACKEND_URL}/api/products/listar/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          axios.get<ApiItem[]>(`${import.meta.env.VITE_BACKEND_URL}/api/categories/listar`, {
+          axios.get<ApiItem[]>(`${VITE_BACKEND_URL}/api/categories/listar`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          axios.get<ApiItem[]>(`${import.meta.env.VITE_BACKEND_URL}/api/brands/listar`, {
+          axios.get<ApiItem[]>(`${VITE_BACKEND_URL}/api/brands/listar`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          axios.get<ApiItem[]>(`${import.meta.env.VITE_BACKEND_URL}/api/flavors/listar`, {
+          axios.get<ApiItem[]>(`${VITE_BACKEND_URL}/api/flavors/listar`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
         ]);
@@ -93,6 +100,29 @@ const EditForm: React.FC = () => {
     }
   }, [id, getAuthToken]);
 
+  // --- NOVA FUNÇÃO PARA UPLOAD DA IMAGEM ---
+  const uploadImage = async (file: File) => {
+    setUploadingImage(true);
+    const token = getAuthToken();
+    const data = new FormData();
+    data.append('image', file);
+
+    try {
+      const response = await axios.post<{ url: string }>(`${VITE_BACKEND_URL}/api/images/upload`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      return response.data.url;
+    } catch (err: any) {
+      console.error('Erro ao fazer upload da imagem:', err);
+      throw new Error(err.response?.data?.message || 'Falha no upload da imagem.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   // Função para lidar com a atualização do produto principal
   const handleUpdateProduct = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -101,12 +131,21 @@ const EditForm: React.FC = () => {
     setIsSaving(true);
     setSaveStatus(null);
     try {
+      let finalImageUrl = product.image_url;
+
+      // --- LÓGICA DE ATUALIZAÇÃO DA IMAGEM ---
+      if (selectedFile) {
+        setSaveStatus('A carregar nova imagem...');
+        finalImageUrl = await uploadImage(selectedFile);
+        setSaveStatus('Imagem carregada com sucesso! A atualizar produto...');
+      }
+
       const token = getAuthToken();
-      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/products/atualizar/${id}`, {
+      await axios.put(`${VITE_BACKEND_URL}/api/products/atualizar/${id}`, {
         name: product.name,
         description: product.description,
         is_active: product.is_active,
-        image_url: product.image_url,
+        image_url: finalImageUrl, // Usa a URL final (nova ou a original)
         brand_id: product.brand_id,
         category_id: product.category_id,
         original_price: product.original_price,
@@ -131,7 +170,7 @@ const EditForm: React.FC = () => {
     setSaveStatus(null);
     try {
       const token = getAuthToken();
-      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/products/atualizar/${id}/variantes/${variantId}`, updatedData, {
+      await axios.put(`${VITE_BACKEND_URL}/api/products/atualizar/${id}/variantes/${variantId}`, updatedData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -160,6 +199,15 @@ const EditForm: React.FC = () => {
       }
       return { ...prev, [name]: value };
     });
+  };
+
+  // --- NOVA FUNÇÃO PARA MUDANÇA DE ARQUIVO ---
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    } else {
+      setSelectedFile(null);
+    }
   };
 
   // Função para lidar com a mudança nos campos do formulário das variantes
@@ -283,17 +331,31 @@ const EditForm: React.FC = () => {
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
+          {/* --- NOVO CAMPO DE INPUT PARA A IMAGEM E PRÉ-VISUALIZAÇÃO --- */}
           <div>
-            <label htmlFor="image_url" className="block text-sm font-medium text-gray-700">URL da Imagem</label>
+            <label htmlFor="image_file" className="block text-sm font-medium text-gray-700">
+              Imagem do Produto
+            </label>
             <input
-              type="text"
-              name="image_url"
-              id="image_url"
-              value={product.image_url}
-              onChange={handleProductChange}
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
+              type="file"
+              name="image_file"
+              id="image_file"
+              onChange={handleFileChange}
+              accept="image/*"
+              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
             />
+            {(product.image_url || selectedFile) && (
+              <div className="mt-4 flex flex-col items-center">
+                <p className="text-sm font-medium text-gray-700 mb-2">Pré-visualização da Imagem:</p>
+                <img
+                  src={selectedFile ? URL.createObjectURL(selectedFile) : product.image_url}
+                  alt="Pré-visualização do Produto"
+                  className="rounded-lg shadow-md max-w-[200px]"
+                />
+              </div>
+            )}
           </div>
+          {/* --- FIM DA NOVA LÓGICA DE IMAGEM --- */}
           <div>
             <label htmlFor="original_price" className="block text-sm font-medium text-gray-700">Preço Original</label>
             <input
@@ -348,15 +410,15 @@ const EditForm: React.FC = () => {
           </div>
           <motion.button
             type="submit"
-            className={`flex items-center justify-center px-6 py-3 font-bold rounded-lg shadow-md transition-all duration-300 ${isSaving ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-orange-500 text-white hover:bg-orange-600'}`}
-            whileHover={{ scale: isSaving ? 1 : 1.05 }}
-            whileTap={{ scale: isSaving ? 1 : 0.95 }}
-            disabled={isSaving}
+            className={`flex items-center justify-center px-6 py-3 font-bold rounded-lg shadow-md transition-all duration-300 ${isSaving || uploadingImage ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-orange-500 text-white hover:bg-orange-600'}`}
+            whileHover={{ scale: isSaving || uploadingImage ? 1 : 1.05 }}
+            whileTap={{ scale: isSaving || uploadingImage ? 1 : 0.95 }}
+            disabled={isSaving || uploadingImage}
           >
-            {isSaving ? (
+            {isSaving || uploadingImage ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                A Guardar...
+                {uploadingImage ? 'A Carregar Imagem...' : 'A Guardar...'}
               </>
             ) : (
               <>
