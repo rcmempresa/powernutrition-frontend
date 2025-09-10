@@ -946,7 +946,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         onClick={(e) => toggleFavorite(product.displayVariantId, e)}
                       >
                         <Heart
-                          lassName={`w-4 h-4 transition-colors ${
+                          className={`w-4 h-4 transition-colors ${
                             checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
                           }`}
                         />
