@@ -568,6 +568,15 @@ const ProductsList: React.FC = () => {
                           {expandedProductId === product.id ? <ArrowDown className="h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
                         </motion.button>
                         <motion.button
+                          onClick={() => navigate(`/admin/products/add-variant/${product.id}`)}
+                          className="text-emerald-600 hover:text-emerald-900 p-2 rounded-full hover:bg-emerald-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Adicionar Variante"
+                        >
+                          <PlusCircle className="h-5 w-5" />
+                        </motion.button>
+                        <motion.button
                           onClick={() => navigate(`/admin/products/edit/${product.id}`)}
                           className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 transition-colors"
                           whileHover={{ scale: 1.1 }}
@@ -701,11 +710,11 @@ const ProductsList: React.FC = () => {
               className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-sm"
             >
               <h3 className="text-xl font-bold text-gray-900 mb-4">Confirmar Eliminação</h3>
-              <p className="text-gray-700 mb-6">Tem certeza que deseja eliminar este produto? Esta ação é irreversível.</p>
+              <p className="text-gray-700 mb-6">Tem certeza de que deseja eliminar este produto? Esta ação é irreversível.</p>
               <div className="flex justify-end space-x-4">
                 <motion.button
                   onClick={closeDeleteModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  className="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
