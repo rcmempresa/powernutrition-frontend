@@ -11,17 +11,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2, Save, XCircle, Plus, Minus } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../hooks/useAuth';
 
 // 💡 IMPORTANTE: Substitua este mock pelo seu hook de autenticação real.
 // O erro 401 que você recebeu é esperado, pois este 'fake-token' não é válido no seu backend.
 // A solução é integrar o seu sistema de autenticação aqui para obter um token real.
-const useAuth = () => ({
-  getAuthToken: () => {
-    console.warn("Utilizando um token de autenticação falso. Por favor, substitua-o pelo seu token real.");
-    // 👈 Substitua 'fake-token' pelo seu token de autenticação real, obtido após o login do usuário.
-    return 'fake-token';
-  }
-});
+
 
 // 💡 CORRIGIDO: URL do backend agora é uma constante para evitar o erro de 'import.meta'
 const VITE_BACKEND_URL = "https://powernutrition-backend-production-7883.up.railway.app"; // 👈 Mude esta URL para o seu backend
@@ -341,12 +336,20 @@ const ProductForm: React.FC = () => {
         return;
       }
       
-      // 💡 CORREÇÃO: Alterado o formato do payload. O backend provavelmente espera um objeto único
-      // com as propriedades do produto e a lista de variantes no mesmo nível.
+      // 💡 NOVO: Construir os objetos aninhados 'product' e 'variants' para o backend
+      // Os nomes das propriedades agora correspondem às colunas da BD
       const payload = {
-        ...productData, // Spread do objeto `productData`
-        original_price: productData.original_price ? String(productData.original_price) : undefined,
-        image_url: finalImageUrl,
+        product: {
+          name: productData.name,
+          description: productData.description,
+          image_url: finalImageUrl,
+          category_id: productData.category_id,
+          brand_id: productData.brand_id,
+          is_active: productData.is_active,
+          original_price: productData.original_price ? String(productData.original_price) : undefined,
+          rating: productData.rating,
+          reviewcount: productData.reviewcount,
+        },
         variants: variantsData.map(v => ({
           ...v,
           preco: String(v.preco),
