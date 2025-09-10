@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Edit, Save, PlusCircle, XCircle } from 'lucide-react';
+import { Loader2, Edit, Save, PlusCircle, XCircle, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -220,11 +220,22 @@ const EditForm: React.FC = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }}
     >
-      <h1 className="text-4xl font-extrabold text-gray-900 mb-6 flex items-center">
-        <Edit className="h-9 w-9 mr-4 text-orange-500" />
-        Editar Produto: {product.name}
-      </h1>
-      <p className="text-lg text-gray-700 mb-8">Edite as informações do produto e suas variantes.</p>
+      <div className="flex items-center justify-between mb-6">
+        <motion.button
+          onClick={() => navigate(-1)}
+          className="flex items-center px-4 py-2 text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors duration-200"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <ArrowLeft className="h-5 w-5 mr-2" />
+          Voltar
+        </motion.button>
+        <h1 className="text-4xl font-extrabold text-gray-900 flex items-center flex-grow justify-center">
+          <Edit className="h-9 w-9 mr-4 text-orange-500" />
+          Editar Produto: {product.name}
+        </h1>
+      </div>
+      <p className="text-lg text-gray-700 mb-8 text-center">Edite as informações do produto e suas variantes.</p>
 
       <AnimatePresence>
         {saveStatus && (
