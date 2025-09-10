@@ -38,7 +38,7 @@ import OrdersList from './pages/admin/OrdersList';
 import ProductsList from './pages/admin/ProductsList';
 import ProductForm from './pages/admin/ProductForm';
 import ProductVariantForm from './pages/admin/ProductVariantForm';
-import EditForm from '.pages/admin/EditForm';
+import EditForm from './pages/admin/EditForm';
 import UserForm from './pages/admin/UserForm';
 import UsersList from './pages/admin/UsersList';
 import CouponsList from './pages/admin/CouponsList';
