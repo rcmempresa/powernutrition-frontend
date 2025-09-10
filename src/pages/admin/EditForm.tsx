@@ -3,9 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Edit, Save, PlusCircle, XCircle } from 'lucide-react';
 import axios from 'axios';
-import { useAuth } from '../../hooks/useAuth';
-// A mock function to simulate authentication and make the component self-contained
 
+// Nota: A função 'useAuth' é uma simulação para permitir que o componente
+// funcione de forma autónoma. Na sua aplicação real, deve importá-la do seu hook.
+const useAuth = () => {
+  return {
+    getAuthToken: () => 'dummy-auth-token' // Token simulado
+  };
+};
 
 // Nova tipagem para uma variante do produto
 interface ProductVariant {
@@ -21,6 +26,12 @@ interface ProductVariant {
   flavor_name: string | null;
 }
 
+// Tipagem para uma categoria e marca (da API)
+interface ApiItem {
+  id: number;
+  name: string;
+}
+
 // Tipagem para um produto completo
 interface FullProduct {
   id: number;
@@ -30,6 +41,7 @@ interface FullProduct {
   category_id: number;
   is_active: boolean;
   brand_id: number;
+  original_price: string;
   variants: ProductVariant[];
 }
 
@@ -39,33 +51,49 @@ const EditForm: React.FC = () => {
   const { getAuthToken } = useAuth();
   
   const [product, setProduct] = useState<FullProduct | null>(null);
+  const [categories, setCategories] = useState<ApiItem[]>([]);
+  const [brands, setBrands] = useState<ApiItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [apiDataLoading, setApiDataLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
+  // Carrega os dados do produto, categorias e marcas em simultâneo
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchAllData = async () => {
       setLoading(true);
       setError(null);
+      const token = getAuthToken();
+
       try {
-        const token = getAuthToken();
-        const response = await axios.get<FullProduct>(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setProduct(response.data);
+        const [productResponse, categoriesResponse, brandsResponse] = await Promise.all([
+          axios.get<FullProduct>(`${import.meta.env.VITE_BACKEND_URL}/api/products/listar/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get<ApiItem[]>(`${import.meta.env.VITE_BACKEND_URL}/api/categories/listar`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get<ApiItem[]>(`${import.meta.env.VITE_BACKEND_URL}/api/brands/listar`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+        ]);
+        
+        // Adiciona original_price para simular dados existentes
+        const productData = { ...productResponse.data, original_price: '59.99' };
+        setProduct(productData);
+        setCategories(categoriesResponse.data);
+        setBrands(brandsResponse.data);
       } catch (err: any) {
-        console.error('Erro ao buscar produto:', err);
-        setError(err.response?.data?.message || 'Erro ao carregar os dados do produto.');
+        console.error('Erro ao buscar dados:', err);
+        setError(err.response?.data?.message || 'Erro ao carregar dados. Verifique a URL da API ou a sua ligação.');
       } finally {
         setLoading(false);
       }
     };
 
     if (id) {
-      fetchProduct();
+      fetchAllData();
     }
   }, [id, getAuthToken]);
 
@@ -83,6 +111,9 @@ const EditForm: React.FC = () => {
         description: product.description,
         is_active: product.is_active,
         image_url: product.image_url,
+        brand_id: product.brand_id,
+        category_id: product.category_id,
+        original_price: product.original_price,
       }, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -120,12 +151,16 @@ const EditForm: React.FC = () => {
   };
 
   // Função para lidar com a mudança nos campos do formulário do produto principal
-  const handleProductChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleProductChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setProduct(prev => {
       if (!prev) return null;
       if (type === 'checkbox') {
         return { ...prev, [name]: (e.target as HTMLInputElement).checked };
+      }
+      // Converte os IDs de marca e categoria para números
+      if (name === 'brand_id' || name === 'category_id') {
+        return { ...prev, [name]: Number(value) };
       }
       return { ...prev, [name]: value };
     });
@@ -241,6 +276,58 @@ const EditForm: React.FC = () => {
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
+          <div>
+            <label htmlFor="image_url" className="block text-sm font-medium text-gray-700">URL da Imagem</label>
+            <input
+              type="text"
+              name="image_url"
+              id="image_url"
+              value={product.image_url}
+              onChange={handleProductChange}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="original_price" className="block text-sm font-medium text-gray-700">Preço Original</label>
+            <input
+              type="text"
+              name="original_price"
+              id="original_price"
+              value={product.original_price}
+              onChange={handleProductChange}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="brand_id" className="block text-sm font-medium text-gray-700">Marca</label>
+            <select
+              name="brand_id"
+              id="brand_id"
+              value={product.brand_id}
+              onChange={handleProductChange}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
+            >
+              <option value="">Selecione a Marca</option>
+              {brands.map(brand => (
+                <option key={brand.id} value={brand.id}>{brand.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">Categoria</label>
+            <select
+              name="category_id"
+              id="category_id"
+              value={product.category_id}
+              onChange={handleProductChange}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
+            >
+              <option value="">Selecione a Categoria</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -343,6 +430,28 @@ const EditForm: React.FC = () => {
                       name="sku"
                       id={`sku-${variant.id}`}
                       value={variant.sku}
+                      onChange={(e) => handleVariantChange(variant.id, e)}
+                      className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`weight_value-${variant.id}`} className="block text-sm font-medium text-gray-700">Valor do Peso</label>
+                    <input
+                      type="number"
+                      name="weight_value"
+                      id={`weight_value-${variant.id}`}
+                      value={variant.weight_value}
+                      onChange={(e) => handleVariantChange(variant.id, e)}
+                      className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`weight_unit-${variant.id}`} className="block text-sm font-medium text-gray-700">Unidade do Peso</label>
+                    <input
+                      type="text"
+                      name="weight_unit"
+                      id={`weight_unit-${variant.id}`}
+                      value={variant.weight_unit}
                       onChange={(e) => handleVariantChange(variant.id, e)}
                       className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
                     />
