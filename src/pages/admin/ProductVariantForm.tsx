@@ -29,7 +29,7 @@ const ProductVariantForm = () => {
         setLoading(true);
         setError(null);
         // Chamada real à API para obter os detalhes do produto
-        const response = await axios.get(`https://powernutrition-backend-production-7883.up.railway.app/api/products/listar/${productId}`);
+        const response = await axios.get(`https://powernutrition-backend-production-7883.up.railway.app/api/products/${productId}`);
         
         if (response.data) {
           setProduct(response.data);
@@ -68,6 +68,8 @@ const ProductVariantForm = () => {
           sku: variant.sku,
         }
       };
+      
+      console.log('Enviando dados da variante:', requestBody);
 
       const response = await axios.post(
         `https://powernutrition-backend-production-7883.up.railway.app/api/products/adicionar-variante/${productId}`,
@@ -90,7 +92,7 @@ const ProductVariantForm = () => {
       
     } catch (err) {
       toast.error('Erro ao adicionar variante.');
-      console.error('Erro na requisição:', err.response ? err.response.data : err.message);
+      console.error('Erro ao adicionar variante:', err);
     }
   };
 
