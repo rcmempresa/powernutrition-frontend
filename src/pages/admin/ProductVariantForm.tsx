@@ -48,7 +48,7 @@ const ProductVariantForm = () => {
         };
 
         // Requisição para obter os detalhes do produto
-        const productResponse = await axios.get(`https://powernutrition-backend-production-7883.up.railway.app/api/products/${productId}`, { headers });
+        const productResponse = await axios.get(`https://powernutrition-backend-production-7883.up.railway.app/api/products/listar/${productId}`, { headers });
         if (productResponse.data) {
           setProduct(productResponse.data);
         } else {
@@ -82,7 +82,7 @@ const ProductVariantForm = () => {
     e.preventDefault();
     try {
       const token = getAuthToken();
-      if (!token || token === 'SEU_TOKEN_DE_AUTENTICACAO_AQUI') {
+      if (!token) {
         toast.error('Token de autenticação não encontrado ou placeholder. Por favor, adicione o seu token.');
         return;
       }
