@@ -51,6 +51,8 @@ const EditForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Carrega os dados do produto, categorias, marcas e sabores em simultâneo
   useEffect(() => {
@@ -80,6 +82,7 @@ const EditForm: React.FC = () => {
         setCategories(categoriesResponse.data);
         setBrands(brandsResponse.data);
         setFlavors(flavorsResponse.data);
+        setImagePreview(productData.image_url);
       } catch (err: any) {
         console.error('Erro ao buscar dados:', err);
         setError(err.response?.data?.message || 'Erro ao carregar dados. Verifique a URL da API ou a sua ligação.');
@@ -93,6 +96,36 @@ const EditForm: React.FC = () => {
     }
   }, [id, getAuthToken]);
 
+  // Função para lidar com a seleção do ficheiro
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Função para lidar com o upload da imagem
+  const handleImageUpload = async (file: File) => {
+    try {
+      const token = getAuthToken();
+      const formData = new FormData();
+      formData.append('image', file);
+
+      // Assumindo um endpoint de upload de imagem na sua API
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/upload/image`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      return response.data.imageUrl; // Retorna a URL da imagem guardada
+    } catch (err) {
+      console.error('Erro ao fazer upload da imagem:', err);
+      throw new Error('Falha no upload da imagem.');
+    }
+  };
+
   // Função para lidar com a atualização do produto principal
   const handleUpdateProduct = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -102,11 +135,17 @@ const EditForm: React.FC = () => {
     setSaveStatus(null);
     try {
       const token = getAuthToken();
+      let newImageUrl = product.image_url;
+
+      if (selectedImage) {
+        newImageUrl = await handleImageUpload(selectedImage);
+      }
+
       await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/products/atualizar/${id}`, {
         name: product.name,
         description: product.description,
         is_active: product.is_active,
-        image_url: product.image_url,
+        image_url: newImageUrl,
         brand_id: product.brand_id,
         category_id: product.category_id,
         original_price: product.original_price,
@@ -116,6 +155,7 @@ const EditForm: React.FC = () => {
         },
       });
       setSaveStatus('Produto principal atualizado com sucesso!');
+      setSelectedImage(null);
     } catch (err: any) {
       console.error('Erro ao atualizar produto:', err);
       setSaveStatus(err.response?.data?.message || 'Erro ao atualizar o produto. Tente novamente.');
@@ -283,16 +323,27 @@ const EditForm: React.FC = () => {
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
-          <div>
-            <label htmlFor="image_url" className="block text-sm font-medium text-gray-700">URL da Imagem</label>
-            <input
-              type="text"
-              name="image_url"
-              id="image_url"
-              value={product.image_url}
-              onChange={handleProductChange}
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="image_file" className="block text-sm font-medium text-gray-700">Carregar Imagem</label>
+              <input
+                type="file"
+                name="image_file"
+                id="image_file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+              />
+            </div>
+            {imagePreview && (
+              <div className="flex justify-center items-center">
+                <img 
+                  src={imagePreview} 
+                  alt="Pré-visualização da Imagem do Produto"
+                  className="rounded-lg shadow-md max-w-full h-auto max-h-48 object-contain"
+                />
+              </div>
+            )}
           </div>
           <div>
             <label htmlFor="original_price" className="block text-sm font-medium text-gray-700">Preço Original</label>
