@@ -941,16 +941,23 @@ const ShopPage: React.FC<ShopPageProps> = ({
                         <ShoppingCart className="w-5 h-5" />
                       </button>
                       <button
-                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
-                        aria-label="Toggle favorite"
-                        onClick={(e) => toggleFavorite(product.displayVariantId, e)}
-                      >
-                        <Heart
-                          className={`w-4 h-4 transition-colors ${
-                            checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
-                          }`}
-                        />
-                      </button>
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (product.displayVariantId !== null) {
+                          toggleFavorite(product.displayVariantId, e);
+                        } else {
+                          toast.error("Não foi possível adicionar aos favoritos. ID da variante não encontrado.");
+                        }
+                      }}
+                      className={`absolute top-4 right-4 z-10 p-2 rounded-full shadow-lg transition-colors
+                      ${checkIfFavorite(product.displayVariantId) ? 'bg-orange-500 text-white' : 'bg-white text-gray-500 hover:text-orange-500'}`}
+                      aria-label="Adicionar aos favoritos"
+                    >
+                      <Heart
+                        size={20}
+                        fill={checkIfFavorite(product.displayVariantId) ? 'currentColor' : 'none'}
+                      />
+                    </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onQuickViewOpen(product); }}
                         className="p-3 bg-gray-700 text-white rounded-full hover:bg-orange-500 hover:text-white transition-colors duration-200"
