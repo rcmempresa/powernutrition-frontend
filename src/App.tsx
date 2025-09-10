@@ -38,6 +38,7 @@ import OrdersList from './pages/admin/OrdersList';
 import ProductsList from './pages/admin/ProductsList';
 import ProductForm from './pages/admin/ProductForm';
 import ProductVariantForm from './pages/admin/ProductVariantForm';
+import EditForm from '.pages/admin/EditForm';
 import UserForm from './pages/admin/UserForm';
 import UsersList from './pages/admin/UsersList';
 import CouponsList from './pages/admin/CouponsList';
@@ -298,7 +299,7 @@ function App() {
             <Route path="orders/:id" element={<OrderDetails />} />
             <Route path="products" element={<ProductsList />} />
             <Route path="products/new" element={<ProductForm />} />
-            <Route path="products/edit/:id" element={<ProductForm />} />
+            <Route path="products/edit/:id" element={<EditForm />} />
             <Route path="users/new" element={<UserForm />} />
             <Route path="users/edit/:id" element={<UserForm />} />
             <Route path="products/add-images/:productId" element={<ProductImagesForm />} />
