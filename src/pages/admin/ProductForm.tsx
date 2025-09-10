@@ -10,7 +10,6 @@ import { useAuth } from '../../hooks/useAuth';
 // Por favor, substitua esta implementação pela sua versão real quando usar o código.
 // O erro 401 que você recebeu anteriormente é esperado, pois este 'fake-token' não é válido no seu backend.
 
-
 // 💡 CORRIGIDO: URL do backend agora é uma constante para evitar o erro de 'import.meta'
 const VITE_BACKEND_URL = "https://powernutrition-backend-production-7883.up.railway.app"; // 👈 Mude esta URL para o seu backend
 
