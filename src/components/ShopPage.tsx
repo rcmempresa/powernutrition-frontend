@@ -108,7 +108,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  
+  const { checkIfFavorite, toggleFavorite } = useFavorites();
   const [showAllFlavors, setShowAllFlavors] = useState(false);
   // 👉 NOVO ESTADO: controla a exibição de mais pesos
   const [showAllWeights, setShowAllWeights] = useState(false);
@@ -276,7 +276,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = filteredAndSortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
-  const { checkIfFavorite, toggleFavorite, loadingFavorites } = useFavorites();
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
