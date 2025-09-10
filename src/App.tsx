@@ -37,6 +37,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import OrdersList from './pages/admin/OrdersList';
 import ProductsList from './pages/admin/ProductsList';
 import ProductForm from './pages/admin/ProductForm';
+import ProductVariantForm from './pages/admin/ProductVariantForm';
 import UserForm from './pages/admin/UserForm';
 import UsersList from './pages/admin/UsersList';
 import CouponsList from './pages/admin/CouponsList';
@@ -128,6 +129,7 @@ function App() {
           if (pathname.startsWith('/admin/products/edit/')) return 'Editar Produto - Admin';
           if (pathname.startsWith('/admin/products/add-images/')) return 'Adicionar Imagens ao Produto - Admin';
           if (pathname.startsWith('/admin/orders/')) return 'Detalhes da Encomenda - Admin';
+          if (pathname.startsWith('/admin/products/add-variant/')) return 'Adicionar Variante ao Produto - Admin';
           return 'RD Power Nutrition';
       }
     };
@@ -300,6 +302,7 @@ function App() {
             <Route path="users/new" element={<UserForm />} />
             <Route path="users/edit/:id" element={<UserForm />} />
             <Route path="products/add-images/:productId" element={<ProductImagesForm />} />
+            <Route path="products/adicionar-variante/:productId" element={<ProductVariantForm />} />
             <Route path="users" element={<UsersList />} />
             <Route path="coupons" element={<CouponsList />} />
             <Route path="/admin/cupoes/editar/:id" element={<CouponEdit />} />
