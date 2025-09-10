@@ -108,7 +108,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  
+  const { checkIfFavorite, toggleFavorite } = useFavorites();
   const [showAllFlavors, setShowAllFlavors] = useState(false);
   // 👉 NOVO ESTADO: controla a exibição de mais pesos
   const [showAllWeights, setShowAllWeights] = useState(false);
@@ -173,9 +173,33 @@ const ShopPage: React.FC<ShopPageProps> = ({
 
   // --- Lógica de Filtragem e Ordenação ---
   const filteredAndSortedProducts = useMemo(() => {
-    let currentProducts = products.filter(product => product != null);
+    // 1. ANTES DE FILTRAR, CALCULAR AS PROPRIEDADES DERIVADAS
+    let currentProducts = products.map(product => {
+      // Encontra a variante com o preço mais baixo
+      const cheapestVariant = product.variants.length > 0
+        ? product.variants.reduce((prev, curr) => 
+            parseFloat(prev.preco) < parseFloat(curr.preco) ? prev : curr
+          )
+        : null;
 
-    // 1. Filtrar por Disponibilidade
+      // Soma o stock total
+      const totalStock = product.variants.reduce((sum, v) => 
+        sum + v.quantidade_em_stock + v.stock_ginasio, 0
+      );
+      
+      return {
+        ...product,
+        displayPrice: cheapestVariant ? parseFloat(cheapestVariant.preco) : 0,
+        displayWeight: cheapestVariant ? `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}` : '',
+        displayVariantId: cheapestVariant ? cheapestVariant.id : null,
+        totalStock,
+        soldOut: totalStock === 0,
+        isOutOfStock: totalStock === 0,
+      };
+    }).filter(product => product != null);
+
+
+    // 2. Filtrar por Disponibilidade
     // 1. Filtrar por Disponibilidade (Versão Corrigida e mais Clara)
     if (selectedAvailability.includes('Em stock')) {
         currentProducts = currentProducts.filter(product =>
@@ -215,12 +239,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
       );
     }
 
-    // 4. Filtrar por Sabor
-    if (selectedFlavors.length > 0) {
-      currentProducts = currentProducts.filter(product =>
-        product.variants.some(variant => variant.flavor_id && selectedFlavors.includes(String(variant.flavor_id)))
-      );
-    }
 
     // 5. Filtrar por Peso
     if (selectedWeights.length > 0) {
@@ -281,7 +299,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = filteredAndSortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
-  const { checkIfFavorite, toggleFavorite, loadingFavorites } = useFavorites();
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -327,26 +344,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
     setSearchParams(newParams);
 };
 
-  const handleFlavorChange = (id: string) => {
-    const currentFlavors = new Set(searchParams.get('sabor')?.split(',').filter(Boolean) || []);
-
-    if (currentFlavors.has(id)) {
-        currentFlavors.delete(id);
-    } else {
-        currentFlavors.add(id);
-    }
-
-    const newFlavorsArray = Array.from(currentFlavors);
-
-    const newParams = { ...Object.fromEntries(searchParams.entries()) };
-    if (newFlavorsArray.length > 0) {
-        newParams.sabor = newFlavorsArray.join(',');
-    } else {
-        delete newParams.sabor;
-    }
-    setSearchParams(newParams);
-};
-
+ 
   const handleWeightChange = (name: string) => {
     const currentWeights = new Set(searchParams.get('peso')?.split(',').filter(Boolean) || []);
 
@@ -627,31 +625,6 @@ const ShopPage: React.FC<ShopPageProps> = ({
                       </div>
                     </div>
 
-                    {/* Sabor Mobile (se houver) */}
-                    {flavorsList && flavorsList.length > 0 && (
-                      <div className="py-6">
-                        <div className="flex items-center justify-between cursor-pointer" onClick={() => { /* Toggle expand/collapse */ }}>
-                          <span className="text-lg text-white font-normal">Sabor</span>
-                          <ChevronRight className="w-5 h-5 text-gray-400" />
-                        </div>
-                        <div className="mt-4 space-y-2">
-                          {flavorsList.map((flavor, index) => (
-                            <div key={index} className="flex items-center justify-between">
-                              <label className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  className="mr-2"
-                                  checked={selectedFlavors.includes(String(flavor.id || ''))}
-                                  onChange={() => handleFlavorChange(String(flavor.id || ''))}
-                                />
-                                <span className="text-gray-300">{flavor.name}</span>
-                              </label>
-                              <span className="text-gray-500">({flavorCounts[flavor.id || ''] || 0})</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Peso Mobile (se houver) */}
                     {products.some(p => p.weight_value && p.weight_unit) && (
@@ -831,249 +804,228 @@ const ShopPage: React.FC<ShopPageProps> = ({
             {/* Filtro de Categoria Desktop */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-white mb-4">Categoria</h3>
-              <div className="space-y-2">
-                {(showAllCategories ? categoriesList : categoriesList.slice(0, 5)).map((category, index) => (
-                  <div key={index} className="flex items-center justify-between mb-2">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="mr-2"
-                        checked={selectedCategories.includes(String(category.id))}
-                        onChange={() => handleCategoryChange(String(category.id))}
-                      />
-                      <span className="text-gray-300">{category.name}</span>
-                    </label>
-                    <span className="text-gray-500">({categoryCounts[category.id] || 0})</span>
-                  </div>
-                ))}
-                {categoriesList.length > 5 && (
-                  <button
-                    onClick={() => setShowAllCategories(!showAllCategories)}
-                    className="w-full text-left text-orange-500 mt-2 font-medium hover:underline"
-                  >
-                    {showAllCategories ? 'Ver menos' : `Ver todas as categorias (+${categoriesList.length - 5})`}
-                  </button>
-                )}
-              </div>
+              {categoriesList.map((category, index) => (
+                <div key={index} className="flex items-center justify-between mb-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      className="mr-2"
+                      checked={selectedCategories.includes(String(category.id))}
+                      onChange={() => handleCategoryChange(String(category.id))}
+                    />
+                    <span className="text-gray-300">{category.name}</span>
+                  </label>
+                  <span className="text-gray-500">({categoryCounts[category.id] || 0})</span>
+                </div>
+              ))}
+              {/* Toggle para mais/menos categorias */}
+              {categoriesList.length > 5 && (
+                <button
+                  onClick={() => setShowAllCategories(!showAllCategories)}
+                  className="mt-2 text-sm text-orange-500 hover:underline"
+                >
+                  {showAllCategories ? 'Mostrar menos' : 'Mostrar mais'}
+                </button>
+              )}
             </div>
 
-            {/* Filtro de Sabor Desktop (com "Ver Mais") */}
-            {flavorsList && flavorsList.length > 0 && (
+            {/* Filtro de Peso Desktop (se houver) */}
+            {products.some(p => p.variants?.some(v => v.weight_value && v.weight_unit)) && (
               <div className="mb-8">
-                <h3 className="text-lg font-semibold text-white mb-4">Sabor</h3>
-                <div className="space-y-2">
-                  {(showAllFlavors ? flavorsList : flavorsList.slice(0, 5)).map((flavor, index) => (
-                    <div key={index} className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white mb-4">Peso</h3>
+                {Array.from(new Set(products.flatMap(p => p.variants.map(v => `${v.weight_value}${v.weight_unit}`).filter(Boolean))))
+                  .slice(0, showAllWeights ? undefined : 5)
+                  .map((weightOption, index) => (
+                    <div key={index} className="flex items-center justify-between mb-2">
                       <label className="flex items-center">
                         <input
                           type="checkbox"
                           className="mr-2"
-                          checked={selectedFlavors.includes(String(flavor.id || ''))}
-                          onChange={() => handleFlavorChange(String(flavor.id || ''))}
+                          checked={selectedWeights.includes(weightOption)}
+                          onChange={() => handleWeightChange(weightOption)}
                         />
-                        <span className="text-gray-300">{flavor.name}</span>
+                        <span className="text-gray-300">{weightOption}</span>
                       </label>
-                      <span className="text-gray-500">({flavorCounts[flavor.id || ''] || 0})</span>
+                      <span className="text-gray-500">({weightCounts[weightOption] || 0})</span>
                     </div>
                   ))}
-                  {flavorsList.length > 5 && (
-                    <button
-                      onClick={() => setShowAllFlavors(!showAllFlavors)}
-                      className="w-full text-left text-orange-500 mt-2 font-medium hover:underline"
-                    >
-                      {showAllFlavors ? 'Ver menos' : `Ver todos os sabores (+${flavorsList.length - 5})`}
-                    </button>
-                  )}
-                </div>
+                {Array.from(new Set(products.flatMap(p => p.variants.map(v => `${v.weight_value}${v.weight_unit}`)))).length > 5 && (
+                  <button
+                    onClick={() => setShowAllWeights(!showAllWeights)}
+                    className="mt-2 text-sm text-orange-500 hover:underline"
+                  >
+                    {showAllWeights ? 'Mostrar menos' : 'Mostrar mais'}
+                  </button>
+                )}
               </div>
             )}
 
-            {/* Filtro de Peso Desktop */}
-            {products.some(p => p.weight_value && p.weight_unit) && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-white mb-4">Peso</h3>
-                <div className="space-y-2">
-                  {/* Formata o peso para não mostrar os decimais. */}
-                  {
-                    (showAllWeights ? Array.from(new Set(products.map(p => p.weight_value && p.weight_unit ? `${(p.weight_value || '').toString().replace(/\.0+$/, '')}${p.weight_unit}` : '').filter(Boolean))) : Array.from(new Set(products.map(p => p.weight_value && p.weight_unit ? `${(p.weight_value || '').toString().replace(/\.0+$/, '')}${p.weight_unit}` : '').filter(Boolean))).slice(0, 5))
-                    .map((weightOption, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            className="mr-2"
-                            checked={selectedWeights.includes(weightOption)}
-                            onChange={() => handleWeightChange(weightOption)}
-                          />
-                          <span className="text-gray-300">{weightOption}</span>
-                        </label>
-                        <span className="text-gray-500">({weightCounts[weightOption] || 0})</span>
-                      </div>
-                    ))
-                  }
-                  {Array.from(new Set(products.map(p => p.weight_value && p.weight_unit ? `${(p.weight_value || '').toString().replace(/\.0+$/, '')}${p.weight_unit}` : '').filter(Boolean))).length > 5 && (
-                    <button
-                      onClick={() => setShowAllWeights(!showAllWeights)}
-                      className="w-full text-left text-orange-500 mt-2 font-medium hover:underline"
-                    >
-                      {showAllWeights ? 'Ver menos' : `Ver todos os pesos (+${Array.from(new Set(products.map(p => p.weight_value && p.weight_unit ? `${(p.weight_value || '').toString().replace(/\.0+$/, '')}${p.weight_unit}` : '').filter(Boolean))).length - 5})`}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Filtro de Marca Desktop */}
+            {/* Filtro de Marca Desktop (se houver) */}
             {brandsList && brandsList.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-white mb-4">Marca</h3>
-                {brandsList.map((brand, index) => (
-                  <div key={index} className="flex items-center justify-between mb-2">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="mr-2"
-                        checked={selectedBrands.includes(brand.id || '')}
-                        onChange={() => handleBrandChange(brand.id || '')}
-                      />
-                      <span className="text-gray-300">{brand.name}</span>
-                    </label>
-                    <span className="text-gray-500">({brandCounts[brand.id || ''] || 0})</span>
-                  </div>
-                ))}
+                {brandsList
+                  .slice(0, showAllBrands ? undefined : 5)
+                  .map((brand, index) => (
+                    <div key={index} className="flex items-center justify-between mb-2">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          className="mr-2"
+                          checked={selectedBrands.includes(brand.id || '')}
+                          onChange={() => handleBrandChange(brand.id || '')}
+                        />
+                        <span className="text-gray-300">{brand.name}</span>
+                      </label>
+                      <span className="text-gray-500">({brandCounts[brand.id || ''] || 0})</span>
+                    </div>
+                  ))}
+                {brandsList.length > 5 && (
+                  <button
+                    onClick={() => setShowAllBrands(!showAllBrands)}
+                    className="mt-2 text-sm text-orange-500 hover:underline"
+                  >
+                    {showAllBrands ? 'Mostrar menos' : 'Mostrar mais'}
+                  </button>
+                )}
               </div>
             )}
           </div>
-          {/* Conteúdo Principal (Produtos e Paginação) */}
+
+          {/* Seção Principal de Produtos */}
           <div className="flex-1">
-            {/* Cabeçalho da Lista de Produtos */}
-            <div className="flex items-center justify-between mb-8">
-              <h1 className="text-2xl font-bold text-white hidden lg:block">Produtos</h1>
-              <div className="flex-1 text-right hidden lg:block">
-                <span className="text-gray-300 mr-4 font-normal">{filteredAndSortedProducts.length} produtos</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-gray-700 border border-gray-600 text-gray-300 rounded-md px-4 py-2"
-                >
-                  <option>Alfabeticamente, A-Z</option>
-                  <option>Alfabeticamente, Z-A</option>
-                  <option>Preço, menor para maior</option>
-                  <option>Preço, maior para menor</option>
-                  <option>Data, mais recente</option>
-                  <option>Data, mais antiga</option>
-                </select>
+            {/* Barra de Ordenação e Contagem Desktop */}
+            <div className="hidden lg:flex items-center justify-between mb-6">
+              <span className="font-bold text-lg text-white">{filteredAndSortedProducts.length} produtos</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-300">Ordenar por:</span>
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="appearance-none bg-gray-700 text-gray-300 border border-gray-600 rounded-lg px-4 py-2 pr-8 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  >
+                    <option>Alfabeticamente, A-Z</option>
+                    <option>Alfabeticamente, Z-A</option>
+                    <option>Preço, menor para maior</option>
+                    <option>Preço, maior para menor</option>
+                    <option>Data, mais recente</option>
+                    <option>Data, mais antiga</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                    <ChevronDown className="h-4 w-4" />
+                  </div>
+                </div>
               </div>
             </div>
-            {/* Div dos produtos atualizada conforme a sua solicitação */}
-            <div className={`grid gap-6 ${
-              viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
-              viewMode === 'grid2' ? 'grid-cols-1 md:grid-cols-2' :
-              'grid-cols-1'
-            }`}>
+
+            {/* Listagem de Produtos */}
+            <div
+              className={`grid gap-8 ${
+                viewMode === 'list'
+                  ? 'grid-cols-1'
+                  : viewMode === 'grid2'
+                  ? 'grid-cols-1 md:grid-cols-2'
+                  : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+              }`}
+            >
               {currentProducts.map((product) => (
-                
-                <div key={product.id} className="relative group bg-gray-800 rounded-lg overflow-hidden shadow-lg transform transition-transform duration-300 hover:scale-105">
+                <div
+                  key={product.id}
+                  className="bg-gray-800 rounded-lg shadow-lg overflow-hidden relative group"
+                  onMouseEnter={() => setHoveredProduct(String(product.id))}
+                  onMouseLeave={() => setHoveredProduct(null)}
+                >
+                  {/* Etiqueta de Fora de Stock */}
+                  {product.isOutOfStock && (
+                    <span className="absolute top-4 left-4 z-10 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded">
+                      FORA DE STOCK
+                    </span>
+                  )}
+
+                  {/* Imagem do Produto */}
                   <div
-                    className="relative overflow-hidden cursor-pointer"
-                    onMouseEnter={() => setHoveredProduct(product.id)}
-                    onMouseLeave={() => setHoveredProduct(null)}
+                    className="relative cursor-pointer"
                     onClick={() => onProductClick(product)}
                   >
-                    
-                    {/* Contêiner para garantir proporção e alinhar as imagens */}
-                    <div className="relative w-full h-48">
-                      {/* Imagem do Produto Principal */}
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-300 ${
-                          hoveredProduct === product.id && product.hoverImage ? 'opacity-0' : 'opacity-100'
-                        }`}
-                      />
-                      {product.hoverImage && (
-                        <img
-                          src={product.hoverImage}
-                          alt={`${product.name} (hover)`}
-                          className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-300 ${
-                            hoveredProduct === product.id ? 'opacity-100' : 'opacity-0'
-                          }`}
-                        />
-                      )}
-                    </div>
+                    <img
+                      src={
+                        hoveredProduct === String(product.id) && product.hoverImage
+                          ? product.hoverImage
+                          : product.image_url
+                      }
+                      alt={product.name}
+                      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
 
-                    {product.isOutOfStock && (
-                      <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
-                        Esgotado
-                      </div>
-                    )}
-
-                    {/* Overlay de Ações (aparece no hover) */}
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      {/* Existing Buttons */}
-                        
+                    {/* Botões de Ação */}
+                    <div className="absolute inset-0 flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Botão de Favorito */}
                       <button
-                        className="p-3 bg-gray-700 text-white rounded-full hover:bg-orange-500 hover:text-white transition-colors duration-200"
-                        aria-label="Add to cart"
-                        onClick={(e) => handleAddToCart(e, product)}
-                        disabled={product.isOutOfStock}
-                      >
-                        <ShoppingCart className="w-5 h-5" />
-                      </button>
-                      <button
-                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
-                        aria-label="Toggle favorite"
-                        onClick={(e) => toggleFavorite(product.displayVariantId, e)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (product.displayVariantId !== null) {
+                            toggleFavorite(product.displayVariantId, e);
+                          } else {
+                            toast.error("Não foi possível adicionar aos favoritos. ID da variante não encontrado.");
+                          }
+                        }}
+                        className={`absolute top-4 right-4 z-10 p-2 rounded-full shadow-lg transition-colors
+                          ${checkIfFavorite(product.displayVariantId) ? 'bg-orange-500 text-white' : 'bg-white text-gray-500 hover:text-orange-500'}`}
+                        aria-label="Adicionar aos favoritos"
                       >
                         <Heart
-                          lassName={`w-4 h-4 transition-colors ${
-                            checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
-                          }`}
+                          size={20}
+                          fill={checkIfFavorite(product.displayVariantId) ? 'currentColor' : 'none'}
                         />
                       </button>
+                      
+                      {/* Botão de Vista Rápida */}
                       <button
-                        onClick={(e) => { e.stopPropagation(); onQuickViewOpen(product); }}
-                        className="p-3 bg-gray-700 text-white rounded-full hover:bg-orange-500 hover:text-white transition-colors duration-200"
-                        aria-label="Visualização rápida"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onQuickViewOpen(product);
+                        }}
+                        className="bg-white text-gray-800 p-3 rounded-full hover:bg-orange-500 hover:text-white transition-colors"
+                        aria-label="Vista Rápida"
                       >
-                        <Eye className="w-5 h-5" />
-                      </button> 
+                        <Eye size={20} />
+                      </button>
                     </div>
                   </div>
 
-                  {/* Detalhes do Produto */}
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">{product.name}</h3>
-                    {product.category_name && (
-                        <p className="text-sm text-gray-300 mb-1">{product.category_name}</p> 
-                    )}
-                    {product.brand_name && (
-                        <p className="text-xs text-gray-400 mb-2">{product.brand_name}</p> 
-                    )}
-                    <div className="flex items-baseline mb-2">
-                    {/* Este span mostra o preço atual ou o preço da variante mais barata */}
-                    <span className="text-xl font-bold text-orange-500 mr-2">
-                      €{Number(product.displayPrice).toFixed(2)}
-                    </span>
-
-                    {/* Esta condição verifica se há um preço original e se ele é maior que o preço atual */}
-                    {product.original_price && Number(product.original_price) > product.displayPrice && (
-                      /* Este span mostra o preço original, riscado, e com estilo mais discreto */
-                      <span className="text-gray-500 line-through">
-                        €{Number(product.original_price).toFixed(2)}
-                      </span>
-                    )}
-                  </div>
-                    {product.rating !== undefined && (
-                      <div className="flex items-center text-yellow-500">
-                        {Array.from({ length: 5 }, (_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${i < product.rating! ? 'fill-current' : 'text-gray-600'}`}
-                          />
-                        ))}
+                  {/* Informações do Produto */}
+                  <div className="p-4 flex flex-col items-center text-center">
+                    {/* Preço e Avaliação */}
+                    <div className="flex items-center justify-between w-full mb-2">
+                      <span className="text-gray-400 font-semibold text-sm">{product.brand_name}</span>
+                      <div className="flex items-center">
+                        <Star className="w-4 h-4 text-orange-500" fill="currentColor" />
+                        <span className="text-xs text-gray-400 ml-1">
+                          {product.rating || 'N/A'} ({product.reviewcount || 0})
+                        </span>
                       </div>
-                    )}
+                    </div>
+                    
+                    {/* Nome do Produto */}
+                    <h3 className="text-lg font-semibold text-white mb-2 truncate w-full">
+                      {product.name}
+                    </h3>
+                    
+                    {/* Preço de Venda */}
+                    <span className="text-xl font-bold text-white">
+                      €{product.displayPrice.toFixed(2)}
+                    </span>
+                    
+                    {/* Botão de Adicionar ao Carrinho */}
+                    <button
+                      onClick={(e) => handleAddToCart(e, product)}
+                      className="mt-4 w-full bg-orange-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-orange-600 transition-colors"
+                      disabled={product.isOutOfStock}
+                    >
+                      <ShoppingCart className="inline-block w-5 h-5 mr-2" />
+                      {product.isOutOfStock ? 'Fora de Stock' : 'Adicionar ao Carrinho'}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -1081,11 +1033,12 @@ const ShopPage: React.FC<ShopPageProps> = ({
 
             {/* Paginação */}
             {totalPages > 1 && (
-              <div className="mt-12 flex justify-center space-x-2">
+              <div className="mt-8 flex justify-center items-center space-x-2">
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-2 border rounded-full text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 border border-gray-600 rounded-full text-white disabled:opacity-50"
+                  aria-label="Página anterior"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -1093,7 +1046,9 @@ const ShopPage: React.FC<ShopPageProps> = ({
                   <button
                     key={page}
                     onClick={() => paginate(page)}
-                    className={`px-4 py-2 border rounded-full font-medium ${currentPage === page ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-600 text-white'}`}
+                    className={`px-4 py-2 rounded-full ${
+                      currentPage === page ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300'
+                    }`}
                   >
                     {page}
                   </button>
@@ -1101,7 +1056,8 @@ const ShopPage: React.FC<ShopPageProps> = ({
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-2 border rounded-full text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 border border-gray-600 rounded-full text-white disabled:opacity-50"
+                  aria-label="Próxima página"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -1110,9 +1066,8 @@ const ShopPage: React.FC<ShopPageProps> = ({
           </div>
         </div>
       </div>
-      <Footer />
+    <Footer />
     </>
   );
 };
-
 export default ShopPage;

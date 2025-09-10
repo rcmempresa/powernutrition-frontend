@@ -1,62 +1,66 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, Loader2, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, Loader2, Edit, Trash2, CheckCircle, XCircle, ArrowRight, ArrowDown } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
 
-// Tipagem para um produto, refletindo a estrutura exata da resposta do backend
+// Nova tipagem para uma variante do produto
+interface ProductVariant {
+  id: number;
+  produto_id: number;
+  sabor_id: number | null;
+  weight_value: number;
+  weight_unit: string;
+  preco: number;
+  quantidade_em_stock: number | null; // Stock online
+  stock_ginasio: number;
+  sku: string;
+  flavor_name: string | null;
+}
+
+// Tipagem para um produto, refletindo a estrutura exata da resposta do backend com variantes
 interface BackendProduct {
   id: number;
   name: string;
   description: string;
-  price: string;
-  stock_quantity: number; // Stock total online
-  sku: string;
+  original_price: string | null;
   image_url: string;
   category_id: number;
-  category_name?: string;
-  brand: string;
-  weight_unit: string;
-  weight_value: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  flavor_id?: number;
-  flavor_name?: string;
-  original_price?: string;
-  stock_ginasio: number; // Stock específico do ginásio
   rating?: string;
   reviewcount?: number;
+  brand_id: number;
+  category_name: string;
+  brand_name: string;
+  variants: ProductVariant[];
 }
 
-// Tipagem para o produto como será usado no estado do frontend (inclui campos para filtros)
+// Tipagem para o produto como será usado no estado do frontend
 interface ProductForDisplay {
   id: number;
   name: string;
   category_id: number;
   category_display: string;
-  price: number;
-  // 'stock' aqui representa o stock TOTAL combinado para efeitos de ordenação/filtragem geral.
-  // Os valores 'stock_quantity' e 'stock_ginasio' são mantidos para exibição individual.
-  stock: number; 
+  displayPrice: number;
+  original_price?: number;
+  stock: number;
   status_display: 'Ativo' | 'Inativo';
-  flavor_id?: number;
   flavor_display: string;
   description: string;
   sku: string;
   image_url: string;
   brand: string;
-  weight_unit: string;
-  weight_value: number;
-  original_price?: number;
   stock_ginasio: number;
-  stock_quantity: number; // Manter stock_quantity também aqui para exibir separadamente
+  stock_online: number;
   rating?: number;
   reviewcount?: number;
   created_at: string;
   updated_at: string;
+  variants: ProductVariant[]; // Mantém as variantes para exibição
 }
 
 const ProductsList: React.FC = () => {
@@ -66,6 +70,8 @@ const ProductsList: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [productToDelete, setProductToDelete] = useState<number | null>(null);
 
   // Estados para paginação
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -82,6 +88,9 @@ const ProductsList: React.FC = () => {
   // Estados para ordenação
   const [sortKey, setSortKey] = useState<keyof ProductForDisplay>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // Estado para controlar a expansão das variantes
+  const [expandedProductId, setExpandedProductId] = useState<number | null>(null);
 
   // Função para buscar produtos do backend
   const fetchProducts = useCallback(async () => {
@@ -101,31 +110,61 @@ const ProductsList: React.FC = () => {
         },
       });
 
-      const fetchedProducts: ProductForDisplay[] = response.data.map(product => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: Number(product.price),
-        // Calcular o stock total para a propriedade 'stock' usada na ordenação/filtragem
-        stock: product.stock_quantity + product.stock_ginasio, 
-        sku: product.sku,
-        image_url: product.image_url,
-        category_id: product.category_id,
-        category_display: product.category_name || `ID: ${product.category_id}`,
-        brand: product.brand,
-        weight_unit: product.weight_unit,
-        weight_value: Number(product.weight_value),
-        status_display: product.is_active ? 'Ativo' : 'Inativo',
-        created_at: product.created_at,
-        updated_at: product.updated_at,
-        flavor_id: product.flavor_id,
-        flavor_display: product.flavor_name || 'N/A',
-        original_price: product.original_price ? Number(product.original_price) : undefined,
-        stock_ginasio: product.stock_ginasio,
-        stock_quantity: product.stock_quantity, // Manter o stock_quantity original do backend
-        rating: product.rating ? Number(product.rating) : undefined,
-        reviewcount: product.reviewcount,
-      }));
+      const fetchedProducts: ProductForDisplay[] = response.data.map(product => {
+        // Encontrar o preço mais baixo e o stock total de todas as variantes
+        let lowestPrice = Infinity;
+        let totalOnlineStock = 0;
+        let totalGinasioStock = 0;
+        let flavorDisplay = 'N/A';
+
+        if (product.variants && product.variants.length > 0) {
+          product.variants.forEach(variant => {
+            if (variant.preco !== undefined && variant.preco !== null) {
+              const variantPrice = Number(variant.preco);
+              if (!isNaN(variantPrice) && variantPrice < lowestPrice) {
+                lowestPrice = variantPrice;
+              }
+            }
+            totalOnlineStock += variant.quantidade_em_stock || 0;
+            totalGinasioStock += variant.stock_ginasio || 0;
+            
+            // Apenas para exibição, pegamos o primeiro sabor encontrado
+            if (variant.flavor_name && flavorDisplay === 'N/A') {
+              flavorDisplay = variant.flavor_name;
+            }
+          });
+        }
+        
+        // Tratar o caso em que não há variantes ou preços válidos
+        if (lowestPrice === Infinity) {
+          lowestPrice = 0;
+        }
+
+        const originalPrice = product.original_price ? Number(product.original_price) : null;
+        
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          displayPrice: lowestPrice,
+          original_price: (originalPrice && originalPrice > lowestPrice) ? originalPrice : undefined,
+          stock: totalOnlineStock + totalGinasioStock,
+          sku: product.sku,
+          image_url: product.image_url,
+          category_id: product.category_id,
+          category_display: product.category_name || `ID: ${product.category_id}`,
+          brand: product.brand_name,
+          status_display: product.is_active ? 'Ativo' : 'Inativo',
+          created_at: product.created_at,
+          updated_at: product.updated_at,
+          flavor_display: flavorDisplay,
+          stock_online: totalOnlineStock,
+          stock_ginasio: totalGinasioStock,
+          rating: product.rating ? Number(product.rating) : undefined,
+          reviewcount: product.reviewcount,
+          variants: product.variants,
+        };
+      });
 
       setProducts(fetchedProducts);
     } catch (err: any) {
@@ -140,14 +179,22 @@ const ProductsList: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Função para lidar com a eliminação de produtos
-  const handleDeleteProduct = useCallback(async (productId: number) => {
-    // IMPORTANTE: Para uma aplicação real, use um modal personalizado em vez de window.confirm
-    const confirmDelete = window.confirm(`Tem certeza que deseja eliminar o produto com ID: ${productId}?`);
-    if (!confirmDelete) {
-      return;
-    }
+  // Lógica do modal de confirmação
+  const openDeleteModal = (productId: number) => {
+    setProductToDelete(productId);
+    setShowDeleteModal(true);
+  };
 
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setProductToDelete(null);
+  };
+
+  // Função para lidar com a eliminação de produtos
+  const handleDeleteProduct = useCallback(async () => {
+    if (!productToDelete) return;
+
+    closeDeleteModal();
     setDeleteStatus(null);
     setLoading(true);
 
@@ -159,14 +206,14 @@ const ProductsList: React.FC = () => {
         return;
       }
 
-      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/products/eliminar/${productId}`, {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/products/eliminar/${productToDelete}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       setDeleteStatus('Produto eliminado com sucesso!');
-      setProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
+      setProducts(prevProducts => prevProducts.filter(p => p.id !== productToDelete));
     } catch (err: any) {
       console.error('Erro ao eliminar produto:', err);
       setDeleteStatus(err.response?.data?.message || 'Erro ao eliminar produto. Tente novamente.');
@@ -174,7 +221,7 @@ const ProductsList: React.FC = () => {
       setLoading(false);
       setTimeout(() => setDeleteStatus(null), 3000);
     }
-  }, [getAuthToken]);
+  }, [getAuthToken, productToDelete]);
 
   // Lógica de filtragem e ordenação no frontend
   const sortedAndFilteredProducts = products
@@ -209,8 +256,8 @@ const ProductsList: React.FC = () => {
         const dateA = parseISO(a.created_at);
         const dateB = parseISO(b.created_at);
         return sortDirection === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
-      } else if (sortKey === 'price') {
-        return sortDirection === 'asc' ? a.price - b.price : b.price - a.price;
+      } else if (sortKey === 'displayPrice') {
+        return sortDirection === 'asc' ? a.displayPrice - b.displayPrice : b.displayPrice - a.displayPrice;
       } else if (sortKey === 'name') {
         return sortDirection === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
       } else if (sortKey === 'stock') { // 'stock' aqui refere-se ao stock TOTAL combinado
@@ -250,6 +297,11 @@ const ProductsList: React.FC = () => {
   const uniqueCategories = Array.from(new Set(products.map(p => p.category_display))).sort();
   const uniqueFlavors = Array.from(new Set(products.map(p => p.flavor_display))).sort();
 
+  // Função para alternar a exibição das variantes
+  const toggleVariants = (productId: number) => {
+    setExpandedProductId(prevId => (prevId === productId ? null : productId));
+  };
+
   // Variantes de animação para Framer Motion
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -272,6 +324,11 @@ const ProductsList: React.FC = () => {
         ease: "easeOut" 
       } 
     }),
+  };
+  
+  const variantsContainerVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: { opacity: 1, height: 'auto', transition: { duration: 0.5, ease: "easeOut" } },
   };
 
   const getStatusColorClass = (status: 'Ativo' | 'Inativo') => {
@@ -398,8 +455,8 @@ const ProductsList: React.FC = () => {
           <option value="created_at-asc">Data Criação (Antiga)</option>
           <option value="name-asc">Nome (A-Z)</option>
           <option value="name-desc">Nome (Z-A)</option>
-          <option value="price-asc">Preço (Crescente)</option>
-          <option value="price-desc">Preço (Decrescente)</option>
+          <option value="displayPrice-asc">Preço (Crescente)</option>
+          <option value="displayPrice-desc">Preço (Decrescente)</option>
           <option value="stock-asc">Stock (Crescente)</option>
           <option value="stock-desc">Stock (Decrescente)</option>
         </select>
@@ -455,69 +512,145 @@ const ProductsList: React.FC = () => {
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Categoria</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Sabor</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Preço</th>
-                <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Total</th>
+                <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Online</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Ginásio</th>
+                <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Stock Total</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Ativo</th>
                 <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {currentProducts.map((product, index) => (
-                <motion.tr 
-                  key={product.id} 
-                  className={`border-b border-gray-100 last:border-b-0 hover:bg-orange-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  custom={index}
-                >
-                  <td className="py-3 px-4 text-sm text-gray-800">{String(product.id).substring(0, 8)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">
-                    <img src={product.image_url} alt={product.name} className="h-12 w-12 object-cover rounded-md" />
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-800 font-medium">{product.name}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">{product.category_display}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">{product.flavor_display}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">€{product.price.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">{product.stock_quantity}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">{product.stock_ginasio}</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColorClass(product.status_display)}`}>
-                      {product.status_display}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-800">
-                    <div className="flex items-center space-x-2">
-                      <motion.button
-                        onClick={() => navigate(`/admin/products/edit/${product.id}`)}
-                        className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        title="Editar Produto"
+                <React.Fragment key={product.id}>
+                  <motion.tr 
+                    className={`border-b border-gray-100 last:border-b-0 hover:bg-orange-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    custom={index}
+                  >
+                    <td className="py-3 px-4 text-sm text-gray-800">{String(product.id).substring(0, 8)}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      <img src={product.image_url} alt={product.name} className="h-12 w-12 object-cover rounded-md" />
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-800 font-medium">{product.name}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{product.category_display}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{product.flavor_display}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      <div className="flex flex-col items-start">
+                        {product.original_price && (
+                          <span className="text-xs text-gray-500 line-through">
+                            €{product.original_price.toFixed(2)}
+                          </span>
+                        )}
+                        <span className="font-semibold text-gray-900">
+                          €{product.displayPrice.toFixed(2)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{product.stock_online}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{product.stock_ginasio}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColorClass(product.status_display)}`}>
+                        {product.status_display}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      <div className="flex items-center space-x-2">
+                        <motion.button
+                          onClick={() => toggleVariants(product.id)}
+                          className="text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Ver Variantes"
+                        >
+                          {expandedProductId === product.id ? <ArrowDown className="h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
+                        </motion.button>
+                        <motion.button
+                          onClick={() => navigate(`/admin/products/adicionar-variante/${product.id}`)}
+                          className="text-emerald-600 hover:text-emerald-900 p-2 rounded-full hover:bg-emerald-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Adicionar Variante"
+                        >
+                          <PlusCircle className="h-5 w-5" />
+                        </motion.button>
+                        <motion.button
+                          onClick={() => navigate(`/admin/products/edit/${product.id}`)}
+                          className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Editar Produto"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </motion.button>
+                        <motion.button
+                          onClick={() => navigate(`/admin/products/add-images/${product.id}`)}
+                          className="text-orange-600 hover:text-orange-900 p-2 rounded-full hover:bg-orange-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Adicionar/Gerir Imagens"
+                        >
+                          <Loader2 className="h-5 w-5" />
+                        </motion.button>
+                        <motion.button
+                          onClick={() => openDeleteModal(product.id)}
+                          className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          title="Remover Produto"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </motion.button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                  {/* Secção de Variantes Expansível */}
+                  <AnimatePresence>
+                    {expandedProductId === product.id && product.variants.length > 0 && (
+                      <motion.tr
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        variants={variantsContainerVariants}
+                        className="bg-gray-100 border-b border-gray-200"
                       >
-                        <Edit className="h-5 w-5" />
-                      </motion.button>
-                      <motion.button
-                        onClick={() => navigate(`/admin/products/add-images/${product.id}`)}
-                        className="text-orange-600 hover:text-orange-900 p-2 rounded-full hover:bg-orange-100 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        title="Adicionar/Gerir Imagens"
-                      >
-                        <Loader2 className="h-5 w-5" />
-                      </motion.button>
-                      <motion.button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        title="Remover Produto"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </motion.button>
-                    </div>
-                  </td>
-                </motion.tr>
+                        <td colSpan={11} className="p-4">
+                          <h4 className="text-lg font-bold text-gray-800 mb-4">Variantes de {product.name}</h4>
+                          <div className="overflow-x-auto rounded-lg">
+                            <table className="min-w-full bg-white rounded-lg shadow-sm">
+                              <thead className="bg-gray-200">
+                                <tr>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">ID</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Sabor</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Peso</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Preço</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">SKU</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Stock Online</th>
+                                  <th className="py-2 px-4 text-left text-xs font-semibold text-gray-700 uppercase">Stock Ginásio</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {product.variants.map((variant) => (
+                                  <tr key={variant.id} className="border-b border-gray-100 last:border-b-0">
+                                    <td className="py-2 px-4 text-sm text-gray-700">{variant.id}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700 font-medium">{variant.flavor_name || 'N/A'}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700">{variant.weight_value} {variant.weight_unit}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700">€{variant.preco.toFixed(2)}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700">{variant.sku}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700">{variant.quantidade_em_stock || 0}</td>
+                                    <td className="py-2 px-4 text-sm text-gray-700">{variant.stock_ginasio}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    )}
+                  </AnimatePresence>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -560,6 +693,46 @@ const ProductsList: React.FC = () => {
           </motion.button>
         </div>
       )}
+
+      {/* Modal de Confirmação */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: -50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 50 }}
+              className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-sm"
+            >
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Confirmar Eliminação</h3>
+              <p className="text-gray-700 mb-6">Tem certeza de que deseja eliminar este produto? Esta ação é irreversível.</p>
+              <div className="flex justify-end space-x-4">
+                <motion.button
+                  onClick={closeDeleteModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Cancelar
+                </motion.button>
+                <motion.button
+                  onClick={handleDeleteProduct}
+                  className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Eliminar
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
