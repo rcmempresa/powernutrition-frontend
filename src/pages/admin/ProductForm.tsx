@@ -62,7 +62,6 @@ interface CreatedProductResponse {
 const ProductForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  // 💡 CORRIGIDO: Substituir a importação do hook useAuth por uma implementação temporária
   const { getAuthToken } = useAuth();
 
   const isEditing = !!id;
