@@ -62,7 +62,6 @@ interface CreatedProductResponse {
 const ProductForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  // 💡 CORRIGIDO: Substituir a importação do hook useAuth por uma implementação temporária
   const { getAuthToken } = useAuth();
 
   const isEditing = !!id;
@@ -373,6 +372,8 @@ const ProductForm: React.FC = () => {
         setSubmitSuccess('Produto atualizado com sucesso!');
         setTimeout(() => navigate('/admin/products'), 1500); 
       } else {
+
+        console.log('Payload being sent:', payload);
         response = await axios.post<CreatedProductResponse>(`${VITE_BACKEND_URL}/api/products/criar`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
