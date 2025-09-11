@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -153,7 +154,7 @@ const ProductForm: React.FC = () => {
     } finally {
       setLoadingOptions(false);
     }
-  }, []);
+  }, [getAuthToken]);
 
   // Função para carregar dados do produto se estiver em modo de edição
   const fetchProductData = useCallback(async () => {
@@ -206,7 +207,7 @@ const ProductForm: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, isEditing]);
+  }, [id, isEditing, getAuthToken]);
 
   useEffect(() => {
     fetchOptions();
@@ -306,11 +307,6 @@ const ProductForm: React.FC = () => {
       }
 
       // Validação das variantes
-      if (variantsData.length === 0) {
-        setSubmitError('Pelo menos uma variante é necessária.');
-        setLoading(false);
-        return;
-      }
       for (const variant of variantsData) {
         if (!variant.preco || !variant.sku || (variant.quantidade_em_stock <= 0 && variant.stock_ginasio <= 0)) {
           setSubmitError('Por favor, preencha todos os campos obrigatórios para cada variante (Preço, SKU, e pelo menos um stock).');
@@ -333,18 +329,6 @@ const ProductForm: React.FC = () => {
       }
       
       // ✨ AQUI: Construímos o payload com a estrutura correta para o backend
-      // Convertemos o array de variantes para o formato que o backend espera.
-      const formattedVariants = variantsData.map(v => ({
-        id: v.id, // Incluir o ID se estiver a editar
-        preco: String(v.preco),
-        quantidade_em_stock: v.quantidade_em_stock,
-        stock_ginasio: v.stock_ginasio,
-        sku: v.sku,
-        weight_unit: v.weight_unit,
-        weight_value: String(v.weight_value),
-        sabor_id: v.sabor_id && v.sabor_id !== 0 ? v.sabor_id : null,
-      }));
-
       const payload = {
         product: {
           name: productData.name,
@@ -357,8 +341,15 @@ const ProductForm: React.FC = () => {
           rating: productData.rating,
           reviewcount: productData.reviewcount,
         },
-        // O backend agora espera um array de objetos 'variant'
-        variants: formattedVariants,
+        // O backend espera um único objeto 'variant', não um array
+        variant: {
+          ...variantsData[0], // Usamos o primeiro (e único) item do array de variantes
+          preco: String(variantsData[0].preco),
+          weight_value: String(variantsData[0].weight_value),
+          quantidade_em_stock: variantsData[0].quantidade_em_stock,
+          stock_ginasio: variantsData[0].stock_ginasio,
+          sabor_id: variantsData[0].sabor_id && variantsData[0].sabor_id !== 0 ? variantsData[0].sabor_id : null,
+        }
       };
 
       let response;
@@ -372,8 +363,6 @@ const ProductForm: React.FC = () => {
         setSubmitSuccess('Produto atualizado com sucesso!');
         setTimeout(() => navigate('/admin/products'), 1500); 
       } else {
-
-        console.log('Payload being sent:', payload);
         response = await axios.post<CreatedProductResponse>(`${VITE_BACKEND_URL}/api/products/criar`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -744,3 +733,4 @@ const ProductForm: React.FC = () => {
 };
 
 export default ProductForm;
+
