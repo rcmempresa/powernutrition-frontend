@@ -273,7 +273,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                 },
             };
 
-            const paymentResponse = await fetch('http://:3000/api/referencia/mbway/create', {
+            const paymentResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/referencia/mbway/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
