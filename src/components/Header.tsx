@@ -45,10 +45,10 @@ interface GroupedCategories {
 const groupCategories = (categories: Category[]): GroupedCategories => {
   return categories.reduce((acc, category) => {
     let groupName = "Outros";
-    if ([1, 2, 5, 12].includes(category.id)) groupName = "Suplementos Essenciais";
-    else if ([3, 6, 11].includes(category.id)) groupName = "Performance & Energia";
-    else if ([4, 7, 10, 13, 14].includes(category.id)) groupName = "Saúde & Bem-Estar";
-    else if ([8, 9, 15].includes(category.id)) groupName = "Lifestyle";
+    if ([1, 2, 15].includes(category.id)) groupName = "Suplementos Essenciais";
+    else if ([14, 4, 6, 11, 5].includes(category.id)) groupName = "Performance & Energia";
+    else if ([7, 3, 9].includes(category.id)) groupName = "Saúde & Bem-Estar";
+    else if ([8, 10, 13 ].includes(category.id)) groupName = "Lifestyle";
 
     if (!acc[groupName]) acc[groupName] = [];
     acc[groupName].push(category);
