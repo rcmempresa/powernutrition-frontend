@@ -48,7 +48,7 @@ const groupCategories = (categories: Category[]): GroupedCategories => {
     if ([1, 2, 15].includes(category.id)) groupName = "Suplementos Essenciais";
     else if ([14, 4, 6, 11, 5].includes(category.id)) groupName = "Performance & Energia";
     else if ([7, 3, 9].includes(category.id)) groupName = "Saúde & Bem-Estar";
-    else if ([8, 10, 13 ].includes(category.id)) groupName = "Lifestyle";
+    else if ([8, 10, 13, 12 ].includes(category.id)) groupName = "Lifestyle";
 
     if (!acc[groupName]) acc[groupName] = [];
     acc[groupName].push(category);
