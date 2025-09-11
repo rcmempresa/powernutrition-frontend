@@ -342,7 +342,7 @@ function App() {
         )}
       </AnimatePresence>
 
-      <WhatsAppButton phoneNumber="351912345678" />
+      <WhatsAppButton phoneNumber="351935708047" />
 
       <CookieConsent
         location="bottom"
