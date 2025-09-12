@@ -14,8 +14,8 @@ const ShippingMethodsPage = () => {
 
           <h2 className="text-2xl font-bold text-white mt-8 mb-4">1. Prazos de Envio</h2>
           <ul className="list-disc list-inside mb-4 space-y-2">
-            <li><strong>Portugal Continental:</strong> 2 a 3 dias úteis.</li>
-            <li><strong>Ilhas (Açores e Madeira):</strong> 4 a 7 dias úteis.</li>
+            <li><strong>Portugal Continental:</strong> 4 a 7 dias úteis.</li>
+            <li><strong>Ilhas (Açores e Madeira):</strong> 2 a 3 dias úteis.</li>
             <li><strong>Europa:</strong> 5 a 10 dias úteis.</li>
           </ul>
           <p className="mb-4">
@@ -24,7 +24,7 @@ const ShippingMethodsPage = () => {
 
           <h2 className="text-2xl font-bold text-white mt-8 mb-4">2. Custos de Envio</h2>
           <p className="mb-4">
-            Os custos de envio são calculados no checkout, com base no peso da encomenda e na morada de entrega. Oferecemos envio gratuito para encomendas superiores a 50€.
+            Os custos de envio são calculados no checkout, com base no peso da encomenda e na morada de entrega.
           </p>
 
           <h2 className="text-2xl font-bold text-white mt-8 mb-4">3. Rastreamento da Encomenda</h2>
