@@ -147,7 +147,7 @@ const ShopPage: React.FC<ShopPageProps> = ({
             toast.error("Produto sem variantes disponíveis para adicionar ao carrinho.");
         }
     } else {
-        console.warn("Cart context or addItem function not available.");
+        console.warn("Cart context or function not available.");
         toast.error("Não foi possível adicionar ao carrinho.");
     }
 }, [cart]);
