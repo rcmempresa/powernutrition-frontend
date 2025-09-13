@@ -12,7 +12,8 @@ interface CartItem {
   price: number;
   quantity: number;
   image_url: string;
-  flavor_name?: string; // ✨ Propriedade 'flavor', usada na ProductPage
+  flavor_name?: string; 
+  product_image?: string;
 }
 
 interface Product {
@@ -22,6 +23,7 @@ interface Product {
   image_url: string;
   rating: number;
   is_sold_out: boolean;
+  product_image?: string;
 }
 
 interface CartPageProps {
@@ -146,7 +148,7 @@ const CartPage: React.FC<CartPageProps> = ({ items, onUpdateQuantity, onRemoveIt
                     <div key={item.id} className="p-6">
                       <div className="flex items-center space-x-4 border-b border-gray-100 pb-4">
                         <img
-                          src={item.image_url}
+                          src={item.product_image}
                           alt={item.name}
                           className="h-16 w-16 rounded-lg object-cover"
                         />
