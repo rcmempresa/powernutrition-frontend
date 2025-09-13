@@ -33,8 +33,12 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({
   onCheckout
 }) => {
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
+  console.log("Dados do carrinho recebidos:", items);
+  // A variável 'secureImageUrl' NÃO DEVE ser declarada aqui.
+  // const secureImageUrl = item.image_url.replace('http://', 'https://'); <-- REMOVER ESTA LINHA
+  
   if (!isOpen) return null;
+  
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -68,42 +72,47 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({
               </div>
             ) : (
               <div className="space-y-4">
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4 border-b border-gray-100 pb-4">
-                    <img
-                      src={item.image_url}
-                      alt={item.name}
-                      className="h-16 w-16 rounded-lg object-cover"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.product_name}</h3>
-                      <p className="text-sm text-gray-500">{item.flavor_name}</p>
-                      <p className="text-orange-500 font-semibold">{item.price.toFixed(2)}€</p>
-                      
-                      <div className="flex items-center space-x-2 mt-2">
-                        <button
-                          onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                          className="rounded-full bg-gray-100 p-1 hover:bg-gray-200"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="w-8 text-center">{item.quantity}</span>
-                        <button
-                          onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                          className="rounded-full bg-gray-100 p-1 hover:bg-gray-200"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => onRemoveItem(item.id)}
-                          className="ml-4 text-red-500 hover:text-red-700 text-sm"
-                        >
-                          Remover
-                        </button>
+                {items.map((item) => {
+                  // ✅ CORREÇÃO: Mover a conversão para dentro do map
+                  const secureImageUrl = item.image_url.replace('http://', 'https://');
+                  
+                  return (
+                    <div key={item.id} className="flex items-center space-x-4 border-b border-gray-100 pb-4">
+                      <img
+                        src={secureImageUrl}
+                        alt={item.name}
+                        className="h-16 w-16 rounded-lg object-cover"
+                      />
+                      <div className="flex-1">
+                       <h3 className="font-medium text-gray-900">{item.product_name}</h3>
+                        <p className="text-sm text-gray-500">{item.flavor_name}</p>
+                        <p className="text-orange-500 font-semibold">{item.price.toFixed(2)}€</p>
+                        
+                        <div className="flex items-center space-x-2 mt-2">
+                          <button
+                            onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                            className="rounded-full bg-gray-100 p-1 hover:bg-gray-200"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </button>
+                          <span className="w-8 text-center">{item.quantity}</span>
+                          <button
+                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                            className="rounded-full bg-gray-100 p-1 hover:bg-gray-200"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => onRemoveItem(item.id)}
+                            className="ml-4 text-red-500 hover:text-red-700 text-sm"
+                          >
+                            Remover
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

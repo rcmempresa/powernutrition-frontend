@@ -24,6 +24,7 @@ interface CheckoutPageProps {
     image_url: string;
     weight_value: string;
     color?: string;
+    original_price?: number;
   }>;
   onBack: () => void;
 }
@@ -750,7 +751,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   />
                   <button
-                    onClick={handleApplyCoupon} // AQUI: Chama a função
+                    onClick={handleApplyCoupon} 
                     disabled={isApplyingCoupon || !couponCode} // Desativa se estiver a processar ou se não houver código
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       isApplyingCoupon ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'
