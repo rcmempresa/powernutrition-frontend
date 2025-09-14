@@ -39,6 +39,7 @@ const CartPage: React.FC<CartPageProps> = ({ items, onUpdateQuantity, onRemoveIt
   const [discount, setDiscount] = useState(0);
   const [couponError, setCouponError] = useState<string | null>(null);
 
+  
   // Estados para os produtos "Pode Também Gostar"
   const [randomProducts, setRandomProducts] = useState<Product[]>([]);
   const [loadingRandom, setLoadingRandom] = useState(true);

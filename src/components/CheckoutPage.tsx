@@ -110,9 +110,14 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
     try {
       const applyCouponPayload = {
-        couponCode,
-        items: items.map(item => ({ price: item.price, quantity: item.quantity })),
-      };
+      couponCode,
+    
+      items: items.map(item => ({
+        price: item.price,
+        quantity: item.quantity,
+        original_price: item.original_price, 
+      })),
+    };
 
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/apply`, {
         method: 'POST',
