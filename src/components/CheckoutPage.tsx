@@ -740,6 +740,11 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-800">{item.product_name}</h4>
                     </div>
+                    {item.original_price && (
+                      <span className="text-sm text-gray-500 line-through">
+                        €{(item.original_price * item.quantity).toFixed(2)}
+                      </span>
+                    )}
                     <div className="text-lg font-bold text-gray-800">
                       €{(item.price * item.quantity).toFixed(2)}
                     </div>
