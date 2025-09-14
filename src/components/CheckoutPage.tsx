@@ -30,6 +30,8 @@ interface CheckoutPageProps {
 }
 
 const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
+
+   console.log('Dados de items recebidos no CheckoutPage:', items);
   // ATENÇÃO: Estes IDs devem vir do seu backend ou ser conhecidos.
   // Estou a usar IDs fictícios para demonstração.
   const STORE_ADDRESS_ID = 1; // Exemplo de ID para a Morada da Loja
