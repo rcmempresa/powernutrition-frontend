@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Loader2, Edit, Trash2, CheckCircle, XCircle, BarChart2, Info } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 
-// Tipagem atualizada para a estrutura do backend, incluindo as novas colunas
+// Tipagem para a estrutura do cupão no backend
 interface BackendCoupon {
   id: string;
   code: string;
   discount_percentage: number;
   athlete_name: string;
-  is_specific: boolean; // Adicionado
-  product_id: number | null; // Adicionado
-  is_active: boolean; // Adicionado, é bom ter este estado
+  is_specific: boolean; 
+  product_id: number | null; 
+  is_active: boolean; 
   created_at: string;
   updated_at: string;
 }
@@ -24,31 +24,38 @@ interface CouponForDisplay {
   code: string;
   discount: number;
   athlete_name: string;
-  is_specific: boolean; // Adicionado
-  product_id: number | null; // Adicionado
+  is_specific: boolean;
+  product_id: number | null;
   status_display: 'Ativo' | 'Inativo'; 
   created_at: string;
+}
+
+// Tipagem para os produtos
+interface Product {
+    id: number;
+    name: string;
+    original_price: number;
 }
 
 const CouponsList: React.FC = () => {
   const navigate = useNavigate();
   // Simulação de autenticação, substitua por seu `useAuth` real
-  const { getAuthToken } = useAuth();
+  const { getAuthToken} = useAuth(); 
   
   const [coupons, setCoupons] = useState<CouponForDisplay[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
 
-  // Estado do formulário atualizado com as novas propriedades
   const [newCouponForm, setNewCouponForm] = useState({
     code: '',
     discount_percentage: 0,
     athlete_name: '',
-    is_specific: false, // Novo
-    product_id: '' // Novo, para o input de texto
+    is_specific: false, 
+    product_id: '' 
   });
 
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
@@ -57,7 +64,6 @@ const CouponsList: React.FC = () => {
     setTimeout(() => setToastMessage(null), 4000); 
   };
 
-  // Função para buscar cupões do backend
   const fetchCoupons = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -88,19 +94,26 @@ const CouponsList: React.FC = () => {
     }
   }, []);
 
-  // Lidar com a submissão do formulário para criar um novo cupão
+  const fetchProducts = useCallback(async () => {
+    try {
+        const response = await axios.get<Product[]>('https://powernutrition-backend-production-7883.up.railway.app/api/products/listar/');
+        setProducts(response.data);
+    } catch (err: any) {
+        console.error('Erro ao buscar produtos:', err);
+        showToast('Não foi possível carregar a lista de produtos.', 'error');
+    }
+  }, []);
+
   const handleCreateCoupon = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
     
-    // Preparar o payload para o backend
     const payload = {
       code: newCouponForm.code,
       discount_percentage: newCouponForm.discount_percentage,
-      athlete_name: newCouponForm.athlete_name,
+      athlete_name: newCouponForm.athlete_name === '' ? null : newCouponForm.athlete_name, 
       is_specific: newCouponForm.is_specific,
-      // Se for específico e o campo product_id não for vazio, converte para número
       product_id: newCouponForm.is_specific && newCouponForm.product_id !== '' 
           ? Number(newCouponForm.product_id) 
           : null,
@@ -125,7 +138,6 @@ const CouponsList: React.FC = () => {
         }
       ]);
       
-      // Limpar o formulário
       setNewCouponForm({ 
         code: '', 
         discount_percentage: 0, 
@@ -144,7 +156,6 @@ const CouponsList: React.FC = () => {
     }
   };
 
-  // Lidar com a eliminação de cupões
   const handleDeleteCoupon = useCallback(async (couponId: string) => {
     const confirmDelete = window.confirm(`Tem certeza que deseja eliminar o cupão com ID: ${couponId}? Esta ação é irreversível.`);
     if (!confirmDelete) {
@@ -167,7 +178,6 @@ const CouponsList: React.FC = () => {
     }
   }, []);
 
-  // Lidar com a visualização do uso do cupão
   const handleViewUsage = async (couponCode: string) => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/usage/${couponCode}`);
@@ -181,9 +191,9 @@ const CouponsList: React.FC = () => {
 
   useEffect(() => {
     fetchCoupons();
-  }, [fetchCoupons]);
+    fetchProducts();
+  }, [fetchCoupons, fetchProducts]);
 
-  // Variantes de animação para Framer Motion
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
@@ -250,7 +260,6 @@ const CouponsList: React.FC = () => {
       initial="hidden"
       animate="visible"
     >
-      {/* Componente Toast */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div
@@ -298,18 +307,16 @@ const CouponsList: React.FC = () => {
             />
           </div>
           <div className="flex flex-col">
-            <label htmlFor="athlete_name" className="text-sm font-medium text-gray-300 mb-1">Nome do Atleta</label>
+            <label htmlFor="athlete_name" className="text-sm font-medium text-gray-300 mb-1">Nome do Atleta (Opcional)</label>
             <input
               id="athlete_name"
               type="text"
               className="p-3 border border-gray-600 rounded-lg shadow-sm focus:ring-orange-400 focus:border-orange-400 text-gray-100 bg-gray-700 placeholder-gray-400 transition-all duration-200"
               value={newCouponForm.athlete_name}
               onChange={(e) => setNewCouponForm({ ...newCouponForm, athlete_name: e.target.value })}
-              required
             />
           </div>
 
-          {/* Novos campos para cupões específicos */}
           <div className="flex items-center space-x-2">
             <input
               id="is_specific"
@@ -318,7 +325,7 @@ const CouponsList: React.FC = () => {
               onChange={(e) => setNewCouponForm({ 
                 ...newCouponForm, 
                 is_specific: e.target.checked,
-                product_id: e.target.checked ? newCouponForm.product_id : '' // Limpa o campo se desmarcar
+                product_id: e.target.checked ? newCouponForm.product_id : '' 
               })}
               className="w-4 h-4 text-orange-500 border-gray-600 rounded focus:ring-orange-400 bg-gray-700"
             />
@@ -329,16 +336,23 @@ const CouponsList: React.FC = () => {
 
           {newCouponForm.is_specific && (
             <div className="flex flex-col">
-              <label htmlFor="product_id" className="text-sm font-medium text-gray-300 mb-1">ID do Produto</label>
-              <input
+              <label htmlFor="product_id" className="text-sm font-medium text-gray-300 mb-1">
+                Selecione o Produto
+              </label>
+              <select
                 id="product_id"
-                type="number"
                 className="p-3 border border-gray-600 rounded-lg shadow-sm focus:ring-orange-400 focus:border-orange-400 text-gray-100 bg-gray-700 placeholder-gray-400 transition-all duration-200"
                 value={newCouponForm.product_id}
                 onChange={(e) => setNewCouponForm({ ...newCouponForm, product_id: e.target.value })}
                 required
-                min="1"
-              />
+              >
+                <option value="" disabled>Selecione um produto...</option>
+                {products.map(product => (
+                    <option key={product.id} value={product.id}>
+                        {product.name}
+                    </option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -368,7 +382,6 @@ const CouponsList: React.FC = () => {
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Código</th>
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Desconto</th>
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Atleta</th>
-                  {/* Nova coluna para o tipo de cupão */}
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Tipo</th>
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Estado</th>
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Ações</th>
@@ -386,8 +399,7 @@ const CouponsList: React.FC = () => {
                   >
                     <td className="py-3 px-4 text-sm font-medium text-gray-900">{coupon.code}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">{coupon.discount}%</td>
-                    <td className="py-3 px-4 text-sm text-gray-800">{coupon.athlete_name}</td>
-                    {/* Exibe o tipo de cupão */}
+                    <td className="py-3 px-4 text-sm text-gray-800">{coupon.athlete_name || '-'}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">
                       {coupon.is_specific ? `Específico (ID: ${coupon.product_id})` : 'Geral'}
                     </td>
