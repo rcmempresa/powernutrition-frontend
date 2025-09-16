@@ -55,7 +55,13 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
     country: 'Portugal',
   };
 
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = items.reduce((sum, item) => {
+    // Se o original_price for maior que o price, use-o para o cálculo
+    const priceToUse = item.original_price && item.original_price > item.price
+        ? item.original_price
+        : item.price;
+    return sum + (priceToUse * item.quantity);
+}, 0);    
   const shipping = 0; // Envio gratuito por enquanto
 
   const [formData, setFormData] = useState({
@@ -741,13 +747,24 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                       <h4 className="font-medium text-gray-800">{item.product_name}</h4>
                     </div>
                     <div className="flex flex-col items-end">
-                      <div className="text-lg font-bold text-gray-800">
-                        €{(item.price * item.quantity).toFixed(2)}
-                      </div>
-                      {item.original_price && (
-                        <span className="text-sm text-gray-500 line-through">
-                          €{(item.original_price * item.quantity).toFixed(2)}
-                        </span>
+                      {/* Verifica se o original_price existe e se é MAIOR que o price */}
+                      {item.original_price > item.price && (
+                        <>
+                          {/* O preço a ser riscado é o price */}
+                          <span className="text-sm text-gray-500 line-through">
+                            €{(item.price * item.quantity).toFixed(2)}
+                          </span>
+                          {/* O preço a ser exibido normalmente é o original_price */}
+                          <div className="text-lg font-bold text-gray-800">
+                            €{(item.original_price * item.quantity).toFixed(2)}
+                          </div>
+                        </>
+                      )}
+                      {/* Se não houver original_price ou se for menor, exiba apenas o price */}
+                      {!(item.original_price > item.price) && (
+                        <div className="text-lg font-bold text-gray-800">
+                          €{(item.price * item.quantity).toFixed(2)}
+                        </div>
                       )}
                     </div>
                   </div>
