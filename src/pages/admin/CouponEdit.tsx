@@ -4,19 +4,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Save, XCircle, CheckCircle, Info } from 'lucide-react';
 import axios from 'axios';
 
-// Tipagem para o cupão
+// Tipagem atualizada para o cupão
 interface Coupon {
   id: string;
   code: string;
   discount_percentage: number;
-  athlete_name: string;
+  athlete_name: string | null;
+  is_specific: boolean; // Adicionado
+  product_id: number | null; // Adicionado
+  is_active: boolean; // Adicionado
+}
+
+// Tipagem para os produtos
+interface Product {
+    id: number;
+    name: string;
+    original_price: number;
 }
 
 const CouponEdit: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); // Obtém o 'id' da URL
+  const { id } = useParams<{ id: string }>(); 
   const navigate = useNavigate();
 
   const [couponData, setCouponData] = useState<Coupon | null>(null);
+  const [products, setProducts] = useState<Product[]>([]); // Novo estado para os produtos
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +45,8 @@ const CouponEdit: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // Rota para buscar um único cupão
+      // Nota: o 'id' que vem da URL é o `code`, não o `id` interno do cupão
+      // A sua rota de backend deve tratar isso.
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/listar/${id}`);
       setCouponData(response.data);
     } catch (err: any) {
@@ -45,22 +57,44 @@ const CouponEdit: React.FC = () => {
     }
   }, [id]);
 
+  // Função para buscar os produtos
+  const fetchProducts = useCallback(async () => {
+    try {
+        const response = await axios.get<Product[]>('https://powernutrition-backend-production-7883.up.railway.app/api/products/listar/');
+        setProducts(response.data);
+    } catch (err: any) {
+        console.error('Erro ao buscar produtos:', err);
+        showToast('Não foi possível carregar a lista de produtos.', 'error');
+    }
+  }, []);
+
   useEffect(() => {
     if (id) {
       fetchCoupon();
+      fetchProducts();
     }
-  }, [id, fetchCoupon]);
+  }, [id, fetchCoupon, fetchProducts]);
 
-  // Lidar com a submissão do formulário de edição
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!couponData) return;
 
     setIsSubmitting(true);
     setError(null);
+    
+    // Preparar o payload para a atualização
+    const payload = {
+        code: couponData.code,
+        discount_percentage: couponData.discount_percentage,
+        athlete_name: couponData.athlete_name === '' ? null : couponData.athlete_name,
+        is_specific: couponData.is_specific,
+        product_id: couponData.is_specific ? couponData.product_id : null,
+    };
+
     try {
-      // Passar o id real do cupão, que está no objeto 'couponData'
-      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/atualizar/${couponData.id}`, couponData);
+      // Agora, a sua rota de backend espera o ID interno para a atualização
+      // O id na URL é o `code`, mas o `couponData.id` é o id real do banco de dados
+      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/atualizar/${couponData.id}`, payload);
       
       showToast('Cupão atualizado com sucesso!', 'success');
       
@@ -157,16 +191,56 @@ const CouponEdit: React.FC = () => {
             />
           </div>
           <div className="flex flex-col">
-            <label htmlFor="athlete_name" className="text-sm font-medium text-gray-300 mb-1">Nome do Atleta</label>
+            <label htmlFor="athlete_name" className="text-sm font-medium text-gray-300 mb-1">Nome do Atleta (Opcional)</label>
             <input
               id="athlete_name"
               type="text"
               className="p-3 border border-gray-600 rounded-lg shadow-sm focus:ring-orange-400 focus:border-orange-400 text-gray-100 bg-gray-700 transition-all duration-200"
-              value={couponData.athlete_name}
+              value={couponData.athlete_name || ''}
               onChange={(e) => setCouponData({ ...couponData, athlete_name: e.target.value })}
-              required
             />
           </div>
+          
+          {/* Campos novos para edição */}
+          <div className="flex items-center space-x-2">
+            <input
+              id="is_specific"
+              type="checkbox"
+              checked={couponData.is_specific}
+              onChange={(e) => setCouponData({
+                ...couponData,
+                is_specific: e.target.checked,
+                product_id: e.target.checked ? couponData.product_id : null,
+              })}
+              className="w-4 h-4 text-orange-500 border-gray-600 rounded focus:ring-orange-400 bg-gray-700"
+            />
+            <label htmlFor="is_specific" className="text-sm font-medium text-gray-300">
+              Cupão para Produto Específico?
+            </label>
+          </div>
+
+          {couponData.is_specific && (
+            <div className="flex flex-col">
+              <label htmlFor="product_id" className="text-sm font-medium text-gray-300 mb-1">
+                Selecione o Produto
+              </label>
+              <select
+                id="product_id"
+                className="p-3 border border-gray-600 rounded-lg shadow-sm focus:ring-orange-400 focus:border-orange-400 text-gray-100 bg-gray-700 transition-all duration-200"
+                value={couponData.product_id || ''}
+                onChange={(e) => setCouponData({ ...couponData, product_id: Number(e.target.value) })}
+                required
+              >
+                <option value="" disabled>Selecione um produto...</option>
+                {products.map(product => (
+                    <option key={product.id} value={product.id}>
+                        {product.name}
+                    </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="flex space-x-4">
             <motion.button
               type="submit"
