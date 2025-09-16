@@ -3,13 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Loader2, Edit, Trash2, CheckCircle, XCircle, BarChart2, Info } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../hooks/useAuth';
 
-// Tipagem para um cupão, refletindo a estrutura do seu backend
+// Tipagem atualizada para a estrutura do backend, incluindo as novas colunas
 interface BackendCoupon {
   id: string;
   code: string;
   discount_percentage: number;
   athlete_name: string;
+  is_specific: boolean; // Adicionado
+  product_id: number | null; // Adicionado
+  is_active: boolean; // Adicionado, é bom ter este estado
   created_at: string;
   updated_at: string;
 }
@@ -20,6 +24,8 @@ interface CouponForDisplay {
   code: string;
   discount: number;
   athlete_name: string;
+  is_specific: boolean; // Adicionado
+  product_id: number | null; // Adicionado
   status_display: 'Ativo' | 'Inativo'; 
   created_at: string;
 }
@@ -27,27 +33,28 @@ interface CouponForDisplay {
 const CouponsList: React.FC = () => {
   const navigate = useNavigate();
   // Simulação de autenticação, substitua por seu `useAuth` real
-  const getAuthToken = () => 'seu_token_de_autenticacao'; 
+  const { getAuthToken } = useAuth();
   
   const [coupons, setCoupons] = useState<CouponForDisplay[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Estado para o toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
 
-  // Estado para o formulário de criação
+  // Estado do formulário atualizado com as novas propriedades
   const [newCouponForm, setNewCouponForm] = useState({
     code: '',
     discount_percentage: 0,
     athlete_name: '',
+    is_specific: false, // Novo
+    product_id: '' // Novo, para o input de texto
   });
 
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     setToastMessage(message);
     setToastType(type);
-    setTimeout(() => setToastMessage(null), 4000); // Ocultar após 4 segundos
+    setTimeout(() => setToastMessage(null), 4000); 
   };
 
   // Função para buscar cupões do backend
@@ -55,7 +62,6 @@ const CouponsList: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // Simulação: A sua API deve ter uma rota de listagem de cupões
       const response = await axios.get<BackendCoupon[]>(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/listar`, {
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
@@ -67,8 +73,9 @@ const CouponsList: React.FC = () => {
         code: coupon.code,
         discount: coupon.discount_percentage,
         athlete_name: coupon.athlete_name,
-        // Supondo que um cupão é sempre ativo ao ser criado, ou baseado em uma propriedade do backend
-        status_display: 'Ativo', 
+        is_specific: coupon.is_specific,
+        product_id: coupon.product_id,
+        status_display: coupon.is_active ? 'Ativo' : 'Inativo', 
         created_at: coupon.created_at,
       }));
 
@@ -87,8 +94,20 @@ const CouponsList: React.FC = () => {
     setLoading(true);
     setError(null);
     
+    // Preparar o payload para o backend
+    const payload = {
+      code: newCouponForm.code,
+      discount_percentage: newCouponForm.discount_percentage,
+      athlete_name: newCouponForm.athlete_name,
+      is_specific: newCouponForm.is_specific,
+      // Se for específico e o campo product_id não for vazio, converte para número
+      product_id: newCouponForm.is_specific && newCouponForm.product_id !== '' 
+          ? Number(newCouponForm.product_id) 
+          : null,
+    };
+    
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/criar`, newCouponForm);
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/criar`, payload);
 
       const createdCoupon: BackendCoupon = response.data;
       
@@ -99,12 +118,21 @@ const CouponsList: React.FC = () => {
           code: createdCoupon.code,
           discount: createdCoupon.discount_percentage,
           athlete_name: createdCoupon.athlete_name,
-          status_display: 'Ativo',
+          is_specific: createdCoupon.is_specific,
+          product_id: createdCoupon.product_id,
+          status_display: createdCoupon.is_active ? 'Ativo' : 'Inativo',
           created_at: createdCoupon.created_at,
         }
       ]);
       
-      setNewCouponForm({ code: '', discount_percentage: 0, athlete_name: '' });
+      // Limpar o formulário
+      setNewCouponForm({ 
+        code: '', 
+        discount_percentage: 0, 
+        athlete_name: '',
+        is_specific: false,
+        product_id: ''
+      });
       showToast('Cupão criado com sucesso!', 'success');
       
     } catch (err: any) {
@@ -126,7 +154,6 @@ const CouponsList: React.FC = () => {
     setLoading(true);
     
     try {
-      // Simulação: A sua API deve ter uma rota de remoção de cupões
       await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/remover/${couponId}`);
       
       setCoupons(prevCoupons => prevCoupons.filter(c => c.id !== couponId));
@@ -184,7 +211,6 @@ const CouponsList: React.FC = () => {
     return status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
 
-  // Mapeamento de tipo de toast para cor e ícone
   const toastStyles = {
     success: { bg: 'bg-green-500', icon: CheckCircle },
     error: { bg: 'bg-red-500', icon: XCircle },
@@ -244,7 +270,7 @@ const CouponsList: React.FC = () => {
       </h1>
       <p className="text-lg text-gray-700 mb-8">Crie, edite e elimine cupões de desconto para a sua loja.</p>
 
-      {/* Formulário de Criação de Cupão com estilo Dark */}
+      {/* Formulário de Criação de Cupão */}
       <div className="mb-10 p-6 bg-gray-800 rounded-lg shadow-inner border border-gray-700">
         <h2 className="text-2xl font-semibold text-gray-100 mb-4">Criar Novo Cupão</h2>
         <form onSubmit={handleCreateCoupon} className="space-y-4">
@@ -282,6 +308,40 @@ const CouponsList: React.FC = () => {
               required
             />
           </div>
+
+          {/* Novos campos para cupões específicos */}
+          <div className="flex items-center space-x-2">
+            <input
+              id="is_specific"
+              type="checkbox"
+              checked={newCouponForm.is_specific}
+              onChange={(e) => setNewCouponForm({ 
+                ...newCouponForm, 
+                is_specific: e.target.checked,
+                product_id: e.target.checked ? newCouponForm.product_id : '' // Limpa o campo se desmarcar
+              })}
+              className="w-4 h-4 text-orange-500 border-gray-600 rounded focus:ring-orange-400 bg-gray-700"
+            />
+            <label htmlFor="is_specific" className="text-sm font-medium text-gray-300">
+              Cupão para Produto Específico?
+            </label>
+          </div>
+
+          {newCouponForm.is_specific && (
+            <div className="flex flex-col">
+              <label htmlFor="product_id" className="text-sm font-medium text-gray-300 mb-1">ID do Produto</label>
+              <input
+                id="product_id"
+                type="number"
+                className="p-3 border border-gray-600 rounded-lg shadow-sm focus:ring-orange-400 focus:border-orange-400 text-gray-100 bg-gray-700 placeholder-gray-400 transition-all duration-200"
+                value={newCouponForm.product_id}
+                onChange={(e) => setNewCouponForm({ ...newCouponForm, product_id: e.target.value })}
+                required
+                min="1"
+              />
+            </div>
+          )}
+
           <motion.button
             type="submit"
             className="w-full px-6 py-3 bg-orange-500 text-white font-bold rounded-lg shadow-md hover:bg-orange-600 transition-all duration-300 transform hover:scale-105"
@@ -308,6 +368,8 @@ const CouponsList: React.FC = () => {
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Código</th>
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Desconto</th>
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Atleta</th>
+                  {/* Nova coluna para o tipo de cupão */}
+                  <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Tipo</th>
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Estado</th>
                   <th className="py-4 px-4 text-left text-sm font-semibold text-orange-700 uppercase tracking-wider">Ações</th>
                 </tr>
@@ -325,6 +387,10 @@ const CouponsList: React.FC = () => {
                     <td className="py-3 px-4 text-sm font-medium text-gray-900">{coupon.code}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">{coupon.discount}%</td>
                     <td className="py-3 px-4 text-sm text-gray-800">{coupon.athlete_name}</td>
+                    {/* Exibe o tipo de cupão */}
+                    <td className="py-3 px-4 text-sm text-gray-800">
+                      {coupon.is_specific ? `Específico (ID: ${coupon.product_id})` : 'Geral'}
+                    </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(coupon.status_display)}`}>
                         {coupon.status_display}
