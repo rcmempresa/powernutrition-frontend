@@ -726,32 +726,32 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
               {/* Cart Items */}
               <div className="space-y-4 mb-6">
                 {items.map((item) => (
-                <div key={item.id} className="flex items-center space-x-4">
-                  <div className="relative">
-                    <img
-                      src={item.image_url}
-                      alt={item.product_name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div className="absolute -top-2 -right-2 bg-gray-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {item.quantity}
+                  <div key={item.id} className="flex items-center space-x-4">
+                    <div className="relative">
+                      <img
+                        src={item.image_url}
+                        alt={item.product_name}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                      <div className="absolute -top-2 -right-2 bg-gray-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {item.quantity}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-800">{item.product_name}</h4>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <div className="text-lg font-bold text-gray-800">
+                        €{(item.price * item.quantity).toFixed(2)}
+                      </div>
+                      {item.original_price && (
+                        <span className="text-sm text-gray-500 line-through">
+                          €{(item.original_price * item.quantity).toFixed(2)}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-800">{item.product_name}</h4>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    {item.original_price && (
-                      <span className="text-sm text-gray-500 line-through">
-                        €{(item.original_price * item.quantity).toFixed(2)}
-                      </span>
-                    )}
-                    <div className="text-lg font-bold text-gray-800">
-                      €{(item.price * item.quantity).toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
               </div>
 
               <div className="mt-6 mb-6">
