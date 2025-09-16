@@ -140,7 +140,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
           price: item.price,
           quantity: item.quantity,
           original_price: item.original_price, 
-          product_id: item.product_id, // Importante: enviar o ID do produto
+          product_id: item.product_id, 
         })),
       };
 
