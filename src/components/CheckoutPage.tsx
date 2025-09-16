@@ -25,17 +25,17 @@ interface CheckoutPageProps {
     weight_value: string;
     color?: string;
     original_price?: number;
+    product_id: number; // Adicione esta propriedade
   }>;
   onBack: () => void;
 }
 
 const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
-   console.log('Dados de items recebidos no CheckoutPage:', items);
-  // ATENÇÃO: Estes IDs devem vir do seu backend ou ser conhecidos.
-  // Estou a usar IDs fictícios para demonstração.
-  const STORE_ADDRESS_ID = 1; // Exemplo de ID para a Morada da Loja
-  const BEFIT_ADDRESS_ID = 2; // Exemplo de ID para a Morada BEFIT
+  console.log('Dados de items recebidos no CheckoutPage:', items);
+  
+  const STORE_ADDRESS_ID = 1; 
+  const BEFIT_ADDRESS_ID = 2; 
 
   const defaultStoreAddress = {
     address: 'Caminho do Poço Barral Nº28',
@@ -56,13 +56,13 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
   };
 
   const subtotal = items.reduce((sum, item) => {
-    // Se o original_price for maior que o price, use-o para o cálculo
-    const priceToUse = item.original_price && item.original_price > item.price
+    const priceToUse = item.original_price != null && item.original_price > item.price
         ? item.original_price
         : item.price;
     return sum + (priceToUse * item.quantity);
-}, 0);    
-  const shipping = 0; // Envio gratuito por enquanto
+  }, 0);    
+  
+  const shipping = 0; 
 
   const [formData, setFormData] = useState({
     email: '',
@@ -88,7 +88,11 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
   const [selectedAddressOption, setSelectedAddressOption] = useState<'custom' | 'store' | 'befit'>('custom');
   const [paymentMethod, setPaymentMethod] = useState<'mbway' | 'multibanco' | 'cc' | 'cod'>('cc');
-  const [couponCode, setCouponCode] = useState('');
+  
+  // NOVOS ESTADOS PARA MÚLTIPLOS CUPÕES
+  const [couponCodes, setCouponCodes] = useState([]);
+  const [currentCouponCode, setCurrentCouponCode] = useState('');
+
   const [isProcessing, setIsProcessing] = useState(false); 
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
@@ -96,36 +100,49 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
   const [finalTotal, setFinalTotal] = useState(subtotal + shipping);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-  const { name, value, type } = e.target;
-  let newValue = value;
+    const { name, value, type } = e.target;
+    let newValue = value;
 
-  if (name === 'phone') {
-    newValue = value.replace(/[^0-9]/g, '');
-  }
+    if (name === 'phone') {
+      newValue = value.replace(/[^0-9]/g, '');
+    }
 
-  setFormData(prev => ({
-    ...prev,
-    [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : newValue
-  }));
-};
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : newValue
+    }));
+  };
 
- const handleApplyCoupon = async () => {
-    if (!couponCode) {
+  const handleAddCoupon = () => {
+    if (currentCouponCode && !couponCodes.includes(currentCouponCode)) {
+      setCouponCodes([...couponCodes, currentCouponCode]);
+      setCurrentCouponCode(''); 
+      toast.success(`Cupão "${currentCouponCode}" adicionado. Clique em 'Aplicar Cupões' para calcular o desconto.`);
+    } else if (couponCodes.includes(currentCouponCode)) {
+      toast.warn('Este cupão já foi adicionado.');
+    } else {
       toast.warn('Por favor, insira um código de cupão.');
+    }
+  };
+
+  // NOVA FUNÇÃO handleApplyCoupon
+  const handleApplyCoupon = async () => {
+    if (couponCodes.length === 0) {
+      toast.warn('Por favor, adicione pelo menos um cupão para aplicar.');
       return;
     }
     setIsApplyingCoupon(true);
 
     try {
       const applyCouponPayload = {
-      couponCode,
-    
-      items: items.map(item => ({
-        price: item.price,
-        quantity: item.quantity,
-        original_price: item.original_price, 
-      })),
-    };
+        couponCodes: couponCodes,
+        items: items.map(item => ({
+          price: item.price,
+          quantity: item.quantity,
+          original_price: item.original_price, 
+          product_id: item.product_id, // Importante: enviar o ID do produto
+        })),
+      };
 
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/apply`, {
         method: 'POST',
@@ -137,7 +154,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Código de cupão inválido.');
+        throw new Error(errorData.message || 'Erro ao aplicar o(s) cupão(ões).');
       }
 
       const result = await response.json();
@@ -145,17 +162,16 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
       setDiscountApplied(result.discount);
       setFinalTotal(result.newTotal);
 
-      toast.success(`Cupão aplicado com sucesso! Desconto de €${result.discount.toFixed(2)}.`);
-    } catch (error: any) {
+      toast.success(`Cupões aplicados com sucesso! Desconto total de €${result.discount.toFixed(2)}.`);
+    } catch (error) {
       console.error('Erro ao aplicar cupão:', error);
       
-      // --- CORREÇÃO AQUI ---
       setDiscountApplied(0);
       setFinalTotal(subtotal + shipping);
-      setCouponCode(''); // <-- Esta linha limpa o input do cupão
-      // --- FIM CORREÇÃO ---
+      setCouponCodes([]); // Limpa a lista de cupões se der erro
+      setCurrentCouponCode('');
       
-      toast.error(error.message || 'Erro ao aplicar o cupão.');
+      toast.error(error.message || 'Erro ao aplicar o(s) cupão(ões).');
     } finally {
       setIsApplyingCoupon(false);
     }
@@ -195,7 +211,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
   const handleCheckout = async () => {
     setIsProcessing(true);
     let finalAddressId = null;
-    let finalShippingAddress = null; // Nova variável para armazenar os detalhes da morada
+    let finalShippingAddress = null; 
 
     const yourAuthToken = localStorage.getItem('authToken');
 
@@ -212,7 +228,6 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
     }
 
     try {
-        // --- Lógica para criar ou obter o ID da morada ---
         if (selectedAddressOption === 'custom') {
             finalShippingAddress = {
                 address_line1: formData.address,
@@ -251,7 +266,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${yourAuthToken}`
             },
-            body: JSON.stringify(finalShippingAddress), // Usa o objeto de morada criado
+            body: JSON.stringify(finalShippingAddress), 
         });
 
         if (!addressResponse.ok) {
@@ -266,10 +281,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
             throw new Error('Não foi possível determinar o ID da morada para o checkout.');
         }
 
-        // Variáveis para armazenar os detalhes de pagamento
         let paymentDetails = null;
         
-        // Se o método de pagamento for MBWay
         if (paymentMethod === 'mbway') {
             const paymentPayload = {
                 customer: {
@@ -312,7 +325,6 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
             
         } 
         
-        // Se o método de pagamento for Multibanco
         else if (paymentMethod === 'multibanco') {
             const paymentPayload = {
                 customer: {
@@ -348,7 +360,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
             
             paymentDetails = {
                 method: 'multibanco',
-                payment_id: paymentConfirmation.id, // ID único do pagamento Easypay
+                payment_id: paymentConfirmation.id, 
                 entity: paymentConfirmation.method.entity,
                 reference: paymentConfirmation.method.reference,
             };
@@ -356,7 +368,6 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
             toast.success(`Pagamento Multibanco gerado com sucesso! Entidade: ${paymentDetails.entity}, Referência: ${paymentDetails.reference}`);
         }
         
-        // --- NOVO: Se o método de pagamento for Cartão de Crédito ---
         else if (paymentMethod === 'cc') {
             const paymentPayload = {
                 customer: {
@@ -391,21 +402,18 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
             const paymentConfirmation = await paymentResponse.json();
             
-            // O EasypayId é crucial para o backend. Se o pagamento for bem-sucedido, a resposta terá um ID.
             paymentDetails = {
                 method: 'credit_card',
-                payment_id: paymentConfirmation.id, // ID único do pagamento Easypay
-                url: paymentConfirmation.method.url, // Para verificar o status imediato
+                payment_id: paymentConfirmation.id, 
+                url: paymentConfirmation.method.url, 
             };
 
             toast.success(`Pagamento CC gerado com sucesso! Entidade: ${paymentDetails.url}`);
         }
-        // --- FIM NOVO: Método de Cartão de Crédito ---
-
 
         const checkoutPayload = {
             addressId: finalAddressId,
-            couponCode: couponCode.length > 0 ? couponCode : undefined,
+            couponCode: couponCodes, // Alterado para enviar a array de códigos
             email: formData.email,
             paymentMethod: paymentMethod, 
             paymentDetails: paymentDetails, 
@@ -433,7 +441,6 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
         toast.success(`Encomenda realizada com sucesso! ID da Encomenda: ${orderConfirmation.orderId}.`);
         
-        // Redireciona o utilizador para a página de confirmação do pedido
         navigate('/order-confirmation', {
             state: {
                 orderId: orderConfirmation.orderId,
@@ -452,8 +459,6 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
     }
 };
   
-
-
   return (
     <div className="min-h-screen bg-gray-50">
       <ToastContainer />
@@ -714,7 +719,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
               {/* Pay Now Button */}
               <button
                 onClick={handleCheckout}
-                disabled={isProcessing} // Desativar o botão enquanto processa
+                disabled={isProcessing} 
                 className={`w-full py-4 rounded-lg font-bold text-lg transition-colors mt-8 ${
                   isProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'
                 }`}
@@ -747,21 +752,17 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                       <h4 className="font-medium text-gray-800">{item.product_name}</h4>
                     </div>
                     <div className="flex flex-col items-end">
-                      {/* Verifica se o original_price existe e se é MAIOR que o price */}
-                      {item.original_price > item.price && (
+                      {item.original_price != null && item.original_price > item.price && (
                         <>
-                          {/* O preço a ser riscado é o price */}
                           <span className="text-sm text-gray-500 line-through">
                             €{(item.price * item.quantity).toFixed(2)}
                           </span>
-                          {/* O preço a ser exibido normalmente é o original_price */}
                           <div className="text-lg font-bold text-gray-800">
                             €{(item.original_price * item.quantity).toFixed(2)}
                           </div>
                         </>
                       )}
-                      {/* Se não houver original_price ou se for menor, exiba apenas o price */}
-                      {!(item.original_price > item.price) && (
+                      {!(item.original_price != null && item.original_price > item.price) && (
                         <div className="text-lg font-bold text-gray-800">
                           €{(item.price * item.quantity).toFixed(2)}
                         </div>
@@ -771,30 +772,53 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                 ))}
               </div>
 
+              {/* Cupão Section - Atualizado para múltiplos cupões */}
               <div className="mt-6 mb-6">
                 <h4 className="text-lg font-bold text-gray-800 mb-3">Cupão de Desconto</h4>
-                <div className="flex space-x-2">
+                <div className="flex w-full space-x-2">
                   <input
                     type="text"
-                    placeholder="Código do cupão"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50"
+                    placeholder="Inserir código de cupão"
+                    value={currentCouponCode}
+                    onChange={(e) => setCurrentCouponCode(e.target.value)}
                   />
                   <button
-                    onClick={handleApplyCoupon} 
-                    disabled={isApplyingCoupon || !couponCode} // Desativa se estiver a processar ou se não houver código
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      isApplyingCoupon ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'
-                    }`}
+                    type="button"
+                    onClick={handleAddCoupon}
+                    className="rounded-md bg-gray-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                   >
-                    {isApplyingCoupon ? 'A aplicar...' : 'Aplicar'}
+                    Adicionar
                   </button>
                 </div>
+
+                {/* Exibe a lista de cupões adicionados */}
+                {couponCodes.length > 0 && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    <p>Cupões a serem aplicados:</p>
+                    <ul className="list-disc list-inside">
+                      {couponCodes.map((code, index) => (
+                        <li key={index} className="font-semibold">{code}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={isApplyingCoupon || couponCodes.length === 0}
+                  className={`mt-4 w-full rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors ${
+                    isApplyingCoupon ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'
+                  }`}
+                >
+                  {isApplyingCoupon ? 'A aplicar...' : 'Aplicar Cupões'}
+                </button>
+
                 {/* Mensagem de sucesso visível apenas quando há um desconto */}
                 {discountApplied > 0 && (
                   <p className="text-sm text-green-600 mt-2">
-                    Cupão aplicado com sucesso! Desconto de €{discountApplied.toFixed(2)}.
+                    Desconto total de €{discountApplied.toFixed(2)}.
                   </p>
                 )}
               </div>
@@ -803,33 +827,25 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
               <div className="space-y-3 border-t border-gray-200 pt-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">€{subtotal.toFixed(2)}</span>
+                  <span className="text-gray-800 font-medium">€{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Envio</span>
-                  <span className="text-gray-500">€{shipping.toFixed(2)}</span>
+                  <span className="text-green-600 font-medium">Grátis</span>
                 </div>
-                {/* Linha do Desconto - Visível apenas se um desconto for aplicado */}
-                {discountApplied > 0 && (
-                  <div className="flex justify-between text-red-500">
-                    <span className="text-gray-600">Desconto do Cupão</span>
-                    <span className="font-medium">- €{discountApplied.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-xl font-bold border-t border-gray-200 pt-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Desconto</span>
+                  <span className="text-red-600 font-medium">-€{discountApplied.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg text-gray-800 border-t-2 border-dashed border-gray-300 pt-4">
                   <span>Total</span>
-                  <span>
-                    <span className="text-sm text-gray-500 mr-2">EUR</span>
-                    €{finalTotal.toFixed(2)}
-                  </span>
+                  <span>€{finalTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Footer */}
       <Footer />
     </div>
   );
