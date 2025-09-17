@@ -98,7 +98,7 @@ const ManageCampaignProducts: React.FC = () => {
     return (
         <div className="p-8 bg-white rounded-lg shadow-xl min-h-screen">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Gerir Produtos da Campanha: "{campaign.name}"</h1>
-            <button onClick={() => navigate(-1)} className="text-blue-500 hover:underline mb-6">
+            <button onClick={() => navigate(-1)} className="text-orange-500 hover:underline mb-6">
                 ← Voltar para as campanhas
             </button>
 
