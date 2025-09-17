@@ -147,6 +147,19 @@ const AdminDashboard: React.FC = () => {
             <p className="text-gray-300">Crie e administre os cupões de desconto.</p>
           </motion.div>
         </Link>
+        <Link to="/admin/campaigns">
+          <motion.div 
+            className="block p-6 bg-gray-800 text-gray-100 rounded-lg shadow-xl border border-gray-700 cursor-pointer"
+            variants={itemVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <h2 className="text-2xl font-semibold mb-2 text-red-400 flex items-center">
+              <Gift className="mr-2" /> Gerir Campanhas
+            </h2>
+            <p className="text-gray-300">Crie, edite e elimine as suas campanhas de marketing.</p>
+          </motion.div>
+        </Link>
       </motion.div>
 
       {/* Secção de Indicadores Chave de Performance (KPIs) - Mover para baixo */}
