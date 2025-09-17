@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Link, Outlet } from 'react-router-dom';
-import { Home, Package, ShoppingBag, Users, Gift, LogOut } from 'lucide-react';
+import { Home, Package, ShoppingBag, Users, Gift, LogOut, Megaphone } from 'lucide-react'; // ✨ ADICIONE Megaphone ✨
 import { useAuth } from '../hooks/useAuth';
 
 const AdminLayout: React.FC = () => {
@@ -55,6 +55,16 @@ const AdminLayout: React.FC = () => {
               >
                 <Users className="h-5 w-5 mr-3" />
                 Utilizadores
+              </Link>
+            </li>
+            {/* ✨ ADICIONE ESTE NOVO ITEM ✨ */}
+            <li>
+              <Link
+                to="/admin/campaigns"
+                className="flex items-center p-2 text-gray-200 hover:bg-gray-700 rounded-md transition-colors duration-200"
+              >
+                <Megaphone className="h-5 w-5 mr-3" />
+                Campanhas
               </Link>
             </li>
             <li>
