@@ -47,6 +47,7 @@ import AdminPrivateRoute from './components/AdminPrivateRoutes';
 import AdminLayout from './components/AdminLayout';
 import OrderDetails from './pages/admin/OrderDetails';
 import ProductImagesForm from './pages/admin/ProductImagesForm';
+import CampaignsList from './pages/admin/CampaignsList';
 import { useAuth } from './hooks/useAuth';
 // --- FIM DAS NOVAS IMPORTAÇÕES PARA ADMIN ---
 
@@ -124,6 +125,7 @@ function App() {
         case '/admin/products/new': return 'Adicionar Produto - Admin';
         case '/admin/users': return 'Gestão de Utilizadores - Admin';
         case '/admin/coupons': return 'Gestão de Cupões - Admin';
+        case '/admin/campaigns': return 'Gestão de Campanhas - Admin';
         case '/minha-conta/:id': return 'Minha Conta - RD Power Nutrition';
         default:
           if (pathname.startsWith('/produto/')) return 'Detalhes do Produto - RD Power Nutrition';
@@ -307,6 +309,7 @@ function App() {
             <Route path="users" element={<UsersList />} />
             <Route path="coupons" element={<CouponsList />} />
             <Route path="/admin/cupoes/editar/:id" element={<CouponEdit />} />
+            <Route path="campaigns" element={<CampaignsList />} />
           </Route>
         </Route>
       </Routes>
