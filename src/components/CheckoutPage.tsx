@@ -126,24 +126,26 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
   };
 
   // NOVA FUNÇÃO handleApplyCoupon
-  const handleApplyCoupon = async () => {
+ const handleApplyCoupon = async () => {
     if (couponCodes.length === 0) {
       toast.warn('Por favor, adicione pelo menos um cupão para aplicar.');
       return;
     }
     setIsApplyingCoupon(true);
 
-    try {
-      const applyCouponPayload = {
-        couponCodes: couponCodes,
-        items: items.map(item => ({
-          price: item.price,
-          quantity: item.quantity,
-          original_price: item.original_price, 
-          product_id: item.product_id, 
-        })),
-      };
+    // Adicione console.log para o payload ANTES de enviar.
+    const applyCouponPayload = {
+      couponCodes: couponCodes,
+      items: items.map(item => ({
+        price: item.price,
+        quantity: item.quantity,
+        original_price: item.original_price, 
+        product_id: item.product_id, 
+      })),
+    };
+    console.log('Payload de cupão a ser enviado:', applyCouponPayload); // ✨ Adicionado
 
+    try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/apply`, {
         method: 'POST',
         headers: {
@@ -154,17 +156,33 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Erro na resposta do servidor (API cupões):', errorData); // ✨ Adicionado
         throw new Error(errorData.message || 'Erro ao aplicar o(s) cupão(ões).');
       }
 
       const result = await response.json();
       
+      // Adicione console.log para os dados recebidos do backend.
+      console.log('Dados da API recebidos:', result); // ✨ Adicionado
+
       setDiscountApplied(result.discount);
       setFinalTotal(result.newTotal);
+
+      // Verifique os valores das variáveis de estado imediatamente após a atualização.
+      // Nota: o console.log pode não mostrar o valor atualizado imediatamente
+      // devido à assincronicidade do React. O console.log no JSX é mais confiável.
+      console.log('Valor de discountApplied (após set):', result.discount); // ✨ Adicionado
+      console.log('Valor de finalTotal (após set):', result.newTotal); // ✨ Adicionado
 
       toast.success(`Cupões aplicados com sucesso! Desconto total de €${result.discount.toFixed(2)}.`);
     } catch (error) {
       console.error('Erro ao aplicar cupão:', error);
+      
+      // Verifique os valores no caso de erro.
+      console.log('Valores redefinidos após erro:', {
+        discount: 0,
+        finalTotal: subtotal + shipping
+      }); // ✨ Adicionado
       
       setDiscountApplied(0);
       setFinalTotal(subtotal + shipping);
@@ -176,6 +194,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
       setIsApplyingCoupon(false);
     }
   };
+
 
   const handleAddressOptionChange = (option: 'custom' | 'store' | 'befit') => {
     setSelectedAddressOption(option);
@@ -817,6 +836,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
                 {/* Mensagem de sucesso visível apenas quando há um desconto */}
                 {discountApplied > 0 && (
+                  
                   <p className="text-sm text-green-600 mt-2">
                     Desconto total de €{discountApplied.toFixed(2)}.
                   </p>
