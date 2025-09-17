@@ -571,7 +571,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {campaign.products.map((product) => {
               const displayVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
-              const totalStock = product.variants.reduce((acc, variant) => acc + variant.quantidade_em_stock, 0);
 
               if (!displayVariant) return null;
 
