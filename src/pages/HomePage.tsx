@@ -587,7 +587,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                 >
                     <div className="relative bg-gray-700 rounded-2xl shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-600 overflow-hidden">
                         <div className="relative w-full h-48 md:h-56">
-                            {(!product.is_active || product.totalStock === 0) && (
+                            {(totalStock === 0) && (
                                 <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm z-10">
                                     Esgotado
                                 </div>
