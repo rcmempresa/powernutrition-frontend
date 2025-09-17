@@ -157,7 +157,7 @@ const AdminDashboard: React.FC = () => {
             <h2 className="text-2xl font-semibold mb-2 text-red-400 flex items-center">
               <Gift className="mr-2" /> Gerir Campanhas
             </h2>
-            <p className="text-gray-300">Crie, edite e elimine as suas campanhas de marketing.</p>
+            <p className="text-gray-300">Crie, edite e elimine as suas campanhas!</p>
           </motion.div>
         </Link>
       </motion.div>
