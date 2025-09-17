@@ -82,7 +82,7 @@ const EditForm: React.FC = () => {
           }),
         ]);
         
-        const productData = { ...productResponse.data, original_price: '59.99' };
+        const productData = { ...productResponse.data, original_price: '' };
         setProduct(productData);
         setCategories(categoriesResponse.data);
         setBrands(brandsResponse.data);
