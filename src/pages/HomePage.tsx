@@ -56,6 +56,13 @@ interface Product {
     totalStock?: number;
 }
 
+interface Campaign {
+  id: number;
+  name: string;
+  is_active: boolean;
+  products: Product[]; // A lista de produtos associados a esta campanha
+}
+
 // --- Função de busca de dados atualizada para a nova estrutura ---
 
 // --- Função de busca de dados atualizada para a nova estrutura ---
@@ -123,6 +130,9 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
 
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [errorCampaigns, setErrorCampaigns] = useState(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(true);
   const [errorCategories, setErrorCategories] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const categoriesPerPage = 4;
@@ -289,6 +299,61 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
         toast.error("Não foi possível adicionar ao carrinho.");
     }
 }, [cart]);
+
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      setLoadingCampaigns(true);
+      try {
+        const response = await axios.get<Campaign[]>(`${import.meta.env.VITE_BACKEND_URL}/api/campaigns/active`);
+        if (response.data && response.data.length > 0) {
+          // Processar os produtos dentro de cada campanha
+          const processedCampaigns = response.data.map(campaign => ({
+            ...campaign,
+            products: campaign.products.map(product => {
+              const hasVariants = product.variants && Array.isArray(product.variants) && product.variants.length > 0;
+              let displayPriceValue = 0;
+              let displayWeightValue = 'N/A';
+              let productImage = product.image_url;
+              let totalStock = 0;
+              let displayVariantId = null;
+
+              if (hasVariants) {
+                totalStock = product.variants.reduce((sum, v) => sum + v.quantidade_em_stock, 0);
+                const sortedVariants = product.variants.sort((a, b) => parseFloat(a.preco) - parseFloat(b.preco));
+                const cheapestVariant = sortedVariants[0];
+                if (cheapestVariant) {
+                  displayPriceValue = parseFloat(cheapestVariant.preco);
+                  displayWeightValue = `${cheapestVariant.weight_value}${cheapestVariant.weight_unit}`;
+                  displayVariantId = cheapestVariant.id;
+                  if (cheapestVariant.image_url) {
+                    productImage = cheapestVariant.image_url;
+                  }
+                }
+              }
+
+              return {
+                ...product,
+                displayPrice: displayPriceValue,
+                displayWeight: displayWeightValue,
+                displayVariantId,
+                image_url: productImage,
+                totalStock,
+              };
+            })
+          }));
+          setCampaigns(processedCampaigns);
+        } else {
+          setCampaigns([]);
+        }
+      } catch (err: any) {
+        console.error("Erro ao buscar campanhas:", err);
+        setErrorCampaigns(err);
+      } finally {
+        setLoadingCampaigns(false);
+      }
+    };
+    fetchCampaigns();
+  }, []);
   
   useEffect(() => {
     const interval = setInterval(() => {
@@ -481,6 +546,119 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
             </div>
           </div>
         </section>
+      )}
+
+      {/* Campaign Section - NOVO */}
+      {loadingCampaigns ? (
+        <p className="text-white text-center py-8 bg-gray-800">Carregando campanhas ativas...</p>
+      ) : errorCampaigns ? (
+        <p className="text-red-500 text-center py-8 bg-gray-800">Erro ao carregar campanhas: {errorCampaigns.message}. Por favor, tente novamente.</p>
+      ) : (
+        campaigns.length > 0 && campaigns.map(campaign => (
+          <section key={campaign.id} className="py-8 md:py-16 px-4 text-white relative overflow-hidden">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-between mb-12">
+                <div>
+                  <span className="text-orange-500 font-medium tracking-wider mb-2 block">🎉 EM DESTAQUE</span>
+                  <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-100">{campaign.name}</h2>
+                </div>
+              </div>
+
+              {campaign.products.length === 0 ? (
+                <p className="text-center text-gray-400">Nenhum produto nesta campanha.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                  {campaign.products.map((product) => (
+                    <div
+                        key={product.id}
+                        className="group cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onMouseEnter={() => setHoveredProduct(product.id)}
+                        onMouseLeave={() => setHoveredProduct(null)}
+                        onClick={() => navigate(`/produto/${product.id}`)} 
+                    >
+                        <div className="relative bg-gray-700 rounded-2xl shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-600 overflow-hidden">
+                            <div className="relative w-full h-48 md:h-56">
+                                {(!product.is_active || product.totalStock === 0) && (
+                                    <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm z-10">
+                                        Esgotado
+                                    </div>
+                                )}
+                                <img
+                                    src={product.image_url}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+
+                            <div className="p-4 md:p-6">
+                                <div className="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
+                                        aria-label="Toggle favorite"
+                                        onClick={(e) => toggleFavorite(product.displayVariantId, e)}
+                                      >
+                                        <Heart 
+                                          className={`w-4 h-4 transition-colors ${
+                                              checkIfFavorite(product.displayVariantId) ? 'text-red-500 fill-current' : 'text-gray-200'
+                                          }`} 
+                                        />
+                                      </button>
+                                    <button
+                                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                        aria-label="Quick view"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleQuickViewOpen(product);
+                                        }}
+                                    >
+                                        <Eye className="w-4 h-4 text-gray-200" />
+                                    </button>
+                                    <button
+                                      className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                      aria-label="Add to cart"
+                                      onClick={(e) => handleAddToCart(e, product)}
+                                    >
+                                      <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
+                                  </button>
+                                </div>
+
+                                <div className="flex mb-2">
+                                    {parseFloat(product.rating || '0') > 0 ? (
+                                        Array.from({ length: 5 }).map((_, i) => (
+                                            <Star
+                                                key={i}
+                                                className={`w-4 h-4 ${i < Math.floor(parseFloat(product.rating)) ? 'text-orange-500 fill-current' : 'text-gray-500'}`}
+                                            />
+                                        ))
+                                    ) : (
+                                        <div className="h-4"></div>
+                                    )}
+                                </div>
+
+                                <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
+                                <p className="text-gray-400 text-sm mb-2">{product.displayWeight}</p>
+                                
+                                <div className="flex items-baseline space-x-2">
+                                    {product.original_price && parseFloat(product.displayPrice) < parseFloat(product.original_price) && (
+                                        <p className="text-gray-500 line-through text-base md:text-lg">
+                                            €{parseFloat(product.original_price).toFixed(2)}
+                                        </p>
+                                    )}
+                                    <p className="text-red-500 font-bold text-lg md:text-xl">
+                                        € {product.displayPrice.toFixed(2)}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        ))
       )}
 
       {/* Vitamin C Section */}
