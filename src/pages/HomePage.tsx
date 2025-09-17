@@ -571,6 +571,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {campaign.products.map((product) => {
               const displayVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
+              const totalStock = product.variants.reduce((acc, variant) => acc + variant.quantidade_em_stock, 0);
 
               if (!displayVariant) return null;
 
@@ -586,7 +587,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                 >
                     <div className="relative bg-gray-700 rounded-2xl shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-600 overflow-hidden">
                         <div className="relative w-full h-48 md:h-56">
-                            {(!product.is_active || totalStock === 0) && (
+                            {(!product.is_active || product.totalStock === 0) && (
                                 <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm z-10">
                                     Esgotado
                                 </div>
