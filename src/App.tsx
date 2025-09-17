@@ -48,6 +48,7 @@ import AdminLayout from './components/AdminLayout';
 import OrderDetails from './pages/admin/OrderDetails';
 import ProductImagesForm from './pages/admin/ProductImagesForm';
 import CampaignsList from './pages/admin/CampaignsList';
+import ManageCampaignProducts from './pages/admin/ManageCampaignProducts';
 import { useAuth } from './hooks/useAuth';
 // --- FIM DAS NOVAS IMPORTAÇÕES PARA ADMIN ---
 
@@ -133,6 +134,7 @@ function App() {
           if (pathname.startsWith('/admin/products/add-images/')) return 'Adicionar Imagens ao Produto - Admin';
           if (pathname.startsWith('/admin/orders/')) return 'Detalhes da Encomenda - Admin';
           if (pathname.startsWith('/admin/products/add-variant/')) return 'Adicionar Variante ao Produto - Admin';
+          if (pathname.startsWith('/admin/campaigns/')) return 'Gerir Produtos da Campanha - Admin';
           return 'RD Power Nutrition';
       }
     };
@@ -310,6 +312,7 @@ function App() {
             <Route path="coupons" element={<CouponsList />} />
             <Route path="/admin/cupoes/editar/:id" element={<CouponEdit />} />
             <Route path="campaigns" element={<CampaignsList />} />
+            <Route path="campaigns/:campaignId" element={<ManageCampaignProducts />} />
           </Route>
         </Route>
       </Routes>
