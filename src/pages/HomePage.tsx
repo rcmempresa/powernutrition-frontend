@@ -572,7 +572,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
             {campaign.products.map((product) => {
               const displayVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
               const totalStock = product.variants.reduce((acc, variant) => acc + variant.quantidade_em_stock, 0);
-
+              console.log(`Produto: ${product.name} | Ativo: ${product.is_active} | Stock Total: ${totalStock}`);
               if (!displayVariant) return null;
 
               return (
