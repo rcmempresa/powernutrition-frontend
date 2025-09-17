@@ -133,7 +133,7 @@ const CampaignsList: React.FC = () => {
                             <div className="flex space-x-2 mt-4">
                                 <Link
                                     to={`/admin/campaigns/${campaign.id}`}
-                                    className="flex-1 text-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200"
+                                    className="flex-1 text-center bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200"
                                 >
                                     Gerir Produtos
                                 </Link>
