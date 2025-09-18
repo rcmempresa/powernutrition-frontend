@@ -1,15 +1,16 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Loader2, Plus, Trash2, CheckCircle, XCircle, Image as ImageIcon, Save, FileUp } from 'lucide-react';
+import { Loader2, Plus, Trash2, CheckCircle, XCircle, Image as ImageIcon, Save, FileUp, Star } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 
-// Tipagem para uma imagem no formulário
 interface ImageFormItem {
-  id: string; // Usado para key no React
-  file?: File; // Agora armazena o ficheiro em si
-  imageUrl?: string; // Para armazenar o URL após o upload
+  id: string; // ID interno para o React
+  file?: File;
+  imageUrl?: string;
+  databaseId?: number; // ID da base de dados se a imagem já existir
+  is_primary?: boolean; // Propriedade para controlar o status primário
   status: 'pending' | 'uploading' | 'success' | 'error';
   message?: string;
 }
@@ -25,7 +26,6 @@ const ProductImagesForm: React.FC = () => {
   const [overallError, setOverallError] = useState<string | null>(null);
   const [productIdNum, setProductIdNum] = useState<number | null>(null);
 
-  // Variantes de animação para Framer Motion
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
@@ -41,24 +41,126 @@ const ProductImagesForm: React.FC = () => {
     tap: { scale: 0.95 }
   };
 
+  // Carrega as imagens secundárias existentes ao entrar na página
   useEffect(() => {
     if (productId) {
-      setProductIdNum(Number(productId));
-      // OPCIONAL: Carregar imagens secundárias existentes para este produto para edição, se necessário.
+      const idNum = Number(productId);
+      setProductIdNum(idNum);
+
+      const fetchImages = async () => {
+        setLoading(true);
+        setOverallError(null);
+        const token = getAuthToken();
+        if (!token) {
+          setOverallError('Token de autenticação não encontrado.');
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/product_images/byProductId/${idNum}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          const existingImages = response.data.map((img: any) => ({
+            id: crypto.randomUUID(),
+            imageUrl: img.image_url,
+            databaseId: img.id,
+            is_primary: img.is_primary,
+            status: 'success' as const,
+            message: 'Carregada'
+          }));
+          setImages(existingImages);
+        } catch (err: any) {
+          console.error('Erro ao carregar imagens existentes:', err);
+          if (err.response && err.response.status !== 404) {
+             setOverallError('Erro ao carregar imagens existentes.');
+          }
+          setImages([]); // Limpa as imagens se houver erro ou não existirem
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchImages();
     } else {
       navigate('/admin/products');
       setOverallError('ID do produto não fornecido.');
     }
-  }, [productId, navigate]);
+  }, [productId, navigate, getAuthToken]);
 
-  const handleRemoveImage = useCallback((id: string) => {
-    setImages(prevImages => {
-      const updatedImages = prevImages.filter(img => img.id !== id);
-      return updatedImages;
-    });
-  }, []);
+  const handleRemoveImage = useCallback(async (id: string, databaseId?: number) => {
+    setLoading(true);
+    setOverallSuccess(null);
+    setOverallError(null);
+    
+    // Se a imagem já existe na base de dados, tenta deletá-la
+    if (databaseId) {
+      const token = getAuthToken();
+      if (!token) {
+        setOverallError('Token de autenticação não encontrado. Por favor, faça login.');
+        setLoading(false);
+        return;
+      }
+      try {
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/product_images/delete/${databaseId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setImages(prevImages => prevImages.filter(img => img.id !== id));
+        setOverallSuccess('Imagem removida com sucesso!');
+      } catch (err) {
+        setOverallError('Erro ao remover imagem da base de dados.');
+        console.error('Erro ao remover imagem:', err);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Se a imagem é nova (só no frontend), remove-a localmente
+      setImages(prevImages => prevImages.filter(img => img.id !== id));
+      setLoading(false);
+    }
+  }, [getAuthToken]);
 
-  // ✨ Handler para o input de múltiplos ficheiros ✨
+  const handleSetPrimary = useCallback(async (id: string, databaseId: number, productId: number) => {
+    setLoading(true);
+    setOverallSuccess(null);
+    setOverallError(null);
+    const token = getAuthToken();
+
+    if (!token) {
+        setOverallError('Token de autenticação não encontrado. Por favor, faça login.');
+        setLoading(false);
+        return;
+    }
+
+    try {
+        const response = await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/product_images/setPrimary/${databaseId}`,
+            { product_id: productId }, // O body agora envia o product_id
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        if (response.status === 200) {
+            // Atualiza o estado para refletir a nova imagem primária
+            setImages(prevImages => prevImages.map(img => ({
+                ...img,
+                is_primary: (img.databaseId === databaseId)
+            })));
+            setOverallSuccess('Imagem definida como primária com sucesso!');
+        }
+    } catch (err: any) {
+        setOverallError(err.response?.data?.message || 'Erro ao definir imagem como primária.');
+        console.error('Erro ao definir imagem primária:', err);
+    } finally {
+        setLoading(false);
+    }
+  }, [getAuthToken]);
+
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
@@ -73,7 +175,6 @@ const ProductImagesForm: React.FC = () => {
     }
   }, []);
 
-  // ✨ Função de upload para o backend, a mesma usada no ProductForm ✨
   const uploadImage = async (file: File) => {
     const token = getAuthToken();
     const uploadUrl = `${import.meta.env.VITE_BACKEND_URL}/api/images/upload`;
@@ -83,7 +184,6 @@ const ProductImagesForm: React.FC = () => {
     }
 
     const data = new FormData();
-    // O nome 'image' aqui DEVE corresponder ao nome que o Multer está à espera no backend
     data.append('image', file);
 
     try {
@@ -119,7 +219,6 @@ const ProductImagesForm: React.FC = () => {
       return;
     }
 
-    // Filtra as imagens que têm um ficheiro e ainda não foram enviadas com sucesso
     const imagesToProcess = images.filter(img => img.file && img.status !== 'success');
 
     if (imagesToProcess.length === 0) {
@@ -137,17 +236,17 @@ const ProductImagesForm: React.FC = () => {
         const payload = {
           product_id: productIdNum,
           image_url: uploadedUrl,
-          is_primary: false, // ✨ Sempre FALSE para imagens secundárias ✨
+          is_primary: false,
         };
 
-        await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/product_images/create`, payload, {
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/product_images/create`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
 
-        setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'success', message: 'Enviada!', imageUrl: uploadedUrl } : i));
+        setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'success', message: 'Enviada!', imageUrl: uploadedUrl, databaseId: response.data.id } : i));
       } catch (err: any) {
         console.error(`Erro ao adicionar imagem:`, err);
         setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'error', message: err.message || 'Erro ao enviar.' } : i));
@@ -158,7 +257,6 @@ const ProductImagesForm: React.FC = () => {
     setLoading(false);
     if (allSuccessful) {
       setOverallSuccess('Todas as imagens secundárias foram adicionadas com sucesso!');
-      setTimeout(() => navigate('/admin/products'), 2000);
     } else {
       setOverallError('Algumas imagens não puderam ser adicionadas. Verifique os detalhes.');
     }
@@ -175,18 +273,18 @@ const ProductImagesForm: React.FC = () => {
     >
       <h1 className="text-4xl font-extrabold text-gray-900 mb-6 flex items-center">
         <ImageIcon className="mr-3 h-9 w-9 text-orange-600" />
-        Adicionar Imagens Secundárias ao Produto: <span className="text-orange-600 ml-2">{productId}</span>
+        Adicionar e Gerir Imagens do Produto: <span className="text-orange-600 ml-2">{productId}</span>
       </h1>
       <p className="text-lg text-gray-700 mb-8">
-        Selecione os ficheiros de imagem que servirão como imagens secundárias para o produto.
+        Adicione novas imagens secundárias ou gerencie as existentes para este produto.
       </p>
       
       <motion.button 
         onClick={() => navigate('/admin/products')}
         className="mb-8 px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-lg shadow-md hover:bg-gray-300 transition-all duration-300 transform hover:scale-105"
         variants={buttonVariants}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover="hover"
+        whileTap="tap"
       >
         <XCircle className="inline-block mr-2 h-5 w-5" />
         Voltar para a Lista de Produtos
@@ -258,11 +356,23 @@ const ProductImagesForm: React.FC = () => {
                 animate="visible"
                 custom={index}
               >
+                {/* Visualização da Imagem */}
+                {img.imageUrl && (
+                  <div className="flex-shrink-0 w-20 h-20 overflow-hidden rounded-md border border-gray-200">
+                    <img src={img.imageUrl} alt="preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                
                 {/* Nome do Ficheiro */}
                 <div className="flex-1 min-w-[250px] flex items-center gap-2">
                   <span className="truncate text-gray-700 font-medium">
-                    {img.file?.name || img.imageUrl || 'Nova Imagem'}
+                    {img.file?.name || 'Imagem Existente'}
                   </span>
+                  {img.is_primary && (
+                    <span className="bg-orange-100 text-orange-800 text-xs font-bold px-2 py-1 rounded-full">
+                      Primária
+                    </span>
+                  )}
                 </div>
 
                 {/* Status da Imagem */}
@@ -279,23 +389,38 @@ const ProductImagesForm: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Botão Remover */}
-                <motion.button
-                  type="button"
-                  onClick={() => handleRemoveImage(img.id)}
-                  className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-all duration-200"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  title="Remover Imagem"
-                  disabled={img.status === 'success' || img.status === 'uploading'}
-                >
-                  <Trash2 className="h-5 w-5" />
-                </motion.button>
+                {/* Botões de Ação */}
+                <div className="flex gap-2">
+                  {img.databaseId && !img.is_primary && (
+                    <motion.button
+                      type="button"
+                      onClick={() => handleSetPrimary(img.id, img.databaseId!, productIdNum!)}
+                      className="p-2 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition-all duration-200"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      title="Definir como Primária"
+                      disabled={loading}
+                    >
+                      <Star className="h-5 w-5" />
+                    </motion.button>
+                  )}
+                  <motion.button
+                    type="button"
+                    onClick={() => handleRemoveImage(img.id, img.databaseId)}
+                    className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-all duration-200"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    title="Remover Imagem"
+                    disabled={loading || img.is_primary}
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </motion.button>
+                </div>
               </motion.div>
             ))}
           </div>
 
-          {/* Botão de Submissão de Imagens */}
+          {/* Botão de Submissão de Novas Imagens */}
           <motion.button
             type="submit"
             className="w-full flex items-center justify-center px-6 py-3 bg-orange-600 text-white font-bold rounded-lg shadow-md hover:bg-orange-700 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed"
@@ -309,7 +434,7 @@ const ProductImagesForm: React.FC = () => {
             ) : (
               <Save className="mr-2 h-5 w-5" />
             )}
-            {loading ? 'A Enviar Imagens...' : 'Guardar Imagens Secundárias'}
+            {loading ? 'A Enviar Imagens...' : 'Guardar Novas Imagens'}
           </motion.button>
         </form>
       )}
