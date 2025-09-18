@@ -415,7 +415,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
         const checkoutPayload = {
             addressId: finalAddressId,
-            couponCode: couponCodes, 
+            couponCodes: couponCodes, 
             email: formData.email,
             paymentMethod: paymentMethod, 
             paymentDetails: paymentDetails, 
