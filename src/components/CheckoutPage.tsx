@@ -17,7 +17,7 @@ import Footer from '../components/FooterPage';
 
 interface CheckoutPageProps {
   items: Array<{
-    id: string;
+    id: string; // ID é necessário para o cálculo do cupão
     product_name: string;
     price: number;
     quantity: number;
@@ -25,7 +25,7 @@ interface CheckoutPageProps {
     weight_value: string;
     color?: string;
     original_price?: number;
-    product_id: number; // Adicione esta propriedade
+    product_id: number;
   }>;
   onBack: () => void;
 }
@@ -55,12 +55,13 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
     country: 'Portugal',
   };
 
+  // CÁLCULO DO SUBTOTAL CORRIGIDO
   const subtotal = items.reduce((sum, item) => {
-    const priceToUse = item.original_price != null && item.original_price > item.price
-        ? item.original_price
-        : item.price;
-    return sum + (priceToUse * item.quantity);
-  }, 0);    
+      const priceToUse = item.original_price != null
+          ? item.original_price
+          : item.price;
+      return sum + (priceToUse * item.quantity);
+  }, 0);
   
   const shipping = 0; 
 
@@ -133,9 +134,11 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
     }
     setIsApplyingCoupon(true);
 
+    // PAYLOAD CORRIGIDO
     const applyCouponPayload = {
       couponCodes: couponCodes,
       items: items.map(item => ({
+        id: item.id, // ADICIONADO: O ID DO ITEM É ESSENCIAL
         price: item.price,
         quantity: item.quantity,
         original_price: item.original_price, 
@@ -412,7 +415,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
         const checkoutPayload = {
             addressId: finalAddressId,
-            couponCode: couponCodes, // Alterado para enviar a array de códigos
+            couponCode: couponCodes, 
             email: formData.email,
             paymentMethod: paymentMethod, 
             paymentDetails: paymentDetails, 
@@ -751,17 +754,17 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                       <h4 className="font-medium text-gray-800">{item.product_name}</h4>
                     </div>
                     <div className="flex flex-col items-end">
-                      {item.original_price != null && item.original_price > item.price && (
+                      {item.original_price != null && (
                         <>
                           <span className="text-sm text-gray-500 line-through">
-                            €{(item.price * item.quantity).toFixed(2)}
+                            €{(item.original_price * item.quantity).toFixed(2)}
                           </span>
                           <div className="text-lg font-bold text-gray-800">
-                            €{(item.original_price * item.quantity).toFixed(2)}
+                            €{(item.price * item.quantity).toFixed(2)}
                           </div>
                         </>
                       )}
-                      {!(item.original_price != null && item.original_price > item.price) && (
+                      {item.original_price === null && (
                         <div className="text-lg font-bold text-gray-800">
                           €{(item.price * item.quantity).toFixed(2)}
                         </div>
@@ -816,28 +819,29 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
                 {/* Mensagem de sucesso visível apenas quando há um desconto */}
                 {discountApplied > 0 && (
-                  
-                  <p className="text-sm text-green-600 mt-2">
-                    Desconto total de €{discountApplied.toFixed(2)}.
+                  <p className="text-sm text-green-600 mt-2 font-medium">
+                    Desconto de €{discountApplied.toFixed(2)} aplicado!
                   </p>
                 )}
               </div>
 
-              {/* Order Totals */}
-              <div className="space-y-3 border-t border-gray-200 pt-4">
+              {/* Totais */}
+              <div className="space-y-2 text-gray-700 font-medium">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="text-gray-800 font-medium">€{subtotal.toFixed(2)}</span>
+                  <span>Subtotal</span>
+                  <span>€{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Envio</span>
-                  <span className="text-green-600 font-medium">Grátis</span>
+                  <span>Envio</span>
+                  <span>€{shipping.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Desconto</span>
-                  <span className="text-red-600 font-medium">-€{discountApplied.toFixed(2)}</span>
+                <div className="flex justify-between font-bold">
+                  <span>Desconto</span>
+                  <span className="text-green-600">-€{discountApplied.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between font-bold text-lg text-gray-800 border-t-2 border-dashed border-gray-300 pt-4">
+              </div>
+              <div className="border-t border-gray-200 mt-4 pt-4">
+                <div className="flex justify-between font-bold text-lg text-gray-800">
                   <span>Total</span>
                   <span>€{finalTotal.toFixed(2)}</span>
                 </div>
