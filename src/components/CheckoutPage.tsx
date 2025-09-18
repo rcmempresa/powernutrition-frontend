@@ -133,17 +133,17 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
     }
     setIsApplyingCoupon(true);
 
-    try {
-      const applyCouponPayload = {
-        couponCodes: couponCodes,
-        items: items.map(item => ({
-          price: item.price,
-          quantity: item.quantity,
-          original_price: item.original_price, 
-          product_id: item.product_id, 
-        })),
-      };
+    const applyCouponPayload = {
+      couponCodes: couponCodes,
+      items: items.map(item => ({
+        price: item.price,
+        quantity: item.quantity,
+        original_price: item.original_price, 
+        product_id: item.product_id, 
+      })),
+    };
 
+    try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cupoes/apply`, {
         method: 'POST',
         headers: {
@@ -164,18 +164,17 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
       toast.success(`Cupões aplicados com sucesso! Desconto total de €${result.discount.toFixed(2)}.`);
     } catch (error) {
-      console.error('Erro ao aplicar cupão:', error);
-      
       setDiscountApplied(0);
       setFinalTotal(subtotal + shipping);
-      setCouponCodes([]); // Limpa a lista de cupões se der erro
+      setCouponCodes([]);
       setCurrentCouponCode('');
       
-      toast.error(error.message || 'Erro ao aplicar o(s) cupão(ões).');
+      toast.error(error.message || 'Ocorreu um erro inesperado.');
     } finally {
       setIsApplyingCoupon(false);
     }
   };
+
 
   const handleAddressOptionChange = (option: 'custom' | 'store' | 'befit') => {
     setSelectedAddressOption(option);
@@ -817,6 +816,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
 
                 {/* Mensagem de sucesso visível apenas quando há um desconto */}
                 {discountApplied > 0 && (
+                  
                   <p className="text-sm text-green-600 mt-2">
                     Desconto total de €{discountApplied.toFixed(2)}.
                   </p>
