@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock,
@@ -9,7 +9,8 @@ import {
   Instagram,
   Facebook,
   MapPin,
-  User
+  User,
+  XCircle // Importa o XCircle para o botão de remover cupão
 } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -17,7 +18,7 @@ import Footer from '../components/FooterPage';
 
 interface CheckoutPageProps {
   items: Array<{
-    id: string; // ID é necessário para o cálculo do cupão
+    id: string;
     product_name: string;
     price: number;
     quantity: number;
@@ -55,12 +56,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
     country: 'Portugal',
   };
 
-  // CÁLCULO DO SUBTOTAL CORRIGIDO
-  const subtotal = items.reduce((sum, item) => {
-      const priceToUse = item.original_price != null
-          ? item.original_price
-          : item.price;
-      return sum + (priceToUse * item.quantity);
+  const initialSubtotal = items.reduce((sum, item) => {
+    return sum + (item.price * item.quantity);
   }, 0);
   
   const shipping = 0; 
@@ -90,15 +87,18 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
   const [selectedAddressOption, setSelectedAddressOption] = useState<'custom' | 'store' | 'befit'>('custom');
   const [paymentMethod, setPaymentMethod] = useState<'mbway' | 'multibanco' | 'cc' | 'cod'>('cc');
   
-  // NOVOS ESTADOS PARA MÚLTIPLOS CUPÕES
-  const [couponCodes, setCouponCodes] = useState([]);
+  const [couponCodes, setCouponCodes] = useState<string[]>([]);
   const [currentCouponCode, setCurrentCouponCode] = useState('');
 
   const [isProcessing, setIsProcessing] = useState(false); 
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   const [discountApplied, setDiscountApplied] = useState(0);
-  const [finalTotal, setFinalTotal] = useState(subtotal + shipping);
+  const [finalTotal, setFinalTotal] = useState(initialSubtotal + shipping);
+
+  useEffect(() => {
+      setFinalTotal(initialSubtotal + shipping);
+  }, [initialSubtotal]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -115,18 +115,30 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
   };
 
   const handleAddCoupon = () => {
-    if (currentCouponCode && !couponCodes.includes(currentCouponCode)) {
-      setCouponCodes([...couponCodes, currentCouponCode]);
+    const couponCode = currentCouponCode.trim().toUpperCase();
+    if (couponCode && !couponCodes.includes(couponCode)) {
+      setCouponCodes([...couponCodes, couponCode]);
       setCurrentCouponCode(''); 
-      toast.success(`Cupão "${currentCouponCode}" adicionado. Clique em 'Aplicar Cupões' para calcular o desconto.`);
-    } else if (couponCodes.includes(currentCouponCode)) {
+      toast.success(`Cupão "${couponCode}" adicionado. Clique em 'Aplicar Cupões' para calcular o desconto.`);
+    } else if (couponCodes.includes(couponCode)) {
       toast.warn('Este cupão já foi adicionado.');
     } else {
       toast.warn('Por favor, insira um código de cupão.');
     }
   };
 
-  // NOVA FUNÇÃO handleApplyCoupon
+  const handleRemoveCoupon = (couponToRemove: string) => {
+    setCouponCodes(prevCodes => {
+      const updatedCodes = prevCodes.filter(code => code !== couponToRemove);
+      if (updatedCodes.length === 0) {
+        setDiscountApplied(0);
+        setFinalTotal(initialSubtotal + shipping);
+      }
+      return updatedCodes;
+    });
+    toast.info(`Cupão "${couponToRemove}" removido.`);
+  };
+
   const handleApplyCoupon = async () => {
     if (couponCodes.length === 0) {
       toast.warn('Por favor, adicione pelo menos um cupão para aplicar.');
@@ -134,11 +146,10 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
     }
     setIsApplyingCoupon(true);
 
-    // PAYLOAD CORRIGIDO
     const applyCouponPayload = {
       couponCodes: couponCodes,
       items: items.map(item => ({
-        id: item.id, // ADICIONADO: O ID DO ITEM É ESSENCIAL
+        id: item.id,
         price: item.price,
         quantity: item.quantity,
         original_price: item.original_price, 
@@ -168,7 +179,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
       toast.success(`Cupões aplicados com sucesso! Desconto total de €${result.discount.toFixed(2)}.`);
     } catch (error) {
       setDiscountApplied(0);
-      setFinalTotal(subtotal + shipping);
+      setFinalTotal(initialSubtotal + shipping);
       setCouponCodes([]);
       setCurrentCouponCode('');
       
@@ -177,7 +188,6 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
       setIsApplyingCoupon(false);
     }
   };
-
 
   const handleAddressOptionChange = (option: 'custom' | 'store' | 'befit') => {
     setSelectedAddressOption(option);
@@ -386,7 +396,6 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                       transaction_key: `transaction_${Date.now()}`,
                   }
               };
-
 
             const paymentResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/referencia/cc/create`, {
                 method: 'POST',
@@ -757,10 +766,10 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                       {item.original_price != null && (
                         <>
                           <span className="text-sm text-gray-500 line-through">
-                            €{(item.price * item.quantity).toFixed(2)}
+                            €{(item.original_price * item.quantity).toFixed(2)}
                           </span>
                           <div className="text-lg font-bold text-gray-800">
-                            €{(item.original_price * item.quantity).toFixed(2)}
+                            €{(item.price * item.quantity).toFixed(2)}
                           </div>
                         </>
                       )}
@@ -774,7 +783,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                 ))}
               </div>
 
-              {/* Cupão Section - Atualizado para múltiplos cupões */}
+              {/* Cupão Section - Atualizado para múltiplos cupões e remoção */}
               <div className="mt-6 mb-6">
                 <h4 className="text-lg font-bold text-gray-800 mb-3">Cupão de Desconto</h4>
                 <div className="flex w-full space-x-2">
@@ -794,13 +803,22 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                   </button>
                 </div>
 
-                {/* Exibe a lista de cupões adicionados */}
+                {/* Exibe a lista de cupões adicionados com botões de remoção */}
                 {couponCodes.length > 0 && (
                   <div className="mt-2 text-sm text-gray-600">
                     <p>Cupões a serem aplicados:</p>
-                    <ul className="list-disc list-inside">
+                    <ul className="space-y-1">
                       {couponCodes.map((code, index) => (
-                        <li key={index} className="font-semibold">{code}</li>
+                        <li key={index} className="flex items-center justify-between font-semibold p-2 bg-gray-100 rounded-md">
+                          <span>{code}</span>
+                          <button 
+                            onClick={() => handleRemoveCoupon(code)}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                            title={`Remover cupão ${code}`}
+                          >
+                            <XCircle className="w-5 h-5" />
+                          </button>
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -816,32 +834,25 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                 >
                   {isApplyingCoupon ? 'A aplicar...' : 'Aplicar Cupões'}
                 </button>
-
-                {/* Mensagem de sucesso visível apenas quando há um desconto */}
-                {discountApplied > 0 && (
-                  <p className="text-sm text-green-600 mt-2 font-medium">
-                    Desconto de €{discountApplied.toFixed(2)} aplicado!
-                  </p>
-                )}
               </div>
 
-              {/* Totais */}
-              <div className="space-y-2 text-gray-700 font-medium">
+              {/* Cálculos da Encomenda */}
+              <div className="space-y-3 font-semibold">
                 <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>€{subtotal.toFixed(2)}</span>
+                  <span className="text-gray-600">Subtotal</span>
+                  <span>€{initialSubtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Envio</span>
+                  <span className="text-gray-600">Envio</span>
                   <span>€{shipping.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between font-bold">
-                  <span>Desconto</span>
-                  <span className="text-green-600">-€{discountApplied.toFixed(2)}</span>
-                </div>
-              </div>
-              <div className="border-t border-gray-200 mt-4 pt-4">
-                <div className="flex justify-between font-bold text-lg text-gray-800">
+                {discountApplied > 0 && (
+                  <div className="flex justify-between text-green-600 font-bold">
+                    <span>Desconto do Cupão</span>
+                    <span>- €{discountApplied.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xl font-bold border-t pt-4">
                   <span>Total</span>
                   <span>€{finalTotal.toFixed(2)}</span>
                 </div>
