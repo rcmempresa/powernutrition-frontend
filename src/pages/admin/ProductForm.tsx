@@ -74,7 +74,6 @@ const ProductForm: React.FC = () => {
     image_url: '',
     category_id: 0,
     brand_id: 0,
-    original_price: 0,
     is_active: true,
     rating: 0,
     reviewcount: 0,
@@ -177,7 +176,6 @@ const ProductForm: React.FC = () => {
       const product = response.data.product;
       const variants = response.data.variants;
 
-
       setProductData({
         name: product.name,
         description: product.description,
@@ -185,7 +183,7 @@ const ProductForm: React.FC = () => {
         category_id: product.category_id,
         brand_id: product.brand_id,
         is_active: product.is_active,
-        original_price: product.original_price,
+        original_price: product.original_price ? Number(product.original_price) : undefined,
         rating: product.rating,
         reviewcount: product.reviewcount,
       });
@@ -287,7 +285,6 @@ const ProductForm: React.FC = () => {
     }
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -310,11 +307,6 @@ const ProductForm: React.FC = () => {
       }
 
       // Validação das variantes
-      if (variantsData.length === 0) {
-        setSubmitError('Por favor, adicione pelo menos uma variante para o produto.');
-        setLoading(false);
-        return;
-      }
       for (const variant of variantsData) {
         if (!variant.preco || !variant.sku || (variant.quantidade_em_stock <= 0 && variant.stock_ginasio <= 0)) {
           setSubmitError('Por favor, preencha todos os campos obrigatórios para cada variante (Preço, SKU, e pelo menos um stock).');
@@ -335,9 +327,8 @@ const ProductForm: React.FC = () => {
         setLoading(false);
         return;
       }
-
-      // 💡 AQUI: Construímos o payload com a estrutura correta para o backend
-      // O backend agora deve esperar um array de variantes, não um único objeto
+      
+      // ✨ AQUI: Construímos o payload com a estrutura correta para o backend
       const payload = {
         product: {
           name: productData.name,
@@ -346,26 +337,23 @@ const ProductForm: React.FC = () => {
           category_id: productData.category_id,
           brand_id: productData.brand_id,
           is_active: productData.is_active,
-          original_price:productData.original_price,
+          original_price: productData.original_price ? String(productData.original_price) : undefined,
           rating: productData.rating,
           reviewcount: productData.reviewcount,
         },
-        // ✨ CORRIGIDO: Passa o array de variantes, não apenas o primeiro item
-        variants: variantsData.map(v => ({
-          ...v,
-          preco: String(v.preco),
-          weight_value: String(v.weight_value),
-          quantidade_em_stock: v.quantidade_em_stock,
-          stock_ginasio: v.stock_ginasio,
-          sabor_id: v.sabor_id && v.sabor_id !== 0 ? v.sabor_id : null,
-        })),
+        // O backend espera um único objeto 'variant', não um array
+        variant: {
+          ...variantsData[0], // Usamos o primeiro (e único) item do array de variantes
+          preco: String(variantsData[0].preco),
+          weight_value: String(variantsData[0].weight_value),
+          quantidade_em_stock: variantsData[0].quantidade_em_stock,
+          stock_ginasio: variantsData[0].stock_ginasio,
+          sabor_id: variantsData[0].sabor_id && variantsData[0].sabor_id !== 0 ? variantsData[0].sabor_id : null,
+        }
       };
-
-      console.log('Payload a ser enviado:', payload);
 
       let response;
       if (isEditing) {
-        // ✨ CORRIGIDO: A rota de atualização deve lidar com variantes
         response = await axios.put(`${VITE_BACKEND_URL}/api/products/atualizar/${id}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -393,7 +381,6 @@ const ProductForm: React.FC = () => {
       setLoading(false);
     }
   };
-
 
   return (
     <motion.div 
@@ -517,7 +504,7 @@ const ProductForm: React.FC = () => {
                 type="number"
                 id="original_price"
                 name="original_price"
-                value={productData.original_price}
+                value={productData.original_price === 0 ? '' : (productData.original_price || '')} 
                 onChange={handleProductChange}
                 min="0"
                 step="0.01"
