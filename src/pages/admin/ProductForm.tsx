@@ -176,7 +176,6 @@ const ProductForm: React.FC = () => {
       const product = response.data.product;
       const variants = response.data.variants;
 
-      console.log('Dados do produto recebidos do backend:', response.data.product);
 
       setProductData({
         name: product.name,
@@ -363,6 +362,8 @@ const ProductForm: React.FC = () => {
           sabor_id: v.sabor_id && v.sabor_id !== 0 ? v.sabor_id : null,
         })),
       };
+
+      console.log('Payload a ser enviado:', payload);
 
       let response;
       if (isEditing) {
