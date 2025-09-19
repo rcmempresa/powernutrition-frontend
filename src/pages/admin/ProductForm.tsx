@@ -285,6 +285,7 @@ const ProductForm: React.FC = () => {
     }
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -307,6 +308,11 @@ const ProductForm: React.FC = () => {
       }
 
       // Validação das variantes
+      if (variantsData.length === 0) {
+        setSubmitError('Por favor, adicione pelo menos uma variante para o produto.');
+        setLoading(false);
+        return;
+      }
       for (const variant of variantsData) {
         if (!variant.preco || !variant.sku || (variant.quantidade_em_stock <= 0 && variant.stock_ginasio <= 0)) {
           setSubmitError('Por favor, preencha todos os campos obrigatórios para cada variante (Preço, SKU, e pelo menos um stock).');
@@ -327,8 +333,9 @@ const ProductForm: React.FC = () => {
         setLoading(false);
         return;
       }
-      
-      // ✨ AQUI: Construímos o payload com a estrutura correta para o backend
+
+      // 💡 AQUI: Construímos o payload com a estrutura correta para o backend
+      // O backend agora deve esperar um array de variantes, não um único objeto
       const payload = {
         product: {
           name: productData.name,
@@ -337,23 +344,27 @@ const ProductForm: React.FC = () => {
           category_id: productData.category_id,
           brand_id: productData.brand_id,
           is_active: productData.is_active,
-          original_price: productData.original_price ? String(productData.original_price) : undefined,
+          // ✨ CORRIGIDO: Passa 'null' se o campo estiver vazio para remover o valor no backend
+          original_price: (productData.original_price === 0 || productData.original_price === null) 
+      ? null 
+      : String(productData.original_price),
           rating: productData.rating,
           reviewcount: productData.reviewcount,
         },
-        // O backend espera um único objeto 'variant', não um array
-        variant: {
-          ...variantsData[0], // Usamos o primeiro (e único) item do array de variantes
-          preco: String(variantsData[0].preco),
-          weight_value: String(variantsData[0].weight_value),
-          quantidade_em_stock: variantsData[0].quantidade_em_stock,
-          stock_ginasio: variantsData[0].stock_ginasio,
-          sabor_id: variantsData[0].sabor_id && variantsData[0].sabor_id !== 0 ? variantsData[0].sabor_id : null,
-        }
+        // ✨ CORRIGIDO: Passa o array de variantes, não apenas o primeiro item
+        variants: variantsData.map(v => ({
+          ...v,
+          preco: String(v.preco),
+          weight_value: String(v.weight_value),
+          quantidade_em_stock: v.quantidade_em_stock,
+          stock_ginasio: v.stock_ginasio,
+          sabor_id: v.sabor_id && v.sabor_id !== 0 ? v.sabor_id : null,
+        })),
       };
 
       let response;
       if (isEditing) {
+        // ✨ CORRIGIDO: A rota de atualização deve lidar com variantes
         response = await axios.put(`${VITE_BACKEND_URL}/api/products/atualizar/${id}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -381,6 +392,7 @@ const ProductForm: React.FC = () => {
       setLoading(false);
     }
   };
+
 
   return (
     <motion.div 
