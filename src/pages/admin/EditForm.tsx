@@ -5,10 +5,8 @@ import { Loader2, Edit, Save, PlusCircle, XCircle, ArrowLeft } from 'lucide-reac
 import axios from 'axios';
 import { useAuth } from '../../hooks/useAuth';
 
-// Use a URL base do seu backend, como import.meta.env.VITE_BACKEND_URL
 const VITE_BACKEND_URL = "https://powernutrition-backend-production-7883.up.railway.app";
 
-// Nova tipagem para uma variante do produto
 interface ProductVariant {
   id: number;
   produto_id: number;
@@ -22,13 +20,11 @@ interface ProductVariant {
   flavor_name: string | null;
 }
 
-// Tipagem para uma categoria, marca e sabor (da API)
 interface ApiItem {
   id: number;
   name: string;
 }
 
-// Tipagem para um produto completo
 interface FullProduct {
   id: number;
   name: string;
@@ -37,7 +33,8 @@ interface FullProduct {
   category_id: number;
   is_active: boolean;
   brand_id: number;
-  original_price: string;
+  // ✨ CORRIGIDO: Adicione 'null' se o backend puder retornar valores nulos.
+  original_price: string | null;
   variants: ProductVariant[];
 }
 
@@ -55,11 +52,9 @@ const EditForm: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   
-  // --- NOVOS ESTADOS PARA O UPLOAD DE IMAGEM ---
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState<boolean>(false);
 
-  // Carrega os dados do produto, categorias, marcas e sabores em simultâneo
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
@@ -82,8 +77,8 @@ const EditForm: React.FC = () => {
           }),
         ]);
         
-        const productData = { ...productResponse.data, original_price: '' };
-        setProduct(productData);
+        // ✨ CORRIGIDO: Remover a linha que sobrescreve o original_price
+        setProduct(productResponse.data);
         setCategories(categoriesResponse.data);
         setBrands(brandsResponse.data);
         setFlavors(flavorsResponse.data);
@@ -100,7 +95,6 @@ const EditForm: React.FC = () => {
     }
   }, [id, getAuthToken]);
 
-  // --- NOVA FUNÇÃO PARA UPLOAD DA IMAGEM ---
   const uploadImage = async (file: File) => {
     setUploadingImage(true);
     const token = getAuthToken();
@@ -123,7 +117,6 @@ const EditForm: React.FC = () => {
     }
   };
 
-  // Função para lidar com a atualização do produto principal
   const handleUpdateProduct = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!product) return;
@@ -133,7 +126,6 @@ const EditForm: React.FC = () => {
     try {
       let finalImageUrl = product.image_url;
 
-      // --- LÓGICA DE ATUALIZAÇÃO DA IMAGEM ---
       if (selectedFile) {
         setSaveStatus('A carregar nova imagem...');
         finalImageUrl = await uploadImage(selectedFile);
@@ -145,10 +137,11 @@ const EditForm: React.FC = () => {
         name: product.name,
         description: product.description,
         is_active: product.is_active,
-        image_url: finalImageUrl, // Usa a URL final (nova ou a original)
+        image_url: finalImageUrl,
         brand_id: product.brand_id,
         category_id: product.category_id,
-        original_price: product.original_price,
+        // ✨ CORRIGIDO: Enviar o valor como null se for uma string vazia
+        original_price: product.original_price === '' ? null : product.original_price,
       }, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -164,7 +157,6 @@ const EditForm: React.FC = () => {
     }
   };
 
-  // Função para lidar com a atualização de uma variante específica
   const handleUpdateVariant = async (variantId: number, updatedData: Partial<ProductVariant>) => {
     setIsSaving(true);
     setSaveStatus(null);
@@ -185,7 +177,6 @@ const EditForm: React.FC = () => {
     }
   };
 
-  // Função para lidar com a mudança nos campos do formulário do produto principal
   const handleProductChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setProduct(prev => {
@@ -193,15 +184,17 @@ const EditForm: React.FC = () => {
       if (type === 'checkbox') {
         return { ...prev, [name]: (e.target as HTMLInputElement).checked };
       }
-      // Converte os IDs de marca e categoria para números
       if (name === 'brand_id' || name === 'category_id') {
         return { ...prev, [name]: Number(value) };
+      }
+      // ✨ CORRIGIDO: Lidar com o campo de preço original como string
+      if (name === 'original_price') {
+        return { ...prev, [name]: value };
       }
       return { ...prev, [name]: value };
     });
   };
 
-  // --- NOVA FUNÇÃO PARA MUDANÇA DE ARQUIVO ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
@@ -210,7 +203,6 @@ const EditForm: React.FC = () => {
     }
   };
 
-  // Função para lidar com a mudança nos campos do formulário das variantes
   const handleVariantChange = (variantId: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setProduct(prev => {
@@ -301,7 +293,6 @@ const EditForm: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Formulário para o Produto Principal */}
       <motion.div 
         className="mb-8 p-6 bg-gray-50 rounded-lg shadow-inner border border-gray-200"
         initial={{ opacity: 0, y: 20 }}
@@ -331,7 +322,6 @@ const EditForm: React.FC = () => {
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
-          {/* --- NOVO CAMPO DE INPUT PARA A IMAGEM E PRÉ-VISUALIZAÇÃO --- */}
           <div>
             <label htmlFor="image_file" className="block text-sm font-medium text-gray-700">
               Imagem do Produto
@@ -355,14 +345,14 @@ const EditForm: React.FC = () => {
               </div>
             )}
           </div>
-          {/* --- FIM DA NOVA LÓGICA DE IMAGEM --- */}
           <div>
             <label htmlFor="original_price" className="block text-sm font-medium text-gray-700">Preço Original</label>
             <input
               type="text"
               name="original_price"
               id="original_price"
-              value={product.original_price}
+              // ✨ CORRIGIDO: Usa o operador de coalescência nula para o valor do input
+              value={product.original_price ?? ''}
               onChange={handleProductChange}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500"
             />
@@ -430,7 +420,6 @@ const EditForm: React.FC = () => {
         </form>
       </motion.div>
 
-      {/* Secção de Edição de Variantes */}
       <motion.div
         className="p-6 bg-gray-50 rounded-lg shadow-inner border border-gray-200"
         initial={{ opacity: 0, y: 20 }}
@@ -438,7 +427,6 @@ const EditForm: React.FC = () => {
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-800">Variantes</h2>
-          {/* Este botão pode ser usado para adicionar uma nova variante se necessário */}
           <motion.button
             onClick={() => navigate(`/admin/products/adicionar-variante/${id}`)}
             className="flex items-center px-4 py-2 bg-emerald-500 text-white rounded-lg shadow-md hover:bg-emerald-600 transition-colors"
