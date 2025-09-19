@@ -23,6 +23,7 @@ interface CheckoutPageProps {
     price: number;
     quantity: number;
     image_url: string;
+    product_image: string;
     weight_value: string;
     color?: string;
     original_price?: number;
@@ -751,7 +752,7 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
                   <div key={item.id} className="flex items-center space-x-4">
                     <div className="relative">
                       <img
-                        src={item.image_url}
+                        src={item.product_image}
                         alt={item.product_name}
                         className="w-16 h-16 object-cover rounded-lg"
                       />
