@@ -176,6 +176,8 @@ const ProductForm: React.FC = () => {
       const product = response.data.product;
       const variants = response.data.variants;
 
+      console.log('Dados do produto recebidos do backend:', response.data.product);
+
       setProductData({
         name: product.name,
         description: product.description,
