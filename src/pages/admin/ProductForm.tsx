@@ -74,6 +74,7 @@ const ProductForm: React.FC = () => {
     image_url: '',
     category_id: 0,
     brand_id: 0,
+    original_price: 0,
     is_active: true,
     rating: 0,
     reviewcount: 0,
@@ -184,7 +185,7 @@ const ProductForm: React.FC = () => {
         category_id: product.category_id,
         brand_id: product.brand_id,
         is_active: product.is_active,
-        original_price: product.original_price ? Number(product.original_price) : undefined,
+        original_price: product.original_price,
         rating: product.rating,
         reviewcount: product.reviewcount,
       });
@@ -345,10 +346,7 @@ const ProductForm: React.FC = () => {
           category_id: productData.category_id,
           brand_id: productData.brand_id,
           is_active: productData.is_active,
-          // ✨ CORRIGIDO: Passa 'null' se o campo estiver vazio para remover o valor no backend
-          original_price: (productData.original_price === 0 || productData.original_price === null || productData.original_price === '') 
-      ? null 
-      : Number(productData.original_price),
+          original_price:productData.original_price,
           rating: productData.rating,
           reviewcount: productData.reviewcount,
         },
@@ -519,7 +517,7 @@ const ProductForm: React.FC = () => {
                 type="number"
                 id="original_price"
                 name="original_price"
-                value={productData.original_price ?? ''}
+                value={productData.original_price}
                 onChange={handleProductChange}
                 min="0"
                 step="0.01"
