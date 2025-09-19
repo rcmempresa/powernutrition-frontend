@@ -77,6 +77,7 @@ const EditForm: React.FC = () => {
           }),
         ]);
         
+        console.log('Dados do produto vindos da API:', productResponse.data);
         // ✨ CORRIGIDO: Remover a linha que sobrescreve o original_price
         setProduct(productResponse.data);
         setCategories(categoriesResponse.data);
