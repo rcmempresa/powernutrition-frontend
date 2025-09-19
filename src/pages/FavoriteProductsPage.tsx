@@ -95,6 +95,8 @@ const FavoriteProductsPage: React.FC = () => {
         },
       });
 
+      console.log('Resposta bruta da API:', response.data);
+
       const processedFavorites: FavoriteProduct[] = response.data.map(item => ({
         product_id: item.product_id,
         variant_id: item.variant_id,
