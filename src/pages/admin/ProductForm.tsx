@@ -345,9 +345,9 @@ const ProductForm: React.FC = () => {
           brand_id: productData.brand_id,
           is_active: productData.is_active,
           // ✨ CORRIGIDO: Passa 'null' se o campo estiver vazio para remover o valor no backend
-          original_price: (productData.original_price === 0 || productData.original_price === null) 
+          original_price: (productData.original_price === 0 || productData.original_price === null || productData.original_price === '') 
       ? null 
-      : String(productData.original_price),
+      : Number(productData.original_price),
           rating: productData.rating,
           reviewcount: productData.reviewcount,
         },
@@ -516,7 +516,7 @@ const ProductForm: React.FC = () => {
                 type="number"
                 id="original_price"
                 name="original_price"
-                value={productData.original_price === 0 ? '' : (productData.original_price || '')} 
+                value={productData.original_price ?? ''}
                 onChange={handleProductChange}
                 min="0"
                 step="0.01"
