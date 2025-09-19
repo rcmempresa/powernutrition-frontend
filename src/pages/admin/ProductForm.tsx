@@ -183,7 +183,7 @@ const ProductForm: React.FC = () => {
         category_id: product.category_id,
         brand_id: product.brand_id,
         is_active: product.is_active,
-        original_price: product.original_price ? Number(product.original_price) : undefined,
+        original_price: variants[0]?.original_price ? Number(variants[0].original_price) : undefined,
         rating: product.rating,
         reviewcount: product.reviewcount,
       });
