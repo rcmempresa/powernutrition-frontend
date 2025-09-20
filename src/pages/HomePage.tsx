@@ -482,6 +482,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
           </div>
         </div>
       </section>
+
       {loadingCampaigns ? (
         <p className="text-white text-center py-8 bg-gray-800">Carregando campanhas ativas...</p>
       ) : errorCampaigns ? (
@@ -497,9 +498,9 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                 </div>
               </div>
 
-              {/* 1. IMAGEM DA CAMPANHA (agora numa div separada) */}
+              {/* 1. IMAGEM DA CAMPANHA (com largura limitada e centralizada) */}
               {campaign.image_url && (
-                  <div className="mb-8">
+                  <div className="mb-8 max-w-4xl mx-auto">
                       <img
                           src={campaign.image_url}
                           alt={`Campanha ${campaign.name}`}
@@ -515,7 +516,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                   ) : (
                       campaign.products.map((product) => {
                           const displayVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
-                          const totalStock = product.variants.reduce((acc, variant) => acc + variant.quantidade_em_stock, 0);
                           if (!displayVariant) return null;
 
                           return (
@@ -530,11 +530,6 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                               >
                                   <div className="relative bg-gray-700 rounded-2xl shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-600 overflow-hidden">
                                       <div className="relative w-full h-48 md:h-56">
-                                          {(totalStock === 0) && (
-                                              <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm z-10">
-                                                  Esgotado
-                                              </div>
-                                          )}
                                           <img
                                               src={product.image_url}
                                               alt={product.name}
@@ -542,63 +537,63 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                                           />
                                       </div>
                                       <div className="p-4 md:p-6">
-                                          <div className="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                              <button 
-                                                  className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
-                                                  aria-label="Toggle favorite"
-                                                  onClick={(e) => toggleFavorite(displayVariant.id, e)}
-                                                >
-                                                  <Heart 
-                                                    className={`w-4 h-4 transition-colors ${
-                                                        checkIfFavorite(displayVariant.id) ? 'text-red-500 fill-current' : 'text-gray-200'
-                                                    }`} 
-                                                  />
-                                                </button>
-                                              <button
-                                                  className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
-                                                  aria-label="Quick view"
-                                                  onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      handleQuickViewOpen(product);
-                                                  }}
-                                              >
-                                                  <Eye className="w-4 h-4 text-gray-200" />
-                                              </button>
-                                              <button
-                                                className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
-                                                aria-label="Add to cart"
-                                                onClick={(e) => handleAddToCart(e, product)}
-                                              >
-                                                <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
-                                            </button>
-                                          </div>
-                                          <div className="flex mb-2">
-                                              {parseFloat(product.rating || '0') > 0 ? (
-                                                  Array.from({ length: 5 }).map((_, i) => (
-                                                      <Star
-                                                          key={i}
-                                                          className={`w-4 h-4 ${i < Math.floor(parseFloat(product.rating)) ? 'text-orange-500 fill-current' : 'text-gray-500'}`}
-                                                      />
-                                                  ))
-                                              ) : (
-                                                  <div className="h-4"></div>
-                                              )}
-                                          </div>
-                                          <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
-                                          <p className="text-gray-400 text-sm mb-2">
-                                              {displayVariant.weight_value} {displayVariant.weight_unit}
-                                          </p>
-                                          <div className="flex items-baseline space-x-2">
-                                              {product.original_price && parseFloat(displayVariant.preco) < parseFloat(product.original_price) && (
-                                                  <p className="text-gray-500 line-through text-base md:text-lg">
-                                                      €{parseFloat(product.original_price).toFixed(2)}
-                                                  </p>
-                                              )}
-                                              <p className="text-red-500 font-bold text-lg md:text-xl">
-                                                  € {parseFloat(displayVariant.preco).toFixed(2)}
-                                              </p>
-                                          </div>
-                                      </div>
+                                                <div className="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button 
+                                                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
+                                                        aria-label="Toggle favorite"
+                                                        onClick={(e) => toggleFavorite(displayVariant.id, e)}
+                                                      >
+                                                        <Heart 
+                                                          className={`w-4 h-4 transition-colors ${
+                                                              checkIfFavorite(displayVariant.id) ? 'text-red-500 fill-current' : 'text-gray-200'
+                                                          }`} 
+                                                        />
+                                                      </button>
+                                                    <button
+                                                        className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                                        aria-label="Quick view"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleQuickViewOpen(product);
+                                                        }}
+                                                    >
+                                                        <Eye className="w-4 h-4 text-gray-200" />
+                                                    </button>
+                                                    <button
+                                                      className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                                      aria-label="Add to cart"
+                                                      onClick={(e) => handleAddToCart(e, product)}
+                                                    >
+                                                      <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
+                                                  </button>
+                                                </div>
+                                                <div className="flex mb-2">
+                                                    {parseFloat(product.rating || '0') > 0 ? (
+                                                        Array.from({ length: 5 }).map((_, i) => (
+                                                            <Star
+                                                                key={i}
+                                                                className={`w-4 h-4 ${i < Math.floor(parseFloat(product.rating)) ? 'text-orange-500 fill-current' : 'text-gray-500'}`}
+                                                            />
+                                                        ))
+                                                    ) : (
+                                                        <div className="h-4"></div>
+                                                    )}
+                                                </div>
+                                                <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
+                                                <p className="text-gray-400 text-sm mb-2">
+                                                    {displayVariant.weight_value} {displayVariant.weight_unit}
+                                                </p>
+                                                <div className="flex items-baseline space-x-2">
+                                                    {product.original_price && parseFloat(displayVariant.preco) < parseFloat(product.original_price) && (
+                                                        <p className="text-gray-500 line-through text-base md:text-lg">
+                                                            €{parseFloat(product.original_price).toFixed(2)}
+                                                        </p>
+                                                    )}
+                                                    <p className="text-red-500 font-bold text-lg md:text-xl">
+                                                        € {parseFloat(displayVariant.preco).toFixed(2)}
+                                                    </p>
+                                                </div>
+                                            </div>
                                   </div>
                               </div>
                           );
