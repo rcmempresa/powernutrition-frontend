@@ -497,56 +497,113 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
                 </div>
               </div>
 
-              {/* 1. CONTAINER DA GRELHA: divide em 3 colunas em ecrãs grandes */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* 2. IMAGEM DA CAMPANHA: ocupa 1 coluna */}
-                  {campaign.image_url && (
-                      <div className="col-span-1 hidden lg:block">
-                          <img
-                              src={campaign.image_url}
-                              alt={`Campanha ${campaign.name}`}
-                              className="w-full h-auto object-cover rounded-2xl shadow-xl border border-gray-600"
-                          />
-                      </div>
-                  )}
-                  
-                  {/* 3. LISTA DE PRODUTOS: ocupa as 2 colunas restantes */}
-                  <div className={`grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 ${campaign.image_url ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
-                      {campaign.products.length === 0 ? (
-                          <p className="text-center text-gray-400">Nenhum produto nesta campanha.</p>
-                      ) : (
-                          campaign.products.map((product) => {
-                              const displayVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
-                              if (!displayVariant) return null;
+              {/* 1. IMAGEM DA CAMPANHA (agora numa div separada) */}
+              {campaign.image_url && (
+                  <div className="mb-8">
+                      <img
+                          src={campaign.image_url}
+                          alt={`Campanha ${campaign.name}`}
+                          className="w-full h-auto object-cover rounded-2xl shadow-xl border border-gray-600"
+                      />
+                  </div>
+              )}
+              
+              {/* 2. LISTA DE PRODUTOS (retorna à grelha de 4 colunas) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                  {campaign.products.length === 0 ? (
+                      <p className="text-center text-gray-400 col-span-full">Nenhum produto nesta campanha.</p>
+                  ) : (
+                      campaign.products.map((product) => {
+                          const displayVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
+                          const totalStock = product.variants.reduce((acc, variant) => acc + variant.quantidade_em_stock, 0);
+                          if (!displayVariant) return null;
 
-                              return (
-                                  <div
-                                      key={product.id}
-                                      className="group cursor-pointer"
-                                      role="button"
-                                      tabIndex={0}
-                                      onMouseEnter={() => setHoveredProduct(product.id)}
-                                      onMouseLeave={() => setHoveredProduct(null)}
-                                      onClick={() => navigate(`/produto/${product.id}`)}
-                                  >
-                                      {/* ... (código existente de exibição de produto) */}
-                                      <div className="relative bg-gray-700 rounded-2xl shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-600 overflow-hidden">
-                                        <div className="relative w-full h-48 md:h-56">
-                                            <img
-                                                src={product.image_url}
-                                                alt={product.name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                        <div className="p-4 md:p-6">
-                                            {/* ... (o resto do código do produto) */}
-                                        </div>
+                          return (
+                              <div
+                                  key={product.id}
+                                  className="group cursor-pointer"
+                                  role="button"
+                                  tabIndex={0}
+                                  onMouseEnter={() => setHoveredProduct(product.id)}
+                                  onMouseLeave={() => setHoveredProduct(null)}
+                                  onClick={() => navigate(`/produto/${product.id}`)}
+                              >
+                                  <div className="relative bg-gray-700 rounded-2xl shadow-lg group-hover:shadow-orange-500/20 transition-all border border-gray-600 overflow-hidden">
+                                      <div className="relative w-full h-48 md:h-56">
+                                          {(totalStock === 0) && (
+                                              <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm z-10">
+                                                  Esgotado
+                                              </div>
+                                          )}
+                                          <img
+                                              src={product.image_url}
+                                              alt={product.name}
+                                              className="w-full h-full object-cover"
+                                          />
+                                      </div>
+                                      <div className="p-4 md:p-6">
+                                          <div className="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <button 
+                                                  className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500" 
+                                                  aria-label="Toggle favorite"
+                                                  onClick={(e) => toggleFavorite(displayVariant.id, e)}
+                                                >
+                                                  <Heart 
+                                                    className={`w-4 h-4 transition-colors ${
+                                                        checkIfFavorite(displayVariant.id) ? 'text-red-500 fill-current' : 'text-gray-200'
+                                                    }`} 
+                                                  />
+                                                </button>
+                                              <button
+                                                  className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                                  aria-label="Quick view"
+                                                  onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleQuickViewOpen(product);
+                                                  }}
+                                              >
+                                                  <Eye className="w-4 h-4 text-gray-200" />
+                                              </button>
+                                              <button
+                                                className="bg-gray-600 p-2 rounded-full shadow-lg hover:bg-gray-500 border border-gray-500"
+                                                aria-label="Add to cart"
+                                                onClick={(e) => handleAddToCart(e, product)}
+                                              >
+                                                <ShoppingCartIcon className="w-4 h-4 text-gray-200" />
+                                            </button>
+                                          </div>
+                                          <div className="flex mb-2">
+                                              {parseFloat(product.rating || '0') > 0 ? (
+                                                  Array.from({ length: 5 }).map((_, i) => (
+                                                      <Star
+                                                          key={i}
+                                                          className={`w-4 h-4 ${i < Math.floor(parseFloat(product.rating)) ? 'text-orange-500 fill-current' : 'text-gray-500'}`}
+                                                      />
+                                                  ))
+                                              ) : (
+                                                  <div className="h-4"></div>
+                                              )}
+                                          </div>
+                                          <h3 className="text-lg font-bold text-gray-100 mb-2">{product.name}</h3>
+                                          <p className="text-gray-400 text-sm mb-2">
+                                              {displayVariant.weight_value} {displayVariant.weight_unit}
+                                          </p>
+                                          <div className="flex items-baseline space-x-2">
+                                              {product.original_price && parseFloat(displayVariant.preco) < parseFloat(product.original_price) && (
+                                                  <p className="text-gray-500 line-through text-base md:text-lg">
+                                                      €{parseFloat(product.original_price).toFixed(2)}
+                                                  </p>
+                                              )}
+                                              <p className="text-red-500 font-bold text-lg md:text-xl">
+                                                  € {parseFloat(displayVariant.preco).toFixed(2)}
+                                              </p>
+                                          </div>
                                       </div>
                                   </div>
-                              );
-                          })
-                      )}
-                  </div>
+                              </div>
+                          );
+                      })
+                  )}
               </div>
             </div>
           </section>
