@@ -500,7 +500,7 @@ const HomePage = ({ cart, handleQuickViewOpen }) => {
 
               {/* 1. IMAGEM DA CAMPANHA (com largura limitada e centralizada) */}
               {campaign.image_url && (
-                  <div className="mb-8 max-w-4xl mx-auto">
+                  <div className="mb-8 max-w-xl mx-auto">
                       <img
                           src={campaign.image_url}
                           alt={`Campanha ${campaign.name}`}
