@@ -16,6 +16,7 @@ interface Campaign {
     id: number;
     name: string;
     is_active: boolean;
+    image_url?: string; // ✨ NOVO: Adicione o URL da imagem da campanha
     products: Product[];
 }
 
@@ -26,6 +27,8 @@ const CampaignsList: React.FC = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [newCampaignName, setNewCampaignName] = useState('');
     const [newCampaignActive, setNewCampaignActive] = useState(true);
+    const [campaignImage, setCampaignImage] = useState<File | null>(null); // ✨ NOVO: Estado para o arquivo de imagem
+    const [isCreating, setIsCreating] = useState(false); // ✨ NOVO: Estado para o loading da criação
 
     const fetchCampaigns = async () => {
         setLoading(true);
@@ -45,21 +48,54 @@ const CampaignsList: React.FC = () => {
         fetchCampaigns();
     }, []);
 
+    // ✨ NOVO: Função para lidar com a seleção do arquivo
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setCampaignImage(e.target.files[0]);
+        } else {
+            setCampaignImage(null);
+        }
+    };
+
+    // ✨ CORRIGIDO: Lógica de criação com upload de imagem em duas etapas
     const handleCreateCampaign = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsCreating(true);
+        let imageUrl = '';
+
         try {
+            // Passo 1: Fazer o upload da imagem se existir um arquivo
+            if (campaignImage) {
+                const formData = new FormData();
+                formData.append('image', campaignImage);
+
+                const uploadResponse = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/images/upload`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+                imageUrl = uploadResponse.data.url;
+                toast.success('Imagem carregada com sucesso!');
+            }
+
+            // Passo 2: Criar a campanha com a URL da imagem
             await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/campaigns/criar`, {
                 name: newCampaignName,
                 is_active: newCampaignActive,
+                image_url: imageUrl, // Envia a URL da imagem (pode ser uma string vazia se não houver upload)
             });
+            
             toast.success('Campanha criada com sucesso!');
             setNewCampaignName('');
             setNewCampaignActive(true);
+            setCampaignImage(null);
             setShowAddModal(false);
-            fetchCampaigns(); // Recarregar a lista de campanhas
-        } catch (err) {
+            fetchCampaigns();
+        } catch (err: any) {
             console.error('Erro ao criar campanha:', err);
-            toast.error('Erro ao criar campanha.');
+            toast.error(err.response?.data?.message || 'Erro ao criar campanha.');
+        } finally {
+            setIsCreating(false);
         }
     };
 
@@ -117,6 +153,16 @@ const CampaignsList: React.FC = () => {
                                         </>
                                     )}
                                 </div>
+                                {/* ✨ NOVO: Exibe a imagem da campanha se ela existir */}
+                                {campaign.image_url && (
+                                    <div className="mb-4">
+                                        <img 
+                                            src={campaign.image_url} 
+                                            alt={`Imagem de ${campaign.name}`} 
+                                            className="w-full h-auto rounded-lg"
+                                        />
+                                    </div>
+                                )}
                                 <div className="mb-4">
                                     <h4 className="font-bold text-gray-800">Produtos ({campaign.products.length})</h4>
                                     <ul className="list-disc list-inside mt-2 text-gray-700 text-sm max-h-24 overflow-y-auto">
@@ -177,6 +223,22 @@ const CampaignsList: React.FC = () => {
                                         required
                                     />
                                 </div>
+                                
+                                {/* ✨ NOVO: Campo para upload da imagem */}
+                                <div className="mb-4">
+                                    <label htmlFor="campaignImage" className="block text-gray-700 font-bold mb-2">Imagem da Campanha</label>
+                                    <input
+                                        type="file"
+                                        id="campaignImage"
+                                        onChange={handleImageChange}
+                                        accept="image/*"
+                                        className="w-full text-sm text-gray-500"
+                                    />
+                                    {campaignImage && (
+                                        <p className="mt-2 text-sm text-gray-500">Ficheiro selecionado: {campaignImage.name}</p>
+                                    )}
+                                </div>
+                                
                                 <div className="mb-4 flex items-center">
                                     <input
                                         type="checkbox"
@@ -192,14 +254,26 @@ const CampaignsList: React.FC = () => {
                                         type="button"
                                         onClick={() => setShowAddModal(false)}
                                         className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-200"
+                                        disabled={isCreating}
                                     >
                                         Cancelar
                                     </button>
                                     <button
                                         type="submit"
                                         className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200"
+                                        disabled={isCreating}
                                     >
-                                        Criar Campanha
+                                        {isCreating ? (
+                                            <div className="flex items-center">
+                                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                A Criar...
+                                            </div>
+                                        ) : (
+                                            'Criar Campanha'
+                                        )}
                                     </button>
                                 </div>
                             </form>
