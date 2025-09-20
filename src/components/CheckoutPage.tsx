@@ -58,7 +58,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ items, onBack }) => {
   };
 
   const initialSubtotal = items.reduce((sum, item) => {
-    return sum + (item.price * item.quantity);
+    const priceToUse = item.original_price != null ? item.original_price : item.price;
+    return sum + (priceToUse * item.quantity);
   }, 0);
   
   const shipping = 0; 
